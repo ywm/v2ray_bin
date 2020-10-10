@@ -1,1 +1,1 @@
-this is for test
+此库供v2ray二进制更新使用，仅支持380固件，armv5，其他固件请自行使用upx压缩即可
