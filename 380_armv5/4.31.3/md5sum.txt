@@ -1,2 +1,0 @@
-de6f5d18efc7cb2a1769b65b9a626d23  v2ctl
-4bf470c4bdd1449ab4dde07e62f1688f  v2ray
