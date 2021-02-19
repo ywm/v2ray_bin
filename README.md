@@ -1,4 +1,4 @@
-# v2ray_bin
+# v2ray_bin （安全，好用）
 support v2ray and xray binary update
 this project will update bin and package for arm_380_v5
 
