@@ -275,14 +275,14 @@ get_ss_config(){
 #   aes-256-gcm:kD9vkjnE6dsUzwQfvKkPkQAd@185.242.4.163:37588
 
    if [ -n "$(echo -n "$decode_link" | awk -F'#' '{print $1}' | grep '@')" ];then
-		paraminfo=$(echo -n "$decode_link" | awk -F'@' '{print $1}'|base64decode_link)
+		paraminfo=$(base64decode_link `echo -n "$decode_link" | awk -F'@' '{print $1}'`)
 		server=$(echo "$decode_link" |awk -F'[@#]' '{print $2}'| awk -F':' '{print $1}')
 		server_port=$(echo "$decode_link" |awk -F'[@#]' '{print $2}'| awk -F':' '{print $2}')
 		encrypt_method=$(echo "$paraminfo" |awk -F':' '{print $1}')
 		password=$(echo "$paraminfo" |awk -F':' '{print $2}')
 		password=$(echo $password | base64_encode)
    else
-		paraminfo=$(echo -n "$decode_link" | awk -F'#' '{print $1}'|base64decode_link)
+		paraminfo=$(base64decode_link `echo -n "$decode_link" | awk -F'#' '{print $1}'`)
 		server=$(echo "$paraminfo" |awk -F'[@:]' '{print $(NF-1}')
 		server_port=$(echo "$paraminfo" |awk -F'[:]' '{print $NF}')
 	#   首段的加密方式跟密码进行解码，method_password=aes-128-gcm:VXPipi29nxMO
