@@ -554,6 +554,19 @@ function openssHint(itemNum) {
 		statusmenu += "</br></br>此参数在客户端json配置文件的【outbound → streamSettings → security】位置"
 		_caption = "底层传输安全";
 		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
+	} else if (itemNum == 110) {
+		width = "750px";
+		statusmenu = "<b>SNI全称Server Name Indication，它扩展了TLS协议。在该协议下，在握手过程开始时客户端告诉它正在连接的服务器要连接的主机名称</b>"
+		statusmenu += "</br></br>此参数在客户端json配置文件的【outbound → streamSettings → (x)tlsSetxtings → serverName】位置"
+		statusmenu += "</br></br>一般对于xtls就留空，ws+tls的话就填成和【伪装域名 (host)】一样"
+		_caption = "tls/xtls域名 (SNI)";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');	
+	} else if (itemNum == 111) {
+		width = "750px";
+		statusmenu = "<b>传输层安全性协议</b>"
+		statusmenu += "</br></br>建议为 xtls-rprx-direct"
+		_caption = "流控 (flow)";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');		
 	} else if (itemNum == 31) {
 		width = "400px";
 		statusmenu = "<b>此处控制开启或者关闭多路复用 (Mux)</b>"
@@ -717,9 +730,13 @@ function openssHint(itemNum) {
 		statusmenu = "节点域名解析DNS服务器.<br />&nbsp;&nbsp;&nbsp;&nbsp;一些SS/SSR/V2RAY的服务器为域名格式，在启用的时候需要对其进行解析，以获取正确的IP地址，此处定义用以解析服务器域名的DNS服务器。<br />&nbsp;&nbsp;&nbsp;&nbsp;一些机场节点的域名托管在国外服务商，此时自定义定义国外的DNS服务器效果可能更好。"
 		_caption = "说明：";
 	}else if (itemNum == 108) {
-		width = "750px";
+		width = "550px";
 		statusmenu = "</br>此参数为选择执行二进制v2ray或者xray,如果不清楚，请选择v2ray"
 		_caption = "二进制（V2ray/Xray）";
+	}else if (itemNum == 109) {
+		width = "450px";
+		statusmenu = "</br>选择对应的协议"
+		_caption = "协议protocol（vmess/vless/trojan）";
 		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
 	}
 	return overlib(statusmenu, OFFSETX, -160, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');

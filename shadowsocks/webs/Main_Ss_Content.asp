@@ -3674,7 +3674,7 @@ function set_cron(action) {
 												</tr>
 												<tr id="v2ray_protocol_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(48)"><font color="#ffcc00">协议protocol（vmess/vless/trojan）</font></a>
+														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(109)"><font color="#ffcc00">协议protocol（vmess/vless/trojan）</font></a>
 													</th>
 													<td>
 														<!-- <input type="text" name="ss_basic_v2ray_protocol" id="ss_basic_v2ray_protocol"  class="input_ss_table" maxlength="300" value=""/>-->
@@ -3905,7 +3905,7 @@ function set_cron(action) {
 												</tr>
 												<tr id="v2ray_network_flow_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);"><font color="#ffcc00">流控 (flow)</font></a>
+														<a class="hintstyle" href="javascript:void(0);"onclick="openssHint(111)"><font color="#ffcc00">流控 (flow)</font></a>
 													</th>
 													<td>
 														<select id="ss_basic_v2ray_network_flow" name="ss_basic_v2ray_network_flow" onchange="verifyFields(this, 1);" style="width:164px;margin:0px 0px 0px 2px;" class="input_option">
@@ -3918,7 +3918,7 @@ function set_cron(action) {
 												</tr>
 												<tr id="v2ray_network_tlshost_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(28)"><font color="#ffcc00">tls/xtls域名 (SNI)</font></a>
+														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(110)"><font color="#ffcc00">tls/xtls域名 (SNI)</font></a>
 													</th>
 													<td>
 														<input type="text" name="ss_basic_v2ray_network_tlshost" id="ss_basic_v2ray_network_tlshost" class="input_ss_table"  placeholder="没有请留空" maxlength="300" value=""/>
@@ -4851,11 +4851,11 @@ taobao.com
 											<table style="margin:8px 0px 0px 0px;" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 												<thead>
 												<tr>
-													<td colspan="3">通过SS/SSR/vmess链接添加服务器</td>
+													<td colspan="3">通过SS/SSR/vmess/trojan/vless链接添加服务器</td>
 												</tr>
 												</thead>
 												<tr>
-													<th width="35%">SS/SSR/vmess链接</th>
+													<th width="35%">SS/SSR/vmess/trojan/vless链接</th>
 													<td>
 														<textarea placeholder="填入以ss://或者ssr://或者vmess://开头的链接，多个链接请分行填写" rows=9 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_base64_links" name="ss_base64_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 													</td>
