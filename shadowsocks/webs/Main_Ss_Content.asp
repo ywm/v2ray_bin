@@ -180,7 +180,7 @@ function pop_node_add() {
 					shade: 0.2,
 					time: 20000, //20s后自动关闭
 					area: ['450px'],
-					btn: ['添加ss节点', '添加ssr节点', '添加koolgame节点', '添加V2Ray节点'],
+					btn: ['添加ss节点', '添加ssr节点', '添加koolgame节点', '添加V2Ray节点','添加 Trojan 节点'],
 					btnAlign: 'c',
 					btn1: function(index, layero) {
 						setTimeout("Add_profile();", 300);
@@ -374,8 +374,8 @@ function save() {
 		}
 	}
 	// adjust some value when switch node between ss ssr v2ray koolgame
-	if (typeof(db_ss["ssconf_basic_rss_protocol_" + node_sel]) != "undefined"){
-		var remove_ssr = [ "ss_v2ray_plugin", "ss_v2ray_plugin_opts", "koolgame_udp", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_protocol", "v2ray_xray", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_tlshost", "v2ray_network_flow", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
+		if (typeof(db_ss["ssconf_basic_rss_protocol_" + node_sel]) != "undefined"){
+		var remove_ssr = [ "ss_v2ray_plugin", "ss_v2ray_plugin_opts", "koolgame_udp", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
 		//console.log("use ssr");
 		dbus["ss_basic_type"] = "1"
 		dbus["ssconf_basic_type_" + node_sel] = "1"
@@ -385,7 +385,7 @@ function save() {
 		}
 	} else {
 		if (typeof(db_ss["ssconf_basic_koolgame_udp_" + node_sel]) != "undefined"){
-			var remove_gamev2 = [ "ss_v2ray_plugin", "ss_v2ray_plugin_opts", "rss_protocol", "rss_protocol_param", "rss_obfs", "rss_obfs_param", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_protocol", "v2ray_xray", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_tlshost", "v2ray_network_flow", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
+			var remove_gamev2 = [ "ss_v2ray_plugin", "ss_v2ray_plugin_opts", "rss_protocol", "rss_protocol_param", "rss_obfs", "rss_obfs_param", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
 			//console.log("use v2");
 			dbus["ss_basic_type"] = "2"
 			dbus["ssconf_basic_type_" + node_sel] = "2"
@@ -403,8 +403,8 @@ function save() {
 					dbus["ss_basic_" + remove_v2ray[i]] = "";
 					dbus["ssconf_basic_" + remove_v2ray[i] + "_" + node_sel] = "";
 				}
-			}else{
-				var remove_ss = [ "koolgame_udp", "rss_protocol", "rss_protocol_param", "rss_obfs", "rss_obfs_param", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_protocol", "v2ray_xray", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_tlshost", "v2ray_network_flow", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
+			}else if(typeof(db_ss["ssconf_basic_ss_v2ray_plugin_" + node_sel])  != "undefined") {
+				var remove_ss = [ "koolgame_udp", "rss_protocol", "rss_protocol_param", "rss_obfs", "rss_obfs_param", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
 				//console.log("use ss");
 				dbus["ss_basic_type"] = "0"
 				dbus["ssconf_basic_type_" + node_sel] = "0"
@@ -412,6 +412,15 @@ function save() {
 					dbus["ss_basic_" + remove_ss[i]] = "";
 					dbus["ssconf_basic_" + remove_ss[i] + "_" + node_sel] = "";
 				}
+			} else {
+			    var remove_trojan = [ "method", "koolgame_udp", "rss_protocol", "rss_protocol_param", "rss_obfs", "rss_obfs_param", "v2ray_use_json", "v2ray_uuid", "v2ray_alterid", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_security", "v2ray_mux_enable", "v2ray_mux_concurrency", "v2ray_json"];
+                //console.log("use trojan");
+                dbus["ss_basic_type"] = "4"
+                dbus["ssconf_basic_type_" + node_sel] = "4"
+                for (var i = 0; i < remove_trojan.length; i++) {
+                    dbus["ss_basic_" + remove_trojan[i]] = "";
+                    dbus["ssconf_basic_" + remove_trojan[i] + "_" + node_sel] = "";
+                }
 			}
 		}
 	}
@@ -507,42 +516,40 @@ function update_ss_ui(obj) {
 }
 
 function verifyFields(r) {
-	// somae variable
+	// some variable
 	var node_sel = E("ssconf_basic_node").value;
 	var ssmode = E("ss_basic_mode").value;
+    var ss_on = false;
+    var ssr_on = false;
+    var koolgame_on = false;
+    var v2ray_on = false;
+    var trojan_on = false;
 	if (typeof(db_ss["ssconf_basic_rss_protocol_" + node_sel]) != "undefined"){
-		var ss_on = false;
-		var ssr_on = true;
-		var koolgame_on = false;
-		var v2ray_on = false;
+        ssr_on = true;
 		$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
 		$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
 	}else{
 		if (typeof(db_ss["ssconf_basic_koolgame_udp_" + node_sel]) != "undefined"){
-			var ss_on = false;
-			var ssr_on = false;
-			var koolgame_on = true;
-			var v2ray_on = false;
+			koolgame_on = true;
 			$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
 			$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
 		}else{
 			if (typeof(db_ss["ssconf_basic_v2ray_use_json_" + node_sel]) != "undefined"){
-				var ss_on = false;
-				var ssr_on = false;
-				var koolgame_on = false;
-				var v2ray_on = true;
+				v2ray_on = true;
 				$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(51)"><font color="#ffcc00">地址（address）</font></a>');
 				$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(50)"><font color="#ffcc00">端口（port）</font></a>');
-			}else{
-				var ss_on = true;
-				var ssr_on = false;
-				var koolgame_on = false;
-				var v2ray_on = false;
+			}else if((typeof(db_ss["ssconf_basic_ss_v2ray_plugin_" + node_sel])  != "undefined") || (typeof(db_ss["ssconf_basic_method_" + node_sel])  != "undefined")) {
+				ss_on = true;
 				$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
 				$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
+			} else {
+			    trojan_on = true;
+			    $("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
+                $("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
 			}
 		}
-	}
+	}	
+	
 	// pop out node add
 	if (node_global_max == 0 && poped == 0) {
 		pop_node_add();
@@ -583,12 +590,12 @@ function verifyFields(r) {
 	var tls_on = E("ss_basic_v2ray_network_security").value == "xtls" || E("ss_basic_v2ray_network_security").value == "tls";
 	var xtls_on = E("ss_basic_v2ray_network_security").value == "xtls";
 	showhide("pass_tr", (!v2ray_on));
-	showhide("method_tr", (!v2ray_on));
+	showhide("method_tr", (!v2ray_on && !trojan_on));
 	showhide("server_tr", (json_off));
 	showhide("port_tr", (json_off));
 	showhide("v2ray_use_json_basic_tr", v2ray_on);
 	showhide("v2ray_uuid_basic_tr", (v2ray_on && json_off));
-	showhide("v2ray_alterid_basic_tr", (v2ray_on && json_off));
+	showhide("v2ray_alterid_basic_tr", (v2ray_on && json_off && E("ss_basic_v2ray_protocol").value == "vmess"));
 	showhide("v2ray_protocol_basic_tr", (v2ray_on && json_off));
 	showhide("v2ray_xray_basic_tr", (v2ray_on && json_off));
 	showhide("v2ray_security_basic_tr", (v2ray_on && json_off));
@@ -665,6 +672,7 @@ function verifyFields(r) {
 			showhide("v2ray_network_path_tr", path_on_2);
 			showhide("v2ray_mux_concurrency_tr", (E("ss_node_table_v2ray_mux_enable").checked));
 			showhide("v2ray_json_tr", (E("ss_node_table_v2ray_use_json").checked));
+			showhide("v2ray_alterid_tr", (E("ss_node_table_v2ray_protocol").value == "vmess"));
 		}
 	}
 	//kcp pannel
@@ -825,16 +833,16 @@ function ssconf_node2obj(node_sel) {
 	for (var i = 0; i < params2.length; i++) {
 		obj["ss_basic_" + params2[i]] = db_ss[p + "_" + params2[i] + "_" + node_sel] || "";
 	}
-	var xy = db_ss[p + "_" + "v2ray_protocol" + "_" + node_sel];
-	if(xy=="vless"){
-		$("#use_uuid_on").text("用户id（id）")
-	}else if(xy=="vmess"){
-		$("#use_uuid_on").text("用户id（id）")
-	}else if(xy=="trojan"){
-		$("#use_uuid_on").text("密码")
-	}else{
-		$("#use_uuid_on").text("用户id（id）")
-	}
+//	var xy = db_ss[p + "_" + "v2ray_protocol" + "_" + node_sel];
+//	if(xy=="vless"){
+//		$("#use_uuid_on").text("用户id（id）")
+//	}else if(xy=="vmess"){
+//		$("#use_uuid_on").text("用户id（id）")
+//	}else if(xy=="trojan"){
+//		$("#use_uuid_on").text("密码")
+//	}else{
+//		$("#use_uuid_on").text("用户id（id）")
+//	}
 	var v2ray_xray = db_ss[p + "_" + "v2ray_xray" + "_" + node_sel]
 	if(v2ray_xray=="xray"){
 		obj["ss_basic_" + "v2ray_xray"] = "xray"
@@ -850,29 +858,31 @@ function ssconf_node2obj(node_sel) {
 //使用中节点改变
 function protocol_change_on(xy){
 	//alert(2)
-	if(xy=="vless"){
-		$("#use_uuid_on").text("用户id（id）")
-	}else if(xy=="vmess"){
-		$("#use_uuid_on").text("用户id（id）")
-	}else if(xy=="trojan"){
-		$("#use_uuid_on").text("密码")
-	}else{
-		$("#use_uuid_on").text("用户id（id）")
-	}
+//	if(xy=="vless"){
+//		$("#use_uuid_on").text("用户id（id）")
+//	}else if(xy=="vmess"){
+//		$("#use_uuid_on").text("用户id（id）")
+//	}else if(xy=="trojan"){
+//		$("#use_uuid_on").text("密码")
+//	}else{
+//		$("#use_uuid_on").text("用户id（id）")
+//	}
+	verifyFields();
 }
 
 //非使用中节点改变
 function protocol_change_off(xy){
 	//alert(3)
-	if(xy=="vless"){
-		$("#use_uuid_off").text("用户id（id）")
-	}else if(xy=="vmess"){
-		$("#use_uuid_off").text("用户id（id）")
-	}else if(xy=="trojan"){
-		$("#use_uuid_off").text("密码")
-	}else{
-		$("#use_uuid_off").text("用户id（id）")
-	}
+//	if(xy=="vless"){
+//		$("#use_uuid_off").text("用户id（id）")
+//	}else if(xy=="vmess"){
+//		$("#use_uuid_off").text("用户id（id）")
+//	}else if(xy=="trojan"){
+//		$("#use_uuid_off").text("密码")
+//	}else{
+//		$("#use_uuid_off").text("用户id（id）")
+//	}
+	verifyFields();
 }
 
 //使用中节点改变
@@ -1046,11 +1056,16 @@ function loadBasicOptions(confs) {
 						value: field,
 						text: c.use_kcp == "1" ? "【V2Ray+KCP】" + c.name : "【V2Ray】" + c.name
 					}));
-				}else{  //判断节点为ss
+				}else if(c["ss_v2ray_plugin"] || c["method"]) {  //判断节点为SS （有 v2ray 插件的为 SS）
 					option.append($("<option>", {
 						value: field,
 						text: c.use_kcp == "1" ? "【SS+KCP】" + c.name : "【SS】" + c.name
 					}));
+				} else { // 其余为 Trojan 节点
+                    option.append($("<option>", {
+                        value: field,
+                        text: c.use_kcp == "1" ? "【Trojan+KCP】" + c.name : "【Trojan】" + c.name
+                    }));
 				}
 			}
 		}
@@ -1127,6 +1142,7 @@ function Add_profile() { //点击节点页面内添加节点动作
 	E("ssrTitle").style.display = "";
 	E("gamev2Title").style.display = "";
 	E("v2rayTitle").style.display = "";
+	E("trojanTitle").style.display = "";
 	E("add_node").style.display = "";
 	E("edit_node").style.display = "none";
 	E("continue_add").style.display = "";
@@ -1150,6 +1166,7 @@ function tabclickhandler(_type) {
 	E('ssrTitle').className = "vpnClientTitle_td_unclick";
 	E('gamev2Title').className = "vpnClientTitle_td_unclick";
 	E('v2rayTitle').className = "vpnClientTitle_td_unclick";
+	E('trojanTitle').className = "vpnClientTitle_td_unclick";
 	if (_type == 0) {
 		save_flag = "shadowsocks";
 		E("vpnc_type").value = "shadowsocks";
@@ -1325,7 +1342,41 @@ function tabclickhandler(_type) {
 			showhide("v2ray_network_flow_tr", xtlshost_on_2);
 			showhide("v2ray_mux_concurrency_tr", (E("ss_node_table_v2ray_mux_enable").checked));
 			showhide("v2ray_json_tr", (E("ss_node_table_v2ray_use_json").checked));
+			showhide("v2ray_alterid_tr", (E("ss_node_table_v2ray_protocol").value == "vmess"));
 		}
+	}else if (_type == 4) {
+	    // 添加 Trojan 节点的界面
+	    save_flag = "trojan";
+        E("vpnc_type").value = "trojan";
+        E('trojanTitle').className = "vpnClientTitle_td_click";
+        // 显示别名、地址、端口和密码（公用 ss 的）
+        E('ss_name_support_tr').style.display = "";
+		E('ss_server_support_tr').style.display = "";
+		E('ss_port_support_tr').style.display = "";
+		E('ss_passwd_support_tr').style.display = "";
+        // 不显示 ss 相关条目
+        E('v2ray_use_json_tr').style.display = "none";
+		E('ss_method_support_tr').style.display = "none";
+		E('ss_v2ray_plugin_support').style.display = "none";
+		E('ss_v2ray_plugin_opts_support').style.display = "none";
+		E('ssr_protocol_tr').style.display = "none";
+		E('ssr_protocol_param_tr').style.display = "none";
+		E('ssr_obfs_tr').style.display = "none";
+		E('ssr_obfs_param_tr').style.display = "none";
+		E('gameV2_udp_tr').style.display = "none";
+		// 不显示 v2ray 相关条目
+        E('v2ray_uuid_tr').style.display = "none";
+        E('v2ray_alterid_tr').style.display = "none";
+        E('v2ray_security_tr').style.display = "none";
+        E('v2ray_network_tr').style.display = "none";
+        E('v2ray_headtype_tcp_tr').style.display = "none";
+        E('v2ray_headtype_kcp_tr').style.display = "none";
+        E('v2ray_network_path_tr').style.display = "none";
+        E('v2ray_network_host_tr').style.display = "none";
+        E('v2ray_network_security_tr').style.display = "none";
+        E('v2ray_mux_enable_tr').style.display = "none";
+        E('v2ray_mux_concurrency_tr').style.display = "none";
+        E('v2ray_json_tr').style.display = "none";
 	} 
 	return save_flag;
 }
@@ -1339,18 +1390,19 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 	var params3 = ["mode", "name", "server", "port", "method", "koolgame_udp"]; //for ssr
 	var params4_1 = ["mode", "name", "server", "port", "v2ray_uuid", "v2ray_alterid", "v2ray_protocol", "v2ray_xray", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_tlshost", "v2ray_network_flow", "v2ray_network_security", "v2ray_mux_concurrency"]; //for v2ray
 	var params4_2 = ["v2ray_use_json", "v2ray_mux_enable"]; //for v2ray
+	var paramsTrojan = ["name", "server", "mode", "port"]; //for trojan
 	if(!$.trim($('#ss_node_table_name').val())){
 		alert("节点名不能为空！！");
 		return false;
 	}
 	//for-trojan
-	if($.trim($('#ss_node_table_v2ray_protocol').val())=="trojan"){
+/**	if($.trim($('#ss_node_table_v2ray_protocol').val())=="trojan"){
 		if($.trim($('#ss_node_table_v2ray_network_security').val())=="none"){
 			//alert("trojan必须填写[底层传输安全],如不清楚,默认请选择tls")
 			E('ss_node_table_v2ray_network_security').value="tls"
 		}
 	}
-	
+**/	
 	if (flag == 'shadowsocks') {
 		for (var i = 0; i < params1.length; i++) {
 			ns[p + "_" + params1[i] + "_" + node_global_max] = $.trim($('#ss_node_table' + "_" + params1[i]).val());
@@ -1434,7 +1486,13 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 			}
 		}
 		ns[p + "_type_" + node_global_max] = "3";
-	}
+	}else if(flag == 'trojan') {
+        for (var i = 0; i < paramsTrojan.length; i++) {
+            ns[p + "_" + paramsTrojan[i] + "_" + node_global_max] = $('#ss_node_table' + "_" + paramsTrojan[i]).val();
+        }
+        ns[p + "_password_" + node_global_max] = Base64.encode($("#ss_node_table_password").val());
+        ns[p + "_type_" + node_global_max] = "4";
+    }
 	$.ajax({
 		url: '/applydb.cgi?p=ssconf_basic',
 		contentType: "application/x-www-form-urlencoded",
@@ -1580,9 +1638,15 @@ function refresh_html() {
 					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #33CC33;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
 				} else {
 					if(c["v2ray_use_json"] == "0" || c["v2ray_use_json"] == "1") { //判断节点为v2ray
+						if(c["v2ray_alterid"]) {	//vmess
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #9900CC;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
-					}else{
+						}else {	//vless
+						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #3c45f6;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
+						}
+					}else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #00CCFF;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
+					} else {  // 其余为 Trojan 节点
+					    html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #e2c628;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
 					}
 				}
 			}
@@ -1594,9 +1658,15 @@ function refresh_html() {
 					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #33CC33;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
 				} else {
 					if(c["v2ray_use_json"] == "0" || c["v2ray_use_json"] == "1") { //判断节点为v2ray
+						if(c["v2ray_alterid"]) {	//vmess
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #9900CC;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
-					}else{
+						}else {	//vless
+						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #3c45f6;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
+						}
+					} else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #00CCFF;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
+					} else {  // 其余为 Trojan 节点
+					    html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #e2c628;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
 					}
 				}
 			}
@@ -1650,11 +1720,16 @@ function apply_this_ss_node(s) { //应用此节点
 						value: field,
 						text: "【V2Ray】" + c.name
 					}));
-				}else{
+				} else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
 					option.append($("<option>", {
 						value: field,
 						text: "【SS】" + c.name
 					}));
+				} else {  // 其余的为 Trojan 节点
+                    option.append($("<option>", {
+                        value: field,
+                        text: "【Trojan】" + c.name
+                    }));
 				}
 			}
 		}
@@ -1735,45 +1810,45 @@ function edit_conf_table(o) { //编辑节点功能，显示编辑面板
 	//编辑时恢复文字
 	protocol_change_off(c["v2ray_protocol"])
 	xray_change_off(c["v2ray_xray"])
+	
 	E("cancelBtn").style.display = "";
 	E("add_node").style.display = "none";
 	E("edit_node").style.display = "";
 	E("continue_add").style.display = "none";
+
+    E("ssTitle").style.display = "none";
+    E("ssrTitle").style.display = "none";
+    E("gamev2Title").style.display = "none";
+    E("v2rayTitle").style.display = "none";
+    E("trojanTitle").style.display = "none";
 	
 	if (c["rss_protocol"]) { //判断节点为SSR
 		$("#vpnc_settings").fadeIn(200);
-		E("ssTitle").style.display = "none";
 		E("ssrTitle").style.display = "";
-		E("gamev2Title").style.display = "none";
-		E("v2rayTitle").style.display = "none";
 		$("#ssrTitle").html("编辑SSR账号");
 		tabclickhandler(1);
 	} else {
 		if (c["koolgame_udp"] == "0" || c["koolgame_udp"] == "1") { //判断节点为koolgame
 			$("#vpnc_settings").fadeIn(200);
-			E("ssTitle").style.display = "none";
-			E("ssrTitle").style.display = "none";
 			E("gamev2Title").style.display = "";
-			E("v2rayTitle").style.display = "none";
 			$("#gamev2Title").html("编辑koolgame账号");
 			tabclickhandler(2);
 		}else { 
 			if(c["v2ray_use_json"] == "0" || c["v2ray_use_json"] == "1") { //判断节点为v2ray
 				$("#vpnc_settings").fadeIn(200);
-				E("ssTitle").style.display = "none";
-				E("ssrTitle").style.display = "none";
-				E("gamev2Title").style.display = "none";
 				E("v2rayTitle").style.display = "";
 				$("#v2rayTitle").html("编辑V2Ray账号");
 				tabclickhandler(3);
-			}else{ //判断节点为SS
+			}else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
 				$("#vpnc_settings").fadeIn(200);
-				E("ssTitle").style.display = "";
-				E("ssrTitle").style.display = "none";
-				E("gamev2Title").style.display = "none";
-				E("v2rayTitle").style.display = "none";
+                E("ssTitle").style.display = "";
 				$("#ssTitle").html("编辑ss账号");
 				tabclickhandler(0);
+			}else { // 其余的为 Trojan 节点
+                $("#vpnc_settings").fadeIn(200);
+                E("trojanTitle").style.display = "";
+                $("#trojanTitle").html("编辑 Trojan 配置");
+                tabclickhandler(4);
 			}
 		}
 	}
@@ -1788,6 +1863,7 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 	var params3 = ["name", "server", "mode", "port", "method", "koolgame_udp"]; //for ssr
 	var params4_1 = ["mode", "name", "server", "port", "v2ray_uuid", "v2ray_alterid", "v2ray_protocol", "v2ray_xray", "v2ray_security", "v2ray_network", "v2ray_headtype_tcp", "v2ray_headtype_kcp", "v2ray_network_path", "v2ray_network_host", "v2ray_network_tlshost", "v2ray_network_flow", "v2ray_network_security", "v2ray_mux_concurrency"]; //for v2ray
 	var params4_2 = ["v2ray_use_json", "v2ray_mux_enable"]; //for v2ray
+	var paramsTrojan = ["name", "server", "mode", "port"]; //for trojan
 	if (flag == 'shadowsocks') {
 		for (var i = 0; i < params1.length; i++) {
 			ns[p + "_" + params1[i] + "_" + myid] = $('#ss_node_table' + "_" + params1[i]).val();
@@ -1856,6 +1932,12 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 			}
 		}
 		ns[p + "_type_" + myid] = "3";
+	}else if(flag == 'trojan') {
+		for (var i = 0; i < paramsTrojan.length; i++) {
+			ns[p + "_" + paramsTrojan[i] + "_" + myid] = $('#ss_node_table' + "_" + paramsTrojan[i]).val();
+		}
+		ns[p + "_password_" + myid] = Base64.encode($("#ss_node_table_password").val());
+	    ns[p + "_type_" + myid] = "4";
 	} 
 	var id = parseInt(Math.random() * 100000000);
 	var postData = {"id": id, "method": "dummy_script.sh", "params":[], "fields": ns };
@@ -3216,7 +3298,7 @@ function set_cron(action) {
 											<img id="return_btn" onclick="reload_Soft_Center();" align="right" style="cursor:pointer;position:absolute;margin-left:-30px;margin-top:-25px;" title="返回软件中心" src="/images/backprev.png" onMouseOver="this.src='/images/backprevclick.png'" onMouseOut="this.src='/images/backprev.png'"></img>
 										</div>
 										<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-										<div class="SimpleNote" id="head_illustrate">本插件是支持<a href="https://github.com/shadowsocks/shadowsocks-libev" target="_blank"><em><u>SS</u></em></a>、<a href="https://github.com/shadowsocksrr/shadowsocksr-libev" target="_blank"><em><u>SSR</u></em></a>、<a href="http://firmware.koolshare.cn/binary/koolgame/" target="_blank"><em><u>KoolGame</u></em></a>、<a href="https://github.com/v2ray/v2ray-core" target="_blank"><em><u>V2Ray</u></em></a>四种客户端的科学上网、游戏加速工具。</div>
+										<div class="SimpleNote" id="head_illustrate">本插件是支持<a href="https://github.com/shadowsocks/shadowsocks-libev" target="_blank"><em><u>SS</u></em></a>、<a href="https://github.com/shadowsocksrr/shadowsocksr-libev" target="_blank"><em><u>SSR</u></em></a>、<a href="http://firmware.koolshare.cn/binary/koolgame/" target="_blank"><em><u>KoolGame</u></em></a>、<a href="https://github.com/v2ray/v2ray-core" target="_blank"><em><u>V2Ray</u></em></a>、<a target="_blank" href="https://github.com/trojan-gfw/trojan"><em><u>Trojan</u></em></a>四种客户端的科学上网、游戏加速工具。</div>
 										<div style="margin-top: 0px;text-align: center;font-size: 18px;margin-bottom: 0px;" class="formfontdesc" id="cmdDesc"></div>
 										<!-- this is the popup area for status -->
 										<div id="detail_status"  class="content_status" style="box-shadow: 3px 3px 10px #000;margin-top: 0px;display: none;">
@@ -3318,10 +3400,11 @@ function set_cron(action) {
 													<td>		
 														<table width="100%" border="0" align="left" cellpadding="0" cellspacing="0" class="vpnClientTitle">
 															<tr>
-													  		<td width="25%" align="center" id="ssTitle" onclick="tabclickhandler(0);">添加SS账号</td>
-													  		<td width="25%" align="center" id="ssrTitle" onclick="tabclickhandler(1);">添加SSR账号</td>
-													  		<td width="25%" align="center" id="gamev2Title" onclick="tabclickhandler(2);">添加koolgame账号</td>
-													  		<td width="25%" align="center" id="v2rayTitle" onclick="tabclickhandler(3);">添加V2Ray配置</td>
+													  		<td width="20%" align="center" id="ssTitle" onclick="tabclickhandler(0);">添加SS账号</td>
+													  		<td width="20%" align="center" id="ssrTitle" onclick="tabclickhandler(1);">添加SSR账号</td>
+													  		<td width="20%" align="center" id="gamev2Title" onclick="tabclickhandler(2);">添加koolgame账号</td>
+													  		<td width="20%" align="center" id="v2rayTitle" onclick="tabclickhandler(3);">添加V2Ray配置</td>
+															<td width="20%" align="center" id="trojanTitle" onclick="tabclickhandler(4);">添加 Trojan 配置</td>
 															</tr>
 														</table>
 													</td>
@@ -3367,13 +3450,13 @@ function set_cron(action) {
 																</td>
 															</tr>
 															<tr id="v2ray_protocol_tr" style="display: none;">
-																<th width="35%">协议protocol（vmess/vless/trojan）</th>
+																<th width="35%">协议protocol（vmess/vless）</th>
 																<td>
 																	<!-- <input type="text" name="ss_node_table_v2ray_protocol" id="ss_node_table_v2ray_protocol"  class="input_ss_table" style="width:342px;" maxlength="300" value=""/> -->
 																	<select id="ss_node_table_v2ray_protocol" name="ss_node_table_v2ray_protocol" style="width:350px;margin:0px 0px 0px 2px;" class="input_option" onchange="protocol_change_off(this.value);">
 																		<option value="vmess">vmess</option>
 																		<option value="vless">vless</option>
-																		<option value="trojan">trojan</option>
+																	<!--	<option value="trojan">trojan</option>	-->
 																	</select>
 																</td>
 															</tr>
@@ -3674,14 +3757,14 @@ function set_cron(action) {
 												</tr>
 												<tr id="v2ray_protocol_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(109)"><font color="#ffcc00">协议protocol（vmess/vless/trojan）</font></a>
+														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(109)"><font color="#ffcc00">协议protocol（vmess/vless）</font></a>
 													</th>
 													<td>
 														<!-- <input type="text" name="ss_basic_v2ray_protocol" id="ss_basic_v2ray_protocol"  class="input_ss_table" maxlength="300" value=""/>-->
 														<select id="ss_basic_v2ray_protocol" name="ss_basic_v2ray_protocol" style="width:164px;margin:0px 0px 0px 2px;" class="input_option"  onchange="protocol_change_on(this.value);">
 															<option value="vmess">vmess</option>
 															<option value="vless">vless</option>
-															<option value="trojan">trojan</option>
+														<!--	<option value="trojan">trojan</option>-->
 														</select>
 													</td>
 												</tr>
@@ -4770,17 +4853,17 @@ taobao.com
 											<table id="conf_table1" style="margin:8px 0px 0px 0px;" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 												<thead>
 												<tr>
-													<td colspan="3">SSR/v2ray订阅设置</td>
+													<td colspan="3">节点订阅设置</td>
 												</tr>
 												</thead>
 												<tr>
-													<th width="35%">订阅地址管理（支持SSR/v2ray）</th>
+													<th width="35%">订阅地址管理（支持SS/SSR/vmess/vless/Trojan）</th>
 													<td>
 														<textarea placeholder="填入需要订阅的地址，多个地址分行填写" rows=8 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_online_links" name="ss_online_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 													</td>
 												</tr>
 												<tr>
-													<th width="35%">订阅节点模式设定（SSR/v2ray）</th>
+													<th width="35%">订阅节点模式设定（SS/SSR/V2ray/Trojan）</th>
 													<td>
 														<select id="ssr_subscribe_mode" name="ssr_subscribe_mode" class="input_option" onchange="update_visibility();" >
 															<option value="1">【1】 gfwlist模式</option>
@@ -4803,7 +4886,7 @@ taobao.com
 													</td>
 												</tr>
 												<tr>
-													<th width="35%">下载订阅时走SS/SSR/v2ray代理网络</th>
+													<th width="35%">下载订阅时走节点代理网络</th>
 													<td>
 														<select id="ss_basic_online_links_goss" name="ss_basic_online_links_goss" class="input_option" onchange="update_visibility();" >
 															<option value="0" selected="">不走代理</option>
@@ -4851,13 +4934,13 @@ taobao.com
 											<table style="margin:8px 0px 0px 0px;" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 												<thead>
 												<tr>
-													<td colspan="3">通过SS/SSR/vmess/trojan/vless链接添加服务器</td>
+													<td colspan="3">通过SS/SSR/vmess/vless/trojan链接添加服务器</td>
 												</tr>
 												</thead>
 												<tr>
-													<th width="35%">SS/SSR/vmess/trojan/vless链接</th>
+													<th width="35%">SS/SSR/vmess/vless/trojan链接</th>
 													<td>
-														<textarea placeholder="填入以ss://或者ssr://或者vmess://开头的链接，多个链接请分行填写" rows=9 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_base64_links" name="ss_base64_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+														<textarea placeholder="填入以ss://或者ssr://或者vmess://或者vless://或者trojan://开头的链接，多个链接请分行填写" rows=9 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_base64_links" name="ss_base64_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 													</td>
 												</tr>
 												<tr>

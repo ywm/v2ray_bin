@@ -1155,7 +1155,7 @@ get_path(){
 create_v2ray_json(){
 	rm -rf "$V2RAY_CONFIG_FILE_TMP"
 	rm -rf "$V2RAY_CONFIG_FILE"
-	if [ "$ss_basic_v2ray_use_json" == "0" ]; then
+	if [ "$ss_basic_v2ray_use_json" == "0" ] || [ "$ss_basic_type" == "4" ]; then
 		echo_date 生成V2Ray配置文件...
 		local kcp="null"
 		local tcp="null"
@@ -1324,7 +1324,7 @@ create_v2ray_json(){
 			EOF
 		fi
 		# outbounds area
-		if [ "$ss_basic_v2ray_protocol" == "vmess" ]; then
+		if [ "$ss_basic_v2ray_protocol" == "vmess" ] && [ "$ss_basic_type" == "3" ]; then
 			cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 				"outbounds": [
 				  {
@@ -1363,7 +1363,7 @@ create_v2ray_json(){
 				]
 				}
 			EOF
-		elif [ "$ss_basic_v2ray_protocol" == "vless" ]; then
+		elif [ "$ss_basic_v2ray_protocol" == "vless" ] && [ "$ss_basic_type" == "3" ]; then
 		  #vless
 		  cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 				"outbounds": [
@@ -1405,33 +1405,11 @@ create_v2ray_json(){
 				]
 				}
 			EOF
-		elif [ "$ss_basic_v2ray_protocol" == "trojan" ]; then
-		  #trojan
-		  cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
-				"outbounds": [
-				  {
-					"tag": "agentout",
-					"protocol": "trojan",
-					"settings": {
-					  "servers": [
-						{
-						  "address": "$(dbus get ss_basic_server)",
-						  "port": $ss_basic_port,
-						  "password": "$ss_basic_v2ray_uuid"
-						}
-					  ]
-					},
-					"streamSettings": {
-					  "network": "tcp",
-					  "security": "tls"
-					}
-				  }
-				]
-				}
-			EOF
 		fi
 		echo_date 解析V2Ray配置文件...
+#		cp "$V2RAY_CONFIG_FILE_TMP" /tmp/home/root/trojantmp.json
 		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
+		
 		echo_date V2Ray配置文件写入成功到"$V2RAY_CONFIG_FILE"
 	elif [ "$ss_basic_v2ray_use_json" == "1" ]; then
 		echo_date 使用自定义的v2ray json配置文件...
@@ -1578,7 +1556,7 @@ create_v2ray_json(){
 	fi
 
 	cd /koolshare/bin
-	if [ "$ss_basic_v2ray_xray" == "xray" ]; then
+	if [ "$ss_basic_v2ray_xray" == "xray" ] ; then
 		echo_date 测试XRay配置文件.....
 		result=$(xray -test -config="$V2RAY_CONFIG_FILE" | grep "Configuration OK.")
 	else
@@ -1593,6 +1571,86 @@ create_v2ray_json(){
 		rm -rf "$V2RAY_CONFIG_FILE_TMP"
 		rm -rf "$V2RAY_CONFIG_FILE"
 		close_in_five
+	fi
+}
+
+
+create_trojan_json(){
+	rm -rf "$V2RAY_CONFIG_FILE_TMP"
+	rm -rf "$V2RAY_CONFIG_FILE"
+	if  [ "$ss_basic_type" == "4" ]; then
+		echo_date 生成Trojan配置文件...
+		 #trojan
+		 # inbounds area (23456 for socks5)  
+		cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
+		{
+			"log": {
+				"access": "/dev/null",
+				"error": "/tmp/v2ray_log.log",
+				"loglevel": "error"
+			},
+				"inbounds": [
+					{
+						"port": 23456,
+						"listen": "0.0.0.0",
+						"protocol": "socks",
+						"settings": {
+							"auth": "noauth",
+							"udp": true,
+							"ip": "127.0.0.1",
+							"clients": null
+						},
+						"streamSettings": null
+					},
+					{
+						"listen": "0.0.0.0",
+						"port": 3333,
+						"protocol": "dokodemo-door",
+						"settings": {
+							"network": "tcp,udp",
+							"followRedirect": true
+						}
+					}
+				],
+			"outbounds": [
+			  {
+				"protocol": "trojan",
+				"settings": {
+				  "servers": [
+					{
+					  "address": "$(dbus get ss_basic_server)",
+					  "port": $ss_basic_port,
+					  "password": "$ss_basic_password"
+					}
+				  ]
+				},
+				"streamSettings": {
+				  "network": "tcp",
+				  "security": "tls"
+				}
+			  }
+			]
+		}
+		EOF
+	
+		echo_date 解析Trojan配置文件...
+	#	cp "$V2RAY_CONFIG_FILE_TMP" /tmp/home/root/trojantmp.json
+		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
+			
+		echo_date V2Ray配置文件写入成功到"$V2RAY_CONFIG_FILE"
+			
+		cd /koolshare/bin
+		echo_date 测试XRay配置文件.....
+		result=$(xray -test -config="$V2RAY_CONFIG_FILE" | grep "Configuration OK.")
+		if [ -n "$result" ]; then
+			echo_date $result
+			echo_date Trojan配置文件通过测试!!!
+		else
+			echo_date Trojan配置文件没有通过测试，请检查设置!!!
+			rm -rf "$V2RAY_CONFIG_FILE_TMP"
+			rm -rf "$V2RAY_CONFIG_FILE"
+			close_in_five
+		fi
 	fi
 }
 
@@ -1618,9 +1676,13 @@ start_v2ray() {
 start_v2ray_xray() {
 	if [ "$ss_basic_v2ray_xray" == "xray" ]; then
 		start_xray
+	elif [ "$ss_basic_type" == "4" ]; then
+		start_trojan
 	else
 		start_v2ray
 	fi
+
+
 }
 
 start_xray() {
@@ -1640,6 +1702,25 @@ start_xray() {
 		sleep 1
 	done
 	echo_date xray启动成功，pid：$xrayPID
+}
+
+start_trojan() {
+	# trojan start
+	cd /koolshare/bin
+	#export GOGC=30
+	xray run -config=/koolshare/ss/v2ray.json >/dev/null 2>&1 &
+	local trojanPID
+	local i=10
+	until [ -n "$trojanPID" ]; do
+		i=$(($i - 1))
+		trojanPID=$(pidof xray)
+		if [ "$i" -lt 1 ]; then
+			echo_date "trojan进程启动失败！"
+			close_in_five
+		fi
+		sleep 1
+	done
+	echo_date trojan启动成功，pid：$trojanPID
 }
 
 write_cron_job(){
@@ -2307,11 +2388,12 @@ apply_ss(){
 	create_ipset
 	create_dnsmasq_conf
 	# do not re generate json on router start, use old one
-	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" != "3" ] && create_ss_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" != "3" ] && [ "$ss_basic_type" != "4" ] && create_ss_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "3" ] && create_v2ray_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" ] && create_trojan_json
 	[ "$ss_basic_type" == "0" ] || [ "$ss_basic_type" == "1" ] && start_ss_redir
 	[ "$ss_basic_type" == "2" ] && start_koolgame
-	[ "$ss_basic_type" == "3" ] && start_v2ray_xray
+	[ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" ] && start_v2ray_xray
 	[ "$ss_basic_type" != "2" ] && start_kcp
 	[ "$ss_basic_type" != "2" ] && start_dns
 	#===load nat start===

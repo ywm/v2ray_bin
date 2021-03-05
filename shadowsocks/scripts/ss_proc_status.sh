@@ -173,6 +173,13 @@ check_status(){
 		echo "程序		状态	PID"
 		[ -n "$V2RAY" ] && echo "v2ray		工作中	pid：$V2RAY" || echo "v2ray	未运行"
 		[ -n "$XRAY" ] && echo "xray		工作中	pid：$XRAY" || echo "xray	未运行"
+	elif [ "$ss_basic_type" == "4" ];then
+		echo_version
+		echo
+		echo ② 检测当前相关进程工作状态：（你正在使用Trojan,选择的模式是$(get_mode_name $ss_basic_mode),国外DNS解析方案是：$(get_dns_name $ss_foreign_dns)）
+		echo -----------------------------------------------------------
+		echo "程序		状态	PID"
+		[ -n "$XRAY" ] && echo "xray		工作中	pid：$XRAY" || echo "xray	未运行"	
 	fi
 
 	if [ -z "$ss_basic_koolgame_udp" ];then

@@ -6,7 +6,14 @@
 eval `dbus export ss`
 source /koolshare/scripts/base.sh
 alias echo_date='echo 【$(TZ=UTC-8 date -R +%Y年%m月%d日\ %X)】:'
-
+socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray"`
+if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
+	echo_date "代理有开启，将使用代理网络..."
+	alias curlxx='curl --connect-timeout 8  --socks5-hostname 127.0.0.1:23456 '
+else
+	echo_date "使用常规网络下载..."
+	alias curlxx='curl --connect-timeout 8 '
+fi
 start_update(){
 	url_main="https://raw.githubusercontent.com/hq450/fancyss/master/rules"
 	url_back=""
@@ -18,7 +25,7 @@ start_update(){
 	echo ==================================================================================================
 	echo_date 开始更新shadowsocks规则，请等待...
 	#wget --no-check-certificate --timeout=8 -qO - "$url_main"/version1 > /tmp/ss_version
-	curl -L -H "Cache-Control: no-cache" -o /tmp/ss_version "$url_main"/version1
+	curlxx "$url_main"/version1 > /tmp/ss_version
 	if [ "$?" == "0" ]; then
 		echo_date 检测到在线版本文件，继续...
 	else
@@ -52,7 +59,7 @@ start_update(){
 				echo_date 检测到新版本gfwlist，开始更新...
 				echo_date 下载gfwlist到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/gfwlist.conf > /tmp/gfwlist.conf
-				curl -L -H "Cache-Control: no-cache" -o /tmp/gfwlist.conf "$url_main"/gfwlist.conf
+				curlxx "$url_main"/gfwlist.conf > /tmp/gfwlist.conf
 				md5sum_gfwlist1=$(md5sum /tmp/gfwlist.conf | sed 's/ /\n/g'| sed -n 1p)
 				if [ "$md5sum_gfwlist1"x = "$md5sum_gfwlist2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始gfwlist文件
@@ -82,7 +89,7 @@ start_update(){
 				echo_date 检测到新版本chnroute，开始更新...
 				echo_date 下载chnroute到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/chnroute.txt > /tmp/chnroute.txt
-				curl -L -H "Cache-Control: no-cache" -o /tmp/chnroute.txt "$url_main"/chnroute.txt
+				curlxx "$url_main"/chnroute.txt > /tmp/chnroute.txt
 				md5sum_chnroute1=$(md5sum /tmp/chnroute.txt | sed 's/ /\n/g'| sed -n 1p)
 				if [ "$md5sum_chnroute1"x = "$md5sum_chnroute2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始chnroute文件
@@ -111,7 +118,7 @@ start_update(){
 				echo_date 检测到新版本cdn名单，开始更新...
 				echo_date 下载cdn名单到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/cdn.txt > /tmp/cdn.txt
-				curl -L -H "Cache-Control: no-cache" -o /tmp/cdn.txt "$url_main"/cdn.txt
+				curlxx "$url_main"/cdn.txt > /tmp/cdn.txt
 				md5sum_cdn1=$(md5sum /tmp/cdn.txt | sed 's/ /\n/g'| sed -n 1p)
 				if [ "$md5sum_cdn1"x = "$md5sum_cdn2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始cdn名单文件

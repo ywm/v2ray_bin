@@ -23,18 +23,18 @@ SOCKS_FLAG=0
 # ssconf_basic_mode_
 # ssconf_basic_name_
 # ssconf_basic_password_
-#ssconf_basic_ss_obfs_
-#ssconf_basic_ss_obfs_host_
-#ssconf_basic_ss_v2ray_
-#ssconf_basic_ss_kcp_support_
-#ssconf_basic_ss_udp_support_
-#ssconf_basic_ss_kcp_opts_
-#ssconf_basic_ss_sskcp_server_
-#ssconf_basic_ss_sskcp_port_
-#ssconf_basic_ss_ssudp_server_
-#ssconf_basic_ss_ssudp_port_
-#ssconf_basic_ss_ssudp_mtu_
-#ssconf_basic_ss_udp_opts_
+# ssconf_basic_ss_obfs_
+# ssconf_basic_ss_obfs_host_
+# ssconf_basic_ss_v2ray_
+# ssconf_basic_ss_kcp_support_
+# ssconf_basic_ss_udp_support_
+# ssconf_basic_ss_kcp_opts_
+# ssconf_basic_ss_sskcp_server_
+# ssconf_basic_ss_sskcp_port_
+# ssconf_basic_ss_ssudp_server_
+# ssconf_basic_ss_ssudp_port_
+# ssconf_basic_ss_ssudp_mtu_
+# ssconf_basic_ss_udp_opts_
 # ssconf_basic_port_
 # ssconf_basic_rss_obfs_
 # ssconf_basic_rss_obfs_param_
@@ -228,6 +228,7 @@ add_ss_servers(){
 	dbus set ssconf_basic_ss_obfs_$ss_index=$ss_obfs_tmp	
 	dbus set ssconf_basic_ss_obfs_host_$ss_index=$ss_obfs_host
 	dbus set ssconf_basic_ss_v2ray_$ss_index=$ss_v2ray_tmp
+	dbus set ssconf_basic_ss_v2ray_plugin_$ss_index=$ss_v2ray_plugin_tmp
 	dbus set ssconf_basic_ss_kcp_support_$ss_index=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$ss_index=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$ss_index=$ss_kcp_opts_tmp
@@ -353,6 +354,7 @@ get_ss_config(){
 			ss_ssudp_port_tmp=""
 			ss_ssudp_mtu_tmp=""
 			ss_udp_opts_tmp=""
+			ss_v2ray_plugin_tmp="0"
 		fi
 	fi
 
@@ -750,7 +752,8 @@ get_trojan_config(){
 	group="$2"
 
 	if [ -n "$(echo -n "$decode_link" | grep "#")" ];then
-		remarks=$(echo -n $decode_link | awk -F'#' '{print $2}' | sed 's/[\r\n ]//g' ) # 因为订阅的 ss 里面有 \r\n ，所以需要先去除，否则就炸了，只能卸载重装				
+		remarks=$(echo -n $decode_link | awk -F'#' '{print $2}' | sed 's/[\r\n ]//g' ) # 因为订阅的 ss 里面有 \r\n ，所以需要先去除，否则就炸了，只能卸载重装	
+		decode_link=$(echo -n $decode_link | awk -F'#' '{print $1}')		
 	else
 		remarks="$remarks" 
 	fi
@@ -800,8 +803,8 @@ add_trojan_servers(){
 	dbus set ssconf_basic_server_$trojanindex=$server
 	dbus set ssconf_basic_port_$trojanindex=$server_port
 	dbus set ssconf_basic_password_$trojanindex=$password
-	dbus set ssconf_basic_type_$trojanindex="3"
-	dbus set ssconf_basic_v2ray_protocol_$trojanindex="trojan"
+	dbus set ssconf_basic_type_$trojanindex="4"
+#	dbus set ssconf_basic_v2ray_protocol_$trojanindex="trojan"
 	[ -n "$sni" ] && dbus set ssconf_basic_trojan_sni_$trojanindex="$sni" || dbus set ssconf_basic_trojan_sni_$trojanindex=""
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
@@ -1047,62 +1050,62 @@ del_none_exist(){
 					let delnum2+=1
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "3" ] && [ "`dbus get ssconf_basic_v2ray_protocol_$localindex`" = "vmess" ];then	 #vmess
 					let delnum3+=1
-				elif [ "`dbus get ssconf_basic_type_$localindex`" = "3" ] && [ "`dbus get ssconf_basic_v2ray_protocol_$localindex`" = "trojan" ];then	#trojan
-					let delnum4+=1
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "3" ] && [ "`dbus get ssconf_basic_v2ray_protocol_$localindex`" = "vless" ];then	 #vless
 					let delnum5+=1
+				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ];then	#trojan
+					let delnum4+=1		
 				fi
 				
-				dbus remove ssconf_basic_group_$localindex
-				dbus remove ssconf_basic_method_$localindex
-				dbus remove ssconf_basic_mode_$localindex
-				dbus remove ssconf_basic_name_$localindex
-				dbus remove ssconf_basic_password_$localindex
-				dbus remove ssconf_basic_port_$localindex
-				dbus remove ssconf_basic_rss_obfs_$localindex
-				dbus remove ssconf_basic_rss_obfs_param_$localindex
-				dbus remove ssconf_basic_rss_protocol_$localindex
-				dbus remove ssconf_basic_rss_protocol_param_$localindex
-				dbus remove ssconf_basic_server_$localindex
-				dbus remove ssconf_basic_server_ip_$localindex
-				dbus remove ssconf_basic_ss_v2ray_plugin_$localindex
-				dbus remove ssconf_basic_ss_v2ray_plugin_opts_$localindex
-				dbus remove ssconf_basic_use_kcp_$localindex
-				dbus remove ssconf_basic_use_lb_$localindex
-				dbus remove ssconf_basic_lbmode_$localindex
-				dbus remove ssconf_basic_weight_$localindex
-				dbus remove ssconf_basic_koolgame_udp_$localindex
-				dbus remove ssconf_basic_v2ray_use_json_$localindex
-				dbus remove ssconf_basic_v2ray_uuid_$localindex
-				dbus remove ssconf_basic_v2ray_protocol_$localindex
-				dbus remove ssconf_basic_v2ray_alterid_$localindex
-				dbus remove ssconf_basic_v2ray_security_$localindex
-				dbus remove ssconf_basic_v2ray_network_$localindex
-				dbus remove ssconf_basic_v2ray_headtype_tcp_$localindex
-				dbus remove ssconf_basic_v2ray_headtype_kcp_$localindex
-				dbus remove ssconf_basic_v2ray_network_path_$localindex
-				dbus remove ssconf_basic_v2ray_network_host_$localindex
-				dbus remove ssconf_basic_v2ray_network_security_$localindex
-				dbus remove ssconf_basic_v2ray_mux_enable_$localindex
-				dbus remove ssconf_basic_v2ray_mux_concurrency_$localindex
-				dbus remove ssconf_basic_v2ray_json_$localindex
-				dbus remove ssconf_basic_type_$localindex
-				dbus remove ssconf_basic_v2ray_xray_$localindex
-				dbus remove ssconf_basic_ss_obfs_$localindex
-				dbus remove ssconf_basic_ss_obfs_host_$localindex
-				dbus remove ssconf_basic_ss_v2ray_$localindex
-				dbus remove ssconf_basic_ss_kcp_support_$localindex
-				dbus remove ssconf_basic_ss_udp_support_$localindex
-				dbus remove ssconf_basic_ss_kcp_opts_$localindex
-				dbus remove ssconf_basic_ss_sskcp_server_$localindex
-				dbus remove ssconf_basic_ss_sskcp_port_$localindex
-				dbus remove ssconf_basic_ss_ssudp_server_$localindex
-				dbus remove ssconf_basic_ss_ssudp_port_$localindex
-				dbus remove ssconf_basic_ss_ssudp_mtu_$localindex
-				dbus remove ssconf_basic_ss_udp_opts_$localindex
-				dbus remove ssconf_basic_trojan_sni_$localindex
-				dbus remove ssconf_basic_v2ray_network_tlshost_$localindex
-				dbus remove ssconf_basic_v2ray_network_flow_$localindex
+					dbus remove ssconf_basic_group_$localindex
+					dbus remove ssconf_basic_koolgame_udp_$localindex
+					dbus remove ssconf_basic_lbmode_$localindex
+					dbus remove ssconf_basic_method_$localindex
+					dbus remove ssconf_basic_mode_$localindex
+					dbus remove ssconf_basic_name_$localindex
+					dbus remove ssconf_basic_password_$localindex
+					dbus remove ssconf_basic_port_$localindex
+					dbus remove ssconf_basic_rss_obfs_$localindex
+					dbus remove ssconf_basic_rss_obfs_param_$localindex
+					dbus remove ssconf_basic_rss_protocol_$localindex
+					dbus remove ssconf_basic_rss_protocol_param_$localindex
+					dbus remove ssconf_basic_server_$localindex
+					dbus remove ssconf_basic_server_ip_$localindex
+					dbus remove ssconf_basic_ss_kcp_opts_$localindex
+					dbus remove ssconf_basic_ss_kcp_support_$localindex
+					dbus remove ssconf_basic_ss_obfs_$localindex
+					dbus remove ssconf_basic_ss_obfs_host_$localindex
+					dbus remove ssconf_basic_ss_sskcp_port_$localindex
+					dbus remove ssconf_basic_ss_sskcp_server_$localindex
+					dbus remove ssconf_basic_ss_ssudp_mtu_$localindex
+					dbus remove ssconf_basic_ss_ssudp_port_$localindex
+					dbus remove ssconf_basic_ss_ssudp_server_$localindex
+					dbus remove ssconf_basic_ss_udp_opts_$localindex
+					dbus remove ssconf_basic_ss_udp_support_$localindex
+					dbus remove ssconf_basic_ss_v2ray_$localindex
+					dbus remove ssconf_basic_ss_v2ray_plugin_$localindex
+					dbus remove ssconf_basic_ss_v2ray_plugin_opts_$localindex
+					dbus remove ssconf_basic_trojan_sni_$localindex
+					dbus remove ssconf_basic_type_$localindex
+					dbus remove ssconf_basic_use_kcp_$localindex
+					dbus remove ssconf_basic_use_lb_$localindex
+					dbus remove ssconf_basic_v2ray_alterid_$localindex
+					dbus remove ssconf_basic_v2ray_headtype_kcp_$localindex
+					dbus remove ssconf_basic_v2ray_headtype_tcp_$localindex
+					dbus remove ssconf_basic_v2ray_json_$localindex
+					dbus remove ssconf_basic_v2ray_mux_concurrency_$localindex
+					dbus remove ssconf_basic_v2ray_mux_enable_$localindex
+					dbus remove ssconf_basic_v2ray_network_$localindex
+					dbus remove ssconf_basic_v2ray_network_flow_$localindex
+					dbus remove ssconf_basic_v2ray_network_host_$localindex
+					dbus remove ssconf_basic_v2ray_network_path_$localindex
+					dbus remove ssconf_basic_v2ray_network_security_$localindex
+					dbus remove ssconf_basic_v2ray_network_tlshost_$localindex
+					dbus remove ssconf_basic_v2ray_protocol_$localindex
+					dbus remove ssconf_basic_v2ray_security_$localindex
+					dbus remove ssconf_basic_v2ray_use_json_$localindex
+					dbus remove ssconf_basic_v2ray_uuid_$localindex
+					dbus remove ssconf_basic_v2ray_xray_$localindex
+					dbus remove ssconf_basic_weight_$localindex
 
 				let delnum+=1
 			done
@@ -1226,6 +1229,9 @@ get_type_name() {
 		3)
 			echo "v2ray"
 		;;
+		4)
+			echo "trojan"
+		;;
 	esac
 }
 
@@ -1241,7 +1247,7 @@ get_oneline_rule_now(){
 	
 	if [ "$ss_basic_online_links_goss" == "1" ];then
 		open_socks_23456
-		socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray"`
+		socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray"`
 		if [ -n "$socksopen_b" ];then
 			echo_date "使用$(get_type_name $ss_basic_type)提供的socks代理网络下载..."
 			curl --connect-timeout 8 -s -L --socks5-hostname 127.0.0.1:23456 $ssr_subscribe_link > /tmp/ssr_subscribe_file.txt
@@ -1451,22 +1457,12 @@ start_update(){
 					for conf_nu in $confs_nu
 					do
 						dbus remove ssconf_basic_group_$conf_nu
+						dbus remove ssconf_basic_koolgame_udp_$conf_nu
+						dbus remove ssconf_basic_lbmode_$conf_nu
 						dbus remove ssconf_basic_method_$conf_nu
 						dbus remove ssconf_basic_mode_$conf_nu
 						dbus remove ssconf_basic_name_$conf_nu
 						dbus remove ssconf_basic_password_$conf_nu
-						dbus remove ssconf_basic_ss_obfs_$conf_nu
-						dbus remove ssconf_basic_ss_obfs_host_$conf_nu
-						dbus remove ssconf_basic_ss_v2ray_$conf_nu
-						dbus remove ssconf_basic_ss_kcp_support_$conf_nu
-						dbus remove ssconf_basic_ss_udp_support_$conf_nu
-						dbus remove ssconf_basic_ss_kcp_opts_$conf_nu
-						dbus remove ssconf_basic_ss_sskcp_server_$conf_nu
-						dbus remove ssconf_basic_ss_sskcp_port_$conf_nu
-						dbus remove ssconf_basic_ss_ssudp_server_$conf_nu
-						dbus remove ssconf_basic_ss_ssudp_port_$conf_nu
-						dbus remove ssconf_basic_ss_ssudp_mtu_$conf_nu
-						dbus remove ssconf_basic_ss_udp_opts_$conf_nu
 						dbus remove ssconf_basic_port_$conf_nu
 						dbus remove ssconf_basic_rss_obfs_$conf_nu
 						dbus remove ssconf_basic_rss_obfs_param_$conf_nu
@@ -1474,28 +1470,42 @@ start_update(){
 						dbus remove ssconf_basic_rss_protocol_param_$conf_nu
 						dbus remove ssconf_basic_server_$conf_nu
 						dbus remove ssconf_basic_server_ip_$conf_nu
+						dbus remove ssconf_basic_ss_kcp_opts_$conf_nu
+						dbus remove ssconf_basic_ss_kcp_support_$conf_nu
+						dbus remove ssconf_basic_ss_obfs_$conf_nu
+						dbus remove ssconf_basic_ss_obfs_host_$conf_nu
+						dbus remove ssconf_basic_ss_sskcp_port_$conf_nu
+						dbus remove ssconf_basic_ss_sskcp_server_$conf_nu
+						dbus remove ssconf_basic_ss_ssudp_mtu_$conf_nu
+						dbus remove ssconf_basic_ss_ssudp_port_$conf_nu
+						dbus remove ssconf_basic_ss_ssudp_server_$conf_nu
+						dbus remove ssconf_basic_ss_udp_opts_$conf_nu
+						dbus remove ssconf_basic_ss_udp_support_$conf_nu
+						dbus remove ssconf_basic_ss_v2ray_$conf_nu
 						dbus remove ssconf_basic_ss_v2ray_plugin_$conf_nu
 						dbus remove ssconf_basic_ss_v2ray_plugin_opts_$conf_nu
+						dbus remove ssconf_basic_trojan_sni_$conf_nu
+						dbus remove ssconf_basic_type_$conf_nu
 						dbus remove ssconf_basic_use_kcp_$conf_nu
 						dbus remove ssconf_basic_use_lb_$conf_nu
-						dbus remove ssconf_basic_lbmode_$conf_nu
-						dbus remove ssconf_basic_weight_$conf_nu
-						dbus remove ssconf_basic_koolgame_udp_$conf_nu
+						dbus remove ssconf_basic_v2ray_alterid_$conf_nu
+						dbus remove ssconf_basic_v2ray_headtype_kcp_$conf_nu
+						dbus remove ssconf_basic_v2ray_headtype_tcp_$conf_nu
+						dbus remove ssconf_basic_v2ray_json_$conf_nu
+						dbus remove ssconf_basic_v2ray_mux_concurrency_$conf_nu
+						dbus remove ssconf_basic_v2ray_mux_enable_$conf_nu
+						dbus remove ssconf_basic_v2ray_network_$conf_nu
+						dbus remove ssconf_basic_v2ray_network_flow_$conf_nu
+						dbus remove ssconf_basic_v2ray_network_host_$conf_nu
+						dbus remove ssconf_basic_v2ray_network_path_$conf_nu
+						dbus remove ssconf_basic_v2ray_network_security_$conf_nu
+						dbus remove ssconf_basic_v2ray_network_tlshost_$conf_nu
+						dbus remove ssconf_basic_v2ray_protocol_$conf_nu
+						dbus remove ssconf_basic_v2ray_security_$conf_nu
 						dbus remove ssconf_basic_v2ray_use_json_$conf_nu
 						dbus remove ssconf_basic_v2ray_uuid_$conf_nu
-						dbus remove ssconf_basic_v2ray_alterid_$conf_nu
-						dbus remove ssconf_basic_v2ray_security_$conf_nu
-						dbus remove ssconf_basic_v2ray_network_$conf_nu
-						dbus remove ssconf_basic_v2ray_headtype_tcp_$conf_nu
-						dbus remove ssconf_basic_v2ray_headtype_kcp_$conf_nu
-						dbus remove ssconf_basic_v2ray_network_path_$conf_nu
-						dbus remove ssconf_basic_v2ray_network_host_$conf_nu
-						dbus remove ssconf_basic_v2ray_network_security_$conf_nu
-						dbus remove ssconf_basic_v2ray_mux_enable_$conf_nu
-						dbus remove ssconf_basic_v2ray_mux_concurrency_$conf_nu
-						dbus remove ssconf_basic_v2ray_json_$conf_nu
-						dbus remove ssconf_basic_v2ray_protocol_$conf_nu	
 						dbus remove ssconf_basic_v2ray_xray_$conf_nu
+						dbus remove ssconf_basic_weight_$conf_nu
 					#	dbus remove ssconf_basic_trojan_sni_$conf_nu
 					done
 					# 删除不再订阅节点的group信息
@@ -1604,21 +1614,12 @@ remove_online(){
 	do
 		echo_date 移除第 $remove_nu 节点...
 		dbus remove ssconf_basic_group_$remove_nu
+		dbus remove ssconf_basic_koolgame_udp_$remove_nu
+		dbus remove ssconf_basic_lbmode_$remove_nu
 		dbus remove ssconf_basic_method_$remove_nu
 		dbus remove ssconf_basic_mode_$remove_nu
 		dbus remove ssconf_basic_name_$remove_nu
 		dbus remove ssconf_basic_password_$remove_nu
-		dbus remove ssconf_basic_ss_obfs_host_$remove_nu
-		dbus remove ssconf_basic_ss_v2ray_$remove_nu
-		dbus remove ssconf_basic_ss_kcp_support_$remove_nu
-		dbus remove ssconf_basic_ss_udp_support_$remove_nu
-		dbus remove ssconf_basic_ss_kcp_opts_$remove_nu
-		dbus remove ssconf_basic_ss_sskcp_server_$remove_nu
-		dbus remove ssconf_basic_ss_sskcp_port_$remove_nu
-		dbus remove ssconf_basic_ss_ssudp_server_$remove_nu
-		dbus remove ssconf_basic_ss_ssudp_port_$remove_nu
-		dbus remove ssconf_basic_ss_ssudp_mtu_$remove_nu
-		dbus remove ssconf_basic_ss_udp_opts_$remove_nu	
 		dbus remove ssconf_basic_port_$remove_nu
 		dbus remove ssconf_basic_rss_obfs_$remove_nu
 		dbus remove ssconf_basic_rss_obfs_param_$remove_nu
@@ -1626,30 +1627,42 @@ remove_online(){
 		dbus remove ssconf_basic_rss_protocol_param_$remove_nu
 		dbus remove ssconf_basic_server_$remove_nu
 		dbus remove ssconf_basic_server_ip_$remove_nu
+		dbus remove ssconf_basic_ss_kcp_opts_$remove_nu
+		dbus remove ssconf_basic_ss_kcp_support_$remove_nu
+		dbus remove ssconf_basic_ss_obfs_$remove_nu
+		dbus remove ssconf_basic_ss_obfs_host_$remove_nu
+		dbus remove ssconf_basic_ss_sskcp_port_$remove_nu
+		dbus remove ssconf_basic_ss_sskcp_server_$remove_nu
+		dbus remove ssconf_basic_ss_ssudp_mtu_$remove_nu
+		dbus remove ssconf_basic_ss_ssudp_port_$remove_nu
+		dbus remove ssconf_basic_ss_ssudp_server_$remove_nu
+		dbus remove ssconf_basic_ss_udp_opts_$remove_nu
+		dbus remove ssconf_basic_ss_udp_support_$remove_nu
+		dbus remove ssconf_basic_ss_v2ray_$remove_nu
 		dbus remove ssconf_basic_ss_v2ray_plugin_$remove_nu
 		dbus remove ssconf_basic_ss_v2ray_plugin_opts_$remove_nu
+		dbus remove ssconf_basic_trojan_sni_$remove_nu
+		dbus remove ssconf_basic_type_$remove_nu
 		dbus remove ssconf_basic_use_kcp_$remove_nu
 		dbus remove ssconf_basic_use_lb_$remove_nu
-		dbus remove ssconf_basic_lbmode_$remove_nu
-		dbus remove ssconf_basic_weight_$remove_nu
-		dbus remove ssconf_basic_koolgame_udp_$remove_nu
+		dbus remove ssconf_basic_v2ray_alterid_$remove_nu
+		dbus remove ssconf_basic_v2ray_headtype_kcp_$remove_nu
+		dbus remove ssconf_basic_v2ray_headtype_tcp_$remove_nu
+		dbus remove ssconf_basic_v2ray_json_$remove_nu
+		dbus remove ssconf_basic_v2ray_mux_concurrency_$remove_nu
+		dbus remove ssconf_basic_v2ray_mux_enable_$remove_nu
+		dbus remove ssconf_basic_v2ray_network_$remove_nu
+		dbus remove ssconf_basic_v2ray_network_flow_$remove_nu
+		dbus remove ssconf_basic_v2ray_network_host_$remove_nu
+		dbus remove ssconf_basic_v2ray_network_path_$remove_nu
+		dbus remove ssconf_basic_v2ray_network_security_$remove_nu
+		dbus remove ssconf_basic_v2ray_network_tlshost_$remove_nu
+		dbus remove ssconf_basic_v2ray_protocol_$remove_nu
+		dbus remove ssconf_basic_v2ray_security_$remove_nu
 		dbus remove ssconf_basic_v2ray_use_json_$remove_nu
 		dbus remove ssconf_basic_v2ray_uuid_$remove_nu
-		dbus remove ssconf_basic_v2ray_alterid_$remove_nu
-		dbus remove ssconf_basic_v2ray_security_$remove_nu
-		dbus remove ssconf_basic_v2ray_network_$remove_nu
-		dbus remove ssconf_basic_v2ray_headtype_tcp_$remove_nu
-		dbus remove ssconf_basic_v2ray_headtype_kcp_$remove_nu
-		dbus remove ssconf_basic_v2ray_network_path_$remove_nu
-		dbus remove ssconf_basic_v2ray_network_host_$remove_nu
-		dbus remove ssconf_basic_v2ray_network_security_$remove_nu
-		dbus remove ssconf_basic_v2ray_mux_enable_$remove_nu
-		dbus remove ssconf_basic_v2ray_mux_concurrency_$remove_nu
-		dbus remove ssconf_basic_v2ray_json_$remove_nu
-		dbus remove ssconf_basic_type_$remove_nu
-		dbus remove ssconf_basic_ss_obfs_$remove_nu
-		dbus remove ssconf_basic_v2ray_network_tlshost_$remove_nu
-		dbus remove ssconf_basic_v2ray_network_flow_$remove_nu
+		dbus remove ssconf_basic_v2ray_xray_$remove_nu
+		dbus remove ssconf_basic_weight_$remove_nu
 	#	dbus remove ssconf_basic_trojan_sni_$remove_nu
 	done
 }
