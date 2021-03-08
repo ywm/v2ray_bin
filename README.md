@@ -1,8 +1,8 @@
-# v2ray_bin （安全，好用）
+# Shadowsocks on 380 ARM （安全，好用）
 support v2ray and xray binary update
 this project will update bin and package for arm_380_v5
 
-除插件原有功能外，另外支持xray,trojan,vless,xtls等一些其他更新。
+除插件原有功能外，另外支持xray,trojan,vless,xtls等一些其他更新, 支持混合节点订阅，支持vless:// trojan://格式订阅和导入。
 
 目前xray已经可以完全替代v2ray了，所以今后只会更新xray的二进制文件。  
 
