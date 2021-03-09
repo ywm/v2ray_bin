@@ -15,7 +15,7 @@ else
 	alias curlxx='curl --connect-timeout 8 '
 fi
 start_update(){
-	url_main="https://raw.githubusercontent.com/hq450/fancyss/master/rules"
+	url_main="https://raw.githubusercontent.com/qxzg/Actions/master/fancyss_rules"
 	url_back=""
 	# version dectet
 	version_gfwlist1=$(cat /koolshare/ss/rules/version | sed -n 1p | sed 's/ /\n/g'| sed -n 1p)
@@ -90,10 +90,14 @@ start_update(){
 				echo_date 下载chnroute到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/chnroute.txt > /tmp/chnroute.txt
 				curlxx "$url_main"/chnroute.txt > /tmp/chnroute.txt
+				# 下载 clouidflare的 IP段清单
+				curlxx  https://www.cloudflare.com/ips-v4 >/tmp/cf_ips-v4.txt 
+
 				md5sum_chnroute1=$(md5sum /tmp/chnroute.txt | sed 's/ /\n/g'| sed -n 1p)
 				if [ "$md5sum_chnroute1"x = "$md5sum_chnroute2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始chnroute文件
-					mv /tmp/chnroute.txt /koolshare/ss/rules/chnroute.txt
+					# 将Cloudflare的IP段合并到大陆白名单中，方便筛查优选IP而套用CDN 
+					cat /tmp/chnroute.txt /tmp/cf_ips-v4.txt > /koolshare/ss/rules/chnroute.txt
 					sed -i "2s/.*/$git_line2/" /koolshare/ss/rules/version
 					reboot="1"
 					echo_date 【更新成功】你的chnroute已经更新到最新了哦~
@@ -139,9 +143,9 @@ start_update(){
 		echo_date 然而你并没有勾选cdn名单更新！
 	fi
 	echo_date " --------------------------------------------------------------------"
-	rm -rf /tmp/gfwlist.conf1
-	rm -rf /tmp/chnroute.txt1
-	rm -rf /tmp/cdn.txt1
+	rm -rf /tmp/gfwlist.conf*
+	rm -rf /tmp/chnroute.txt*
+	rm -rf /tmp/cdn.txt*
 	rm -rf /tmp/ss_version
 	
 	echo_date Shadowsocks更新进程运行完毕！

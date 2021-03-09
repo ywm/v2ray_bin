@@ -763,7 +763,8 @@ get_trojan_config(){
 	password=$(echo "$decode_link" |awk -F':' '{print $1}'|awk -F'@' '{print $1}')
 	password=`echo $password|base64_encode`
 	#20201024+++
-	sni=$(echo "$decode_link" |awk -F'sni=' '{print $2}' | awk -F'#' '{print $1}')
+	sni=$(echo "$decode_link" | tr '?#&' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
+	peer=$(echo "$decode_link" | tr '?#&' '\n' | grep 'peer=' | awk -F'=' '{print $2}')
 #	echo_date "服务器：$server" >> $LOG_FILE
 #	echo_date "端口：$server_port" >> $LOG_FILE
 #	echo_date "密码：$password" >> $LOG_FILE
@@ -1506,7 +1507,6 @@ start_update(){
 						dbus remove ssconf_basic_v2ray_uuid_$conf_nu
 						dbus remove ssconf_basic_v2ray_xray_$conf_nu
 						dbus remove ssconf_basic_weight_$conf_nu
-					#	dbus remove ssconf_basic_trojan_sni_$conf_nu
 					done
 					# 删除不再订阅节点的group信息
 					confs_nu_2=`dbus list ss_online_group_|grep "$local_group"| cut -d "=" -f 1|cut -d "_" -f 4`
@@ -1663,7 +1663,6 @@ remove_online(){
 		dbus remove ssconf_basic_v2ray_uuid_$remove_nu
 		dbus remove ssconf_basic_v2ray_xray_$remove_nu
 		dbus remove ssconf_basic_weight_$remove_nu
-	#	dbus remove ssconf_basic_trojan_sni_$remove_nu
 	done
 }
 

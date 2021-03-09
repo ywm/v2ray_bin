@@ -1407,7 +1407,6 @@ create_v2ray_json(){
 			EOF
 		fi
 		echo_date 解析V2Ray配置文件...
-#		cp "$V2RAY_CONFIG_FILE_TMP" /tmp/home/root/trojantmp.json
 		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
 		
 		echo_date V2Ray配置文件写入成功到"$V2RAY_CONFIG_FILE"
@@ -1574,7 +1573,6 @@ create_v2ray_json(){
 	fi
 }
 
-
 create_trojan_json(){
 	rm -rf "$V2RAY_CONFIG_FILE_TMP"
 	rm -rf "$V2RAY_CONFIG_FILE"
@@ -1626,7 +1624,10 @@ create_trojan_json(){
 				},
 				"streamSettings": {
 				  "network": "tcp",
-				  "security": "tls"
+				  "security": "tls",
+				  "tlsSettings": {
+                    "serverName": "$ss_basic_trojan_sni"
+                }
 				}
 			  }
 			]
