@@ -1,0 +1,2 @@
+7ffc67777e8349f0407d1c64fa1a6912  v2ctl
+d9d6c8ca11cfc0aaef46b584f80ead05  v2ray
