@@ -90,14 +90,15 @@ start_update(){
 				echo_date 下载chnroute到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/chnroute.txt > /tmp/chnroute.txt
 				curlxx "$url_main"/chnroute.txt > /tmp/chnroute.txt
-				# 下载 clouidflare的 IP段清单
-				curlxx  https://www.cloudflare.com/ips-v4 >/tmp/cf_ips-v4.txt 
+				## 下载 clouidflare的 IP段清单
+				#curlxx  https://www.cloudflare.com/ips-v4 >/tmp/cf_ips-v4.txt 
 
 				md5sum_chnroute1=$(md5sum /tmp/chnroute.txt | sed 's/ /\n/g'| sed -n 1p)
 				if [ "$md5sum_chnroute1"x = "$md5sum_chnroute2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始chnroute文件
-					# 将Cloudflare的IP段合并到大陆白名单中，方便筛查优选IP而套用CDN 
-					cat /tmp/chnroute.txt /tmp/cf_ips-v4.txt > /koolshare/ss/rules/chnroute.txt
+					## 将Cloudflare的IP段合并到大陆白名单中，方便筛查优选IP而套用CDN 
+					#cat /tmp/chnroute.txt /tmp/cf_ips-v4.txt > /koolshare/ss/rules/chnroute.txt
+					mv /tmp/chnroute.txt /koolshare/ss/rules/chnroute.txt
 					sed -i "2s/.*/$git_line2/" /koolshare/ss/rules/version
 					reboot="1"
 					echo_date 【更新成功】你的chnroute已经更新到最新了哦~
