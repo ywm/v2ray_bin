@@ -55,6 +55,9 @@ get_dns_name() {
 		8)
 			echo "koolgame内置"
 		;;
+		9)
+			echo "SmartDNS"
+		;;
 	esac
 }
 
@@ -142,6 +145,7 @@ check_status(){
 	XRAY=`pidof xray`
 	HDP=`pidof https_dns_proxy`
 	DMQ=`pidof dnsmasq`
+	SMD=$(pidof smartdns)
 	game_on=`dbus list ss_acl_mode|cut -d "=" -f 2 | grep 3`
 
 	if [ "$ss_basic_type" == "0" ];then
@@ -219,8 +223,13 @@ check_status(){
 			[ -n "$CHINADNS1" ] && echo "chinadns1	工作中	pid：$CHINADNS1" || echo "chinadns1	未运行"
 		elif [ "$ss_foreign_dns" == "6" ];then
 			[ -n "$HDP" ] && echo "https_dns_proxy	工作中	pid：$HDP" || echo "https_dns_proxy	未运行"
+		elif [ "$ss_foreign_dns" == "9" ]; then
+			[ -n "$SMD" ] && echo "SmartDNS	工作中	pid：$SMD" || echo "SmartDNS	未运行"
 		fi
 	fi
+	[ "$ss_dnschina" == "13" ] &&{
+		[ "$ss_foreign_dns" != "9" ] && [ -n "$SMD" ] && echo "SmartDNS	工作中	pid：$SMD" || echo "SmartDNS	未运行"
+	}
 	[ -n "$DMQ" ] && echo "dnsmasq		工作中	pid：$DMQ" || echo "dnsmasq	未运行"
 
 	echo -----------------------------------------------------------

@@ -38,6 +38,7 @@ rm -rf /koolshare/bin/cdns
 rm -rf /koolshare/bin/client_linux_arm5
 rm -rf /koolshare/bin/chinadns
 rm -rf /koolshare/bin/chinadns1
+rm -rf /koolshare/bin/smartdns
 rm -rf /koolshare/bin/resolveip
 rm -rf /koolshare/bin/udp2raw
 rm -rf /koolshare/bin/speeder*

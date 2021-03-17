@@ -15,6 +15,7 @@ V2RAY_CONFIG_FILE_TMP="/tmp/v2ray_tmp.json"
 V2RAY_CONFIG_FILE="/koolshare/ss/v2ray.json"
 LOCK_FILE=/var/lock/koolss.lock
 DNSF_PORT=7913
+DNSC_PORT=53
 ISP_DNS1=$(nvram get wan0_dns|sed 's/ /\n/g'|grep -v 0.0.0.0|grep -v 127.0.0.1|sed -n 1p)
 ISP_DNS2=$(nvram get wan0_dns|sed 's/ /\n/g'|grep -v 0.0.0.0|grep -v 127.0.0.1|sed -n 2p)
 IFIP_DNS1=`echo $ISP_DNS1|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
@@ -89,6 +90,7 @@ get_server_resolver(){
 	[ "$ss_basic_server_resolver" == "9" ] && RESOLVER="117.50.22.22"
 	[ "$ss_basic_server_resolver" == "10" ] && RESOLVER="180.76.76.76"
 	[ "$ss_basic_server_resolver" == "11" ] && RESOLVER="119.29.29.29"
+	[ "$ss_basic_server_resolver" == "13" ] && RESOLVER="8.8.8.8"
 	[ "$ss_basic_server_resolver" == "12" ] && {
 		[ -n "$ss_basic_server_resolver_user" ] && RESOLVER="$ss_basic_server_resolver_user" || RESOLVER="114.114.114.114"
 	}
@@ -142,6 +144,7 @@ restore_conf(){
 	rm -rf /tmp/custom.conf
 	rm -rf /tmp/wblist.conf
 	rm -rf /tmp/ss_host.conf
+	rm -rf /tmp/smartdns.conf
 }
 
 kill_process(){
@@ -210,6 +213,11 @@ kill_process(){
 	if [ -n "$dns2socks_process" ];then 
 		echo_date 关闭dns2socks进程...
 		killall dns2socks >/dev/null 2>&1
+	fi
+	smartdns_process=$(pidof smartdns)
+	if [ -n "$smartdns_process" ]; then
+		echo_date 关闭smartdns进程...
+		killall smartdns >/dev/null 2>&1
 	fi
 	koolgame_process=`pidof koolgame`
 	if [ -n "$koolgame_process" ];then 
@@ -440,6 +448,9 @@ get_dns_name() {
 		8)
 			echo "koolgame内置"
 		;;
+		9)
+		echo "SmartDNS"
+		;;
 	esac
 }
 
@@ -541,13 +552,24 @@ start_dns(){
 	fi
 	
 	#start chinadns1
-	if [ "$ss_foreign_dns" == "5" ];then
-		start_sslocal
-		echo_date 开启dns2socks，用于chinadns1上游...
-		dns2socks 127.0.0.1:23456 "$ss_chinadns1_user" 127.0.0.1:1055 > /dev/null 2>&1 &
-		echo_date 开启chinadns1，用于dns解析...
-		chinadns1 -p $DNSF_PORT -s $CDN,127.0.0.1:1055 -d -c /koolshare/ss/rules/chnroute.txt > /dev/null 2>&1 &
+	if [ "$ss_foreign_dns" == "5" ]; then
+		# 当国内SmartDNS和国外chiandns1冲突
+		if [ "$ss_dns_china" == "13" -a "$ss_foreign_dns" == "5" ]; then
+			echo_date "！！中国DNS选择SmartDNS和外国DNS选择chiandns1冲突，将外国DNS默认改为dns2socks！！"
+			ss_foreign_dns="3"
+			dbus set ss_foreign_dns="3"
+			start_sslocal
+			echo_date 开启dns2socks，用于chinadns1上游...
+			dns2socks 127.0.0.1:23456 "$ss_dns2socks_user" 127.0.0.1:$DNSF_PORT >/dev/null 2>&1 &
+		else
+			start_sslocal
+			echo_date 开启dns2socks，用于chinadns1上游...
+			dns2socks 127.0.0.1:23456 "$ss_chinadns1_user" 127.0.0.1:1055 >/dev/null 2>&1 &
+			echo_date 开启chinadns1，用于dns解析...
+			chinadns1 -p $DNSF_PORT -s $CDN,127.0.0.1:1055 -d -c /koolshare/ss/rules/chnroute.txt >/dev/null 2>&1 &
+		fi
 	fi
+
 
 	#start https_dns_proxy
 	if [ "$ss_foreign_dns" == "6" ];then
@@ -580,6 +602,40 @@ start_dns(){
 			echo_date 开启dns2socks，用于dns解析...
 			dns2socks 127.0.0.1:23456 "$ss_dns2socks_user" 127.0.0.1:$DNSF_PORT > /dev/null 2>&1 &
 		fi
+	fi
+
+# 开启SmartDNS
+	if [ "$ss_dns_china" == "13" ] && [ "$ss_foreign_dns" == "9" ]; then
+		# 国内国外都启用SmartDNS （此情况下，如果是gfwlist模式则不用cdn.conf；如果是大陆白名单模式也不需要使用cdn.conf）
+
+		echo_date "开启SmartDNS，用于DNS解析..."
+		#if [ "$(nvram get ipv6_service)" == "disabled" ]; then
+		#	sed 's/# force-AAAA-SOA yes/force-AAAA-SOA yes/g' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
+		#	sed -i '/^#/d /^$/d' /tmp/smartdns.conf
+		#else
+			sed '/^#/d /^$/d' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
+		#fi
+		smartdns -c /tmp/smartdns.conf >/dev/null 2>&1 &
+	elif [ "$ss_dns_china" == "13" ] && [ "$ss_foreign_dns" != "9" ]; then
+		# 国内启用SmartDNS，国外不启用SmartDNS （此情况下，如果是gfwlist模式则不用cdn.conf；如果是大陆白名单模式则是根据国外DNS的选择而决定是否使用cdn.conf）
+		echo_date "开启SmartDNS，用于DNS解析..."
+		#if [ "$(nvram get ipv6_service)" == "disabled" ]; then
+		#	sed 's/# force-AAAA-SOA yes/force-AAAA-SOA yes/g' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
+		#	sed -i '/^#/d /^$/d /foreign/d' /tmp/smartdns.conf
+		#else
+			sed '/^#/d /^$/d /foreign/d' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
+		#fi
+		smartdns -c /tmp/smartdns.conf >/dev/null 2>&1 &
+	elif [ "$ss_dns_china" != "13" ] && [ "$ss_foreign_dns" == "9" ]; then
+		# 国内不启用SmartDNS，国外启用SmartDNS （此情况下，如果是gfwlist模式则不用cdn.conf；如果是大陆白名单模式则需要使用cdn.conf）
+		echo_date "开启SmartDNS，用于DNS解析..."
+		#if [ "$(nvram get ipv6_service)" == "disabled" ]; then
+		#	sed 's/# force-AAAA-SOA yes/force-AAAA-SOA yes/g' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
+		#	sed -i '/^#/d /^$/d /china/d' /tmp/smartdns.conf
+		#else
+			sed '/^#/d /^$/d /china/d' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
+		#fi
+		smartdns -c /tmp/smartdns.conf >/dev/null 2>&1 &
 	fi
 
 	# direct
@@ -643,7 +699,10 @@ create_dnsmasq_conf(){
 	[ "$ss_dns_china" == "12" ] && {
 		[ -n "$ss_dns_china_user" ] && CDN="$ss_dns_china_user" || CDN="114.114.114.114"
 	}
-
+	if [ "$ss_dns_china" == "13" ];then
+		CDN="127.0.0.1"
+		DNSC_PORT=5335
+	fi
 	# delete pre settings
 	rm -rf /tmp/sscdn.conf
 	rm -rf /tmp/custom.conf
@@ -654,6 +713,7 @@ create_dnsmasq_conf(){
 	rm -rf /jffs/configs/dnsmasq.d/cdn.conf
 	rm -rf /jffs/configs/dnsmasq.d/gfwlist.conf
 	rm -rf /jffs/scripts/dnsmasq.postconf
+	rm -rf /tmp/smartdns.conf
 	
 	# custom dnsmasq settings by user
 	if [ -n "$ss_dnsmasq" ];then
@@ -706,12 +766,11 @@ create_dnsmasq_conf(){
 	fi
 	
 	# 非回国模式下，apple 和 microsoft需要中国cdn
-	if [ "$ss_basic_mode" != "6" ];then
-		echo "#for special site" >> /tmp/wblist.conf
-		for wan_white_domain2 in "apple.com" "microsoft.com"
-		do 
-			echo "$wan_white_domain2" | sed "s/^/server=&\/./g" | sed "s/$/\/$CDN#53/g" >> /tmp/wblist.conf
-			echo "$wan_white_domain2" | sed "s/^/ipset=&\/./g" | sed "s/$/\/white_list/g" >> /tmp/wblist.conf
+	if [ "$ss_basic_mode" != "6" ]; then
+		echo "#for special site (Mandatory China DNS)" >>/tmp/wblist.conf
+		for wan_white_domain2 in "apple.com" "microsoft.com" "dns.msftncsi.com"; do
+			echo "$wan_white_domain2" | sed "s/^/server=&\/./g" | sed "s/$/\/$CDN#$DNSC_PORT/g" >>/tmp/wblist.conf
+			echo "$wan_white_domain2" | sed "s/^/ipset=&\/./g" | sed "s/$/\/white_list/g" >>/tmp/wblist.conf
 		done
 	fi
 
@@ -719,17 +778,16 @@ create_dnsmasq_conf(){
 	wanblackdomain=$(echo $ss_wan_black_domain | base64_decode)
 	if [ -n "$ss_wan_black_domain" ];then
 		echo_date 应用域名黑名单
-		echo "#for black_domain" >> /tmp/wblist.conf
-		for wan_black_domain in $wanblackdomain
-		do
+		echo "#for black_domain" >>/tmp/wblist.conf
+		for wan_black_domain in $wanblackdomain; do
 			detect_domain "$wan_black_domain"
-			if [ "$?" == "0" ];then
-				if [ "$ss_basic_mode" != "6" ];then
-					echo "$wan_black_domain" | sed "s/^/server=&\/./g" | sed "s/$/\/127.0.0.1#7913/g" >> /tmp/wblist.conf
-					echo "$wan_black_domain" | sed "s/^/ipset=&\/./g" | sed "s/$/\/black_list/g" >> /tmp/wblist.conf
+			if [ "$?" == "0" ]; then
+				if [ "$ss_basic_mode" != "6" ]; then
+					echo "$wan_black_domain" | sed "s/^/server=&\/./g" | sed "s/$/\/127.0.0.1#$DNSF_PORT/g" >>/tmp/wblist.conf
+					echo "$wan_black_domain" | sed "s/^/ipset=&\/./g" | sed "s/$/\/black_list/g" >>/tmp/wblist.conf
 				else
-					echo "$wan_black_domain" | sed "s/^/server=&\/./g" | sed "s/$/\/$CDN#53/g" >> /tmp/wblist.conf
-					echo "$wan_black_domain" | sed "s/^/ipset=&\/./g" | sed "s/$/\/black_list/g" >> /tmp/wblist.conf
+					echo "$wan_black_domain" | sed "s/^/server=&\/./g" | sed "s/$/\/$CDN#$DNSC_PORT/g" >>/tmp/wblist.conf
+					echo "$wan_black_domain" | sed "s/^/ipset=&\/./g" | sed "s/$/\/black_list/g" >>/tmp/wblist.conf
 				fi
 			else
 				echo_date ！！检测到域名黑名单内的【"$wan_black_domain"】不是域名格式！！此条将不会添加！！
@@ -772,18 +830,19 @@ create_dnsmasq_conf(){
 			# 回国模式下自动判断使用国内优先
 			echo_date 自动判断使用国内优先模式，不加载cdn.conf
 		else
-			# 其它情况，均使用国外优先模式
-			if [ "$ss_foreign_dns" != "2" ] && [ "$ss_foreign_dns" != "5" ];then
+			# 其它情况，均使用国外优先模式，以下区分是否加载cdn.conf
+			# if [ "$ss_foreign_dns" == "2" ] || [ "$ss_foreign_dns" == "5" ] || [ "$ss_foreign_dns" == "9" -a "$ss_dns_china" == "13" ]; then
+			if [ "$ss_foreign_dns" == "2" ] || [ "$ss_foreign_dns" == "5" -a "$ss_dns_china" != "13" ] || [ "$ss_foreign_dns" == "10" ]; then
 				# 因为chinadns1 chinadns2自带国内cdn，所以也不需要cdn.conf
+				echo_date 自动判断dns解析使用国外优先模式...
+				echo_date 国外解析方案【$(get_dns_name $ss_foreign_dns)】自带国内cdn，无需加载cdn.conf，路由器开销小...
+			else
 				echo_date 自动判断dns解析使用国外优先模式...
 				echo_date 国外解析方案【$(get_dns_name $ss_foreign_dns)】，需要加载cdn.conf提供国内cdn...
 				echo_date 建议将系统dnsmasq替换为dnsmasq-fastlookup，以减轻路由cpu消耗...
 				echo_date 生成cdn加速列表到/tmp/sscdn.conf，加速用的dns：$CDN
-				echo "#for china site CDN acclerate" >> /tmp/sscdn.conf
-				cat /koolshare/ss/rules/cdn.txt | sed "s/^/server=&\/./g" | sed "s/$/\/&$CDN/g" | sort | awk '{if ($0!=line) print;line=$0}' >>/tmp/sscdn.conf
-			else
-				echo_date 自动判断dns解析使用国外优先模式...
-				echo_date 你选择解析方案【$(get_dns_name $ss_foreign_dns)】自带国内cdn，无需加载cdn.conf，路由器开销小...
+				echo "#for china site CDN acclerate" >>/tmp/sscdn.conf
+				cat /koolshare/ss/rules/cdn.txt | sed "s/^/server=&\/./g" | sed "s/$/\/&$CDN#$DNSC_PORT/g" | sort | awk '{if ($0!=line) print;line=$0}' >>/tmp/sscdn.conf
 			fi
 		fi
 	fi

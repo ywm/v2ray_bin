@@ -4161,6 +4161,7 @@ function set_cron(action) {
 															<option value="10">百度DNS【180.76.76.76】</option>
 															<option value="11">DNSpod DNS【119.29.29.29】</option>
 															<option value="12">自定义</option>
+															<option value="13">SmartDNS</option>
 														</select>
 														<input type="text" class="input_ss_table" id="ss_dns_china_user" name="ss_dns_china_user" value="">
 													</td>
@@ -4179,6 +4180,7 @@ function set_cron(action) {
 															<option value="6">https_dns_proxy</option>
 															<option value="7">v2ray_dns</option>
 															<option value="8">直连</option>
+															<option value="9">SmartDNS</option>
 														</select>
 														<input type="text" class="input_ss_table" id="ss_dns2socks_user" name="ss_dns2socks_user" style="width:160px" placeholder="需端口号如：8.8.8.8:53" value="8.8.8.8:53">
 														<input type="text" class="input_ss_table" id="ss_chinadns1_user" name="ss_chinadns1_user" style="width:160px" placeholder="需端口号如：8.8.8.8:53" value="8.8.8.8:53">
