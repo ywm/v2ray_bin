@@ -4,7 +4,7 @@ this project will update bin and package for arm_380_v5
 
 除插件原有功能外，另外支持xray,trojan,vless,xtls等一些其他更新, 支持混合节点订阅，支持vless:// trojan://格式订阅和导入。
 
-目前xray已经可以完全替代v2ray了，所以今后只会更新xray的二进制文件。  
+目前xray已经可以完全替代v2ray了，xray支持vmess，vless和trojan。  
 
 离线安装包仅能在koolshare 梅林 arm 380平台，且linux内核为2.6.36.4的armv7架构的机器上使用！
 
