@@ -23,8 +23,6 @@ SOCKS_FLAG=0
 # ssconf_basic_mode_
 # ssconf_basic_name_
 # ssconf_basic_password_
-# ssconf_basic_ss_obfs_
-# ssconf_basic_ss_obfs_host_
 # ssconf_basic_ss_v2ray_
 # ssconf_basic_ss_kcp_support_
 # ssconf_basic_ss_udp_support_
@@ -124,8 +122,6 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_name_$nu)" ] && echo dbus set ssconf_basic_name_$q=$(dbus get ssconf_basic_name_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_password_$nu)" ] && echo dbus set ssconf_basic_password_$q=$(dbus get ssconf_basic_password_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_port_$nu)" ] && echo dbus set ssconf_basic_port_$q=$(dbus get ssconf_basic_port_$nu) >> /tmp/ss_conf.sh
-		[ -n "$(dbus get ssconf_basic_ss_obfs_$nu)" ] && echo dbus set ssconf_basic_ss_obfs_$q=$(dbus get ssconf_basic_ss_obfs_$nu)  >> /tmp/ss_conf.sh
-		[ -n "$(dbus get ssconf_basic_ss_obfs_host_$nu)" ] && echo dbus set ssconf_basic_ss_obfs_host_$q=$(dbus get ssconf_basic_ss_obfs_host_$nu)  >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_ss_v2ray_$nu)" ] && echo dbus set ssconf_basic_ss_v2ray_$q=$(dbus get ssconf_basic_ss_v2ray_$nu)  >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_ss_kcp_support_$nu)" ] && echo dbus set ssconf_basic_ss_kcp_support_$q=$(dbus get ssconf_basic_ss_kcp_support_$nu)  >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_ss_udp_support_$nu)" ] && echo dbus set ssconf_basic_ss_udp_support_$q=$(dbus get ssconf_basic_ss_udp_support_$nu)  >> /tmp/ss_conf.sh
@@ -225,10 +221,9 @@ add_ss_servers(){
 	dbus set ssconf_basic_method_$ss_index=$encrypt_method
 	dbus set ssconf_basic_password_$ss_index=$password
 	dbus set ssconf_basic_type_$ss_index="0"
-	dbus set ssconf_basic_ss_obfs_$ss_index=$ss_obfs_tmp	
-	dbus set ssconf_basic_ss_obfs_host_$ss_index=$ss_obfs_host
 	dbus set ssconf_basic_ss_v2ray_$ss_index=$ss_v2ray_tmp
 	dbus set ssconf_basic_ss_v2ray_plugin_$ss_index=$ss_v2ray_plugin_tmp
+	dbus set ssconf_basic_ss_v2ray_plugin_opts_$ss_index=$ss_v2ray_opts_tmp
 	dbus set ssconf_basic_ss_kcp_support_$ss_index=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$ss_index=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$ss_index=$ss_kcp_opts_tmp
@@ -243,12 +238,10 @@ add_ss_servers(){
 
 	#初始化
 	encrypt_method=""
-	ss_obfs_tmp="0"
 	ss_v2ray_tmp="0"
 	ss_v2ray_opts_tmp=""
 	ss_kcp_support_tmp="0"
 	ss_udp_support_tmp="0"
-	ss_obfs_host=""
 	ss_kcp_opts_tmp=""
 	ss_sskcp_server_tmp=""
 	ss_sskcp_port_tmp=""
@@ -277,8 +270,8 @@ get_ss_config(){
 
    if [ -n "$(echo -n "$decode_link" | awk -F'#' '{print $1}' | grep '@')" ];then
 		paraminfo=$(base64decode_link `echo -n "$decode_link" | awk -F'@' '{print $1}'`)
-		server=$(echo "$decode_link" |awk -F'[@#]' '{print $2}'| awk -F':' '{print $1}')
-		server_port=$(echo "$decode_link" |awk -F'[@#]' '{print $2}'| awk -F':' '{print $2}')
+		server=$(echo "$decode_link" |awk -F'[@?#]' '{print $2}'| awk -F':' '{print $1}')
+		server_port=$(echo "$decode_link" |awk -F'[@?#]' '{print $2}'| awk -F':' '{print $2}')
 		encrypt_method=$(echo "$paraminfo" |awk -F':' '{print $1}')
 		password=$(echo "$paraminfo" |awk -F':' '{print $2}')
 		password=$(echo $password | base64_encode)
@@ -294,57 +287,31 @@ get_ss_config(){
 		password=$(echo $password | base64_encode)
 	fi	
 	
-	#参数获值
-	if [ -n "$(echo -n "$paraminfo" | grep "?")" ];then
-		plugin=$(echo "$paraminfo" |awk -F'?' '{print $2}')
-		#去掉无plugin但是有group=造成误取值
-		
-		plugin=$(echo "$plugin" |awk -F'group' '{print $1}')
-		#plugin=obfs-local;obfs=tls;obfs-host=bebca9215.wns.windows.com&
-			
-		if [ -n "$plugin" ];then
-			#ss_obfs_tmp=tls;obfs-host=bebc5.wns.windows.com&group=RGxlciBDbG91ZA
-			#ss_obfs_tmp=$(echo "$plugin" | awk -F'obfs=' '{print $2}')
+	#v2ray plugin : simple obfs will not be supported anymore, v2ray plugin will replace it
+	# link format example
+	# plugin=v2ray;path=/s233;host=yes.herokuapp.com;tls
 
-			#ss_obfs_tmp=tls
-			ss_obfs_tmp=$(echo "$plugin" | awk -F'obfs=' '{print $2}' | awk -F';' '{print $1}')
-			case "$ss_obfs_tmp" in
-			tls)
-				ss_obfs_host=$(echo "$plugin" | awk -F'obfs=' '{print $2}' | awk -F';' '{print $2}' | awk -F'&' '{print $1}' | awk -F'obfs-host=' '{print $2}')
-				ss_v2ray_tmp="0"
-				ss_v2ray_opts_tmp=""
-				ss_kcp_support_tmp="0"
-				ss_udp_support_tmp="0"
-				ss_kcp_opts_tmp=""
-				ss_sskcp_server_tmp=""
-				ss_sskcp_port_tmp=""
-				ss_ssudp_server_tmp=""
-				ss_ssudp_port_tmp=""
-				ss_ssudp_mtu_tmp=""
-				ss_udp_opts_tmp=""
-				;;
-			http)
-				ss_obfs_host=$(echo "$plugin" | awk -F'obfs=' '{print $2}' | awk -F';' '{print $2}' | awk -F'&' '{print $1}' | awk -F'obfs-host=' '{print $2}')
-				ss_v2ray_tmp="0"
-				ss_v2ray_opts_tmp=""
-				ss_kcp_support_tmp="0"
-				ss_udp_support_tmp="0"
-				ss_kcp_opts_tmp=""
-				ss_sskcp_server_tmp=""
-				ss_sskcp_port_tmp=""
-				ss_ssudp_server_tmp=""
-				ss_ssudp_port_tmp=""
-				ss_ssudp_mtu_tmp=""
-				ss_udp_opts_tmp=""
-				;;
-			kcp)
-				
-				;;
-			esac
-		else
-			ss_obfs_tmp="0"
+	if [ -n "$(echo -n "$decode_link" | grep "?")" ];then
+		plugin=$(echo "$decode_link" |awk -F'?' '{print $2}')
+		plugin_type=$(echo "$plugin" | tr ';' '\n' | grep 'plugin=' | awk -F'=' '{print $2}')	
+
+		if [ -n "$plugin" ] && [ "$plugin_type" == "v2ray" ];then
+			ss_v2ray_tmp="1"
+			ss_v2ray_opts_tmp="$(echo $plugin | cut -d";" -f2-)"
+			ss_v2ray_plugin_tmp="1"
+			ss_kcp_support_tmp="0"
+			ss_udp_support_tmp="0"
+			ss_kcp_opts_tmp=""
+			ss_sskcp_server_tmp=""
+			ss_sskcp_port_tmp=""
+			ss_ssudp_server_tmp=""
+			ss_ssudp_port_tmp=""
+			ss_ssudp_mtu_tmp=""
+			ss_udp_opts_tmp=""			
+		else 
 			ss_v2ray_tmp="0"
 			ss_v2ray_opts_tmp=""
+			ss_v2ray_plugin_tmp="0"	
 			ss_kcp_support_tmp="0"
 			ss_udp_support_tmp="0"
 			ss_kcp_opts_tmp=""
@@ -354,7 +321,6 @@ get_ss_config(){
 			ss_ssudp_port_tmp=""
 			ss_ssudp_mtu_tmp=""
 			ss_udp_opts_tmp=""
-			ss_v2ray_plugin_tmp="0"
 		fi
 	fi
 
@@ -368,8 +334,8 @@ get_ss_config(){
 	#echo server: $server
 	#echo server_port: $server_port
 	#echo password: $password
-	#echo ss_obfs_tmp: $ss_obfs_tmp
-	#echo ss_obfs_host: $ss_obfs_host
+	#echo ss_v2ray_plugin_tmp: $ss_v2ray_plugin_tmp
+	#echo ss_v2ray_opts_tmp: $ss_v2ray_opts_tmp
 	#echo ------
 	echo "$group" >> /tmp/all_group_info.txt
 	[ -n "$group" ] && return 0 || return 1
@@ -406,15 +372,12 @@ update_ss_config(){
 		local_encrypt_method=$(dbus get ssconf_basic_method_$index)
 		[ "$local_encrypt_method" != "$encrypt_method" ] && dbus set ssconf_basic_method_$index=$encrypt_method && let i+=1
 		
-		local_ss_obfs_tmp=$(dbus get ssconf_basic_ss_obfs_$index)
-		[ "$local_ss_obfs_tmp" != "$ss_obfs_tmp" ] && dbus set ssconf_basic_ss_obfs_$index=$ss_obfs_tmp && let i+=1
-		
-		local_ss_obfs_host=$(dbus get ssconf_basic_ss_obfs_host_$index)
-		[ "$local_ss_obfs_host" != "$ss_obfs_host" ] && dbus set ssconf_basic_ss_obfs_host_$index=$ss_obfs_host && let i+=1
-		
 		local_ss_v2ray_tmp=$(dbus get ssconf_basic_ss_v2ray_$index)
 		[ "$local_ss_v2ray_tmp" != "$ss_v2ray_tmp" ] && dbus set ssconf_basic_ss_v2ray_$index=$ss_v2ray_tmp && let i+=1
-		
+
+		local_ss_v2ray_opts_tmp=$(dbus get ssconf_basic_ss_v2ray_opts_tmp_$index)
+		[ "$local_ss_v2ray_opts_tmp" != "$ss_v2ray_opts_tmp" ] && dbus set ssconf_basic_ss_v2ray_plugin_opts_$index=$ss_v2ray_opts_tmp && let i+=1
+
 		local_ss_kcp_support_tmp=$(dbus get ssconf_basic_ss_kcp_support_$index)
 		[ "$local_ss_kcp_support_tmp" != "$ss_kcp_support_tmp" ] && dbus set ssconf_basic_ss_kcp_support_$index=$ss_kcp_support_tmp && let i+=1
 		
@@ -1073,8 +1036,6 @@ del_none_exist(){
 					dbus remove ssconf_basic_server_ip_$localindex
 					dbus remove ssconf_basic_ss_kcp_opts_$localindex
 					dbus remove ssconf_basic_ss_kcp_support_$localindex
-					dbus remove ssconf_basic_ss_obfs_$localindex
-					dbus remove ssconf_basic_ss_obfs_host_$localindex
 					dbus remove ssconf_basic_ss_sskcp_port_$localindex
 					dbus remove ssconf_basic_ss_sskcp_server_$localindex
 					dbus remove ssconf_basic_ss_ssudp_mtu_$localindex
@@ -1139,8 +1100,6 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_name_$nu)" ] && dbus set ssconf_basic_name_"$y"="$(dbus get ssconf_basic_name_$nu)" && dbus remove ssconf_basic_name_$nu
 				[ -n "$(dbus get ssconf_basic_password_$nu)" ] && dbus set ssconf_basic_password_"$y"="$(dbus get ssconf_basic_password_$nu)" && dbus remove ssconf_basic_password_$nu
 				[ -n "$(dbus get ssconf_basic_port_$nu)" ] && dbus set ssconf_basic_port_"$y"="$(dbus get ssconf_basic_port_$nu)" && dbus remove ssconf_basic_port_$nu
-				[ -n "$(dbus get ssconf_basic_ss_obfs_$nu)" ] && dbus set ssconf_basic_ss_obfs_"$y"="$(dbus get ssconf_basic_ss_obfs_$nu)"  && dbus remove ssconf_basic_ss_obfs_$nu
-				[ -n "$(dbus get ssconf_basic_ss_obfs_host_$nu)" ] && dbus set ssconf_basic_ss_obfs_host_"$y"="$(dbus get ssconf_basic_ss_obfs_host_$nu)"  && dbus remove ssconf_basic_ss_obfs_host_$nu
 				[ -n "$(dbus get ssconf_basic_ss_v2ray_$nu)" ] && dbus set ssconf_basic_ss_v2ray_"$y"="$(dbus get ssconf_basic_ss_v2ray_$nu)"  && dbus remove ssconf_basic_ss_v2ray_$nu
 				[ -n "$(dbus get ssconf_basic_ss_kcp_support_$nu)" ] && dbus set ssconf_basic_ss_kcp_support_"$y"="$(dbus get ssconf_basic_ss_kcp_support_$nu)"  && dbus remove ssconf_basic_ss_kcp_support_$nu
 				[ -n "$(dbus get ssconf_basic_ss_udp_support_$nu)" ] && dbus set ssconf_basic_ss_udp_support_"$y"="$(dbus get ssconf_basic_ss_udp_support_$nu)"  && dbus remove ssconf_basic_ss_udp_support_$nu
@@ -1157,6 +1116,7 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_rss_protocol_param_$nu)" ] && dbus set ssconf_basic_rss_protocol_param_"$y"="$(dbus get ssconf_basic_rss_protocol_param_$nu)" && dbus remove ssconf_basic_rss_protocol_param_$nu
 				[ -n "$(dbus get ssconf_basic_server_$nu)" ] && dbus set ssconf_basic_server_"$y"="$(dbus get ssconf_basic_server_$nu)" && dbus remove ssconf_basic_server_$nu
 				[ -n "$(dbus get ssconf_basic_server_ip_$nu)" ] && dbus set ssconf_basic_server_ip_"$y"="$(dbus get ssconf_basic_server_ip_$nu)" && dbus remove ssconf_basic_server_ip_$nu
+				[ -n "$(dbus get ssconf_basic_ss_v2ray_plugin_$nu)" ] && dbus set ssconf_basic_ss_v2ray_plugin_"$y"="$(dbus get ssconf_basic_ss_v2ray_plugin_$nu)" && dbus remove ssconf_basic_ss_v2ray_plugin_$nu
 				[ -n "$(dbus get ssconf_basic_ss_v2ray_plugin_opts_$nu)" ] && dbus set ssconf_basic_ss_v2ray_plugin_opts_"$y"="$(dbus get ssconf_basic_ss_v2ray_plugin_opts_$nu)" && dbus remove ssconf_basic_ss_v2ray_plugin_opts_$nu
 				[ -n "$(dbus get ssconf_basic_use_kcp_$nu)" ] && dbus set ssconf_basic_use_kcp_"$y"="$(dbus get ssconf_basic_use_kcp_$nu)" && dbus remove ssconf_basic_use_kcp_$nu
 				[ -n "$(dbus get ssconf_basic_use_lb_$nu)" ] && dbus set ssconf_basic_use_lb_"$y"="$(dbus get ssconf_basic_use_lb_$nu)" && dbus remove ssconf_basic_use_lb_$nu
@@ -1473,8 +1433,6 @@ start_update(){
 						dbus remove ssconf_basic_server_ip_$conf_nu
 						dbus remove ssconf_basic_ss_kcp_opts_$conf_nu
 						dbus remove ssconf_basic_ss_kcp_support_$conf_nu
-						dbus remove ssconf_basic_ss_obfs_$conf_nu
-						dbus remove ssconf_basic_ss_obfs_host_$conf_nu
 						dbus remove ssconf_basic_ss_sskcp_port_$conf_nu
 						dbus remove ssconf_basic_ss_sskcp_server_$conf_nu
 						dbus remove ssconf_basic_ss_ssudp_mtu_$conf_nu
@@ -1579,9 +1537,9 @@ add() {
 			decode_link=""
 
 			NODE_FORMAT=$(echo $ssrlink | awk -F":" '{print $1}')
-			echo $NODE_FORMAT
+			#echo $NODE_FORMAT
 			link=$(echo $ssrlink | cut -f3-  -d/)
-			echo $link
+			#echo $link
 			if [ -n "$NODE_FORMAT" ] && [ -n "$link" ]; then
 				echo_date 检测到${NODE_FORMAT}链接...开始尝试解析...
 				remarks='AddByLink'
@@ -1629,8 +1587,6 @@ remove_online(){
 		dbus remove ssconf_basic_server_ip_$remove_nu
 		dbus remove ssconf_basic_ss_kcp_opts_$remove_nu
 		dbus remove ssconf_basic_ss_kcp_support_$remove_nu
-		dbus remove ssconf_basic_ss_obfs_$remove_nu
-		dbus remove ssconf_basic_ss_obfs_host_$remove_nu
 		dbus remove ssconf_basic_ss_sskcp_port_$remove_nu
 		dbus remove ssconf_basic_ss_sskcp_server_$remove_nu
 		dbus remove ssconf_basic_ss_ssudp_mtu_$remove_nu

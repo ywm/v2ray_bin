@@ -1214,7 +1214,7 @@ get_path(){
 create_v2ray_json(){
 	rm -rf "$V2RAY_CONFIG_FILE_TMP"
 	rm -rf "$V2RAY_CONFIG_FILE"
-	if [ "$ss_basic_v2ray_use_json" == "0" ] || [ "$ss_basic_type" == "4" ]; then
+	if [ "$ss_basic_v2ray_use_json" == "0" ]; then
 		echo_date 生成V2Ray配置文件...
 		local kcp="null"
 		local tcp="null"
@@ -1383,7 +1383,7 @@ create_v2ray_json(){
 			EOF
 		fi
 		# outbounds area
-		if [ "$ss_basic_v2ray_protocol" == "vmess" ] && [ "$ss_basic_type" == "3" ]; then
+		if [ "$ss_basic_v2ray_protocol" == "vmess" ]; then
 			cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 				"outbounds": [
 				  {
@@ -1422,7 +1422,7 @@ create_v2ray_json(){
 				]
 				}
 			EOF
-		elif [ "$ss_basic_v2ray_protocol" == "vless" ] && [ "$ss_basic_type" == "3" ]; then
+		elif [ "$ss_basic_v2ray_protocol" == "vless" ]; then
 		  #vless
 		  cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 				"outbounds": [
