@@ -180,7 +180,7 @@ function pop_node_add() {
 					shade: 0.2,
 					time: 20000, //20s后自动关闭
 					area: ['450px'],
-					btn: ['添加ss节点', '添加ssr节点', '添加koolgame节点', '添加V2Ray节点','添加 Trojan 节点'],
+					btn: ['添加ss节点', '添加ssr节点', '添加koolgame节点', '添加V2Ray节点','添加Trojan节点'],
 					btnAlign: 'c',
 					btn1: function(index, layero) {
 						setTimeout("Add_profile();", 300);
@@ -525,30 +525,26 @@ function verifyFields(r) {
     var v2ray_on = false;
     var trojan_on = false;
 	
-	if (typeof(db_ss["ssconf_basic_trojan_sni_" + node_sel]) != "undefined"){
-		trojan_on = true;
-		$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
-        $("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');			
-	}else if (typeof(db_ss["ssconf_basic_rss_protocol_" + node_sel]) != "undefined"){
+	if (typeof(db_ss["ssconf_basic_rss_protocol_" + node_sel]) != "undefined"){
         ssr_on = true;
 		$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
 		$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
-	}else {
-		if (typeof(db_ss["ssconf_basic_koolgame_udp_" + node_sel]) != "undefined"){
+	}else if(typeof(db_ss["ssconf_basic_koolgame_udp_" + node_sel]) != "undefined"){
 			koolgame_on = true;
 			$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
 			$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
-		}else{
-			if (typeof(db_ss["ssconf_basic_v2ray_use_json_" + node_sel]) != "undefined"){
+	}else if(typeof(db_ss["ssconf_basic_v2ray_use_json_" + node_sel]) != "undefined"){
 				v2ray_on = true;
 				$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(51)"><font color="#ffcc00">地址（address）</font></a>');
 				$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(50)"><font color="#ffcc00">端口（port）</font></a>');
-			}else if((typeof(db_ss["ssconf_basic_ss_v2ray_plugin_" + node_sel])  != "undefined") || (typeof(db_ss["ssconf_basic_method_" + node_sel])  != "undefined")) {
+	}else if((typeof(db_ss["ssconf_basic_ss_v2ray_plugin_" + node_sel])  != "undefined") || (typeof(db_ss["ssconf_basic_method_" + node_sel])  != "undefined")) {
 				ss_on = true;
 				$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
 				$("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');
-			} 
-		}
+	}else{
+		trojan_on = true;
+		$("#server_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(2)">服务器</a>');
+        $("#port_th").html('<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(3)">服务器端口</a>');			
 	}	
 	
 	// pop out node add
@@ -1157,7 +1153,7 @@ function Add_profile() { //点击节点页面内添加节点动作
 	E("ss_node_table_v2ray_xray").value = "v2ray";
 	$("#vpnc_settings").fadeIn(200);
 	$("#use_uuid_off").text("用户id（id）");
-	$("#v2rayTitle").html("添加V2Ray节点");
+	$("#v2rayTitle").html("添加V2Ray配置");
 	$("#ss_node_table_v2ray_mux_enable").prop("checked",false);
 	$("#continue_add_box").prop("checked",false);
 	E("ss_node_table_v2ray_mux_concurrency").value = "";
@@ -1393,6 +1389,7 @@ function tabclickhandler(_type) {
         E('v2ray_mux_concurrency_tr').style.display = "none";
         E('v2ray_json_tr').style.display = "none";
 		E('v2ray_network_tlshost_tr').style.display = "none";
+		E('v2ray_network_flow_tr').style.display = "none";
 	} 
 	return save_flag;
 }
@@ -1621,19 +1618,18 @@ function refresh_html() {
 		} else {
 			html = html + '<td style="width:40px"></td>';
 		}
-		html = html + '<td style="width:90px;" id="ss_node_name_' + c["node"] + '">' + c["name"] + '</td>';
-		html = html + '<td style="width:90px;" id="ss_node_server_' + c["node"] + '"> ' + c["server"] + '</td>';
+		html = html + '<td style="width:120px;text-align:left;" id="ss_node_name_' + c["node"] + '">' + c["name"] + '</td>';
+		html = html + '<td style="width:120px;text-align:left;" id="ss_node_server_' + c["node"] + '"> ' + c["server"] + '</td>';
 		html = html + '<td id="ss_node_port_' + c["node"] + '" style="width:37px;">' + c["port"] + '</td>';
-		html = html + '<td id="ss_node_method_' + c["node"] + '" style="width:90px;"> ' + c["method"] + '</td>';
 		if(!c["ping"]){
-			html = html + '<td id="ss_node_ping_' + c["node"] + '" style="width:78px;" class="ping" id="ping_test_td_' + c["node"] + '" style="text-align: center;">' + "不支持" + '</td>';
+			html = html + '<td id="ss_node_ping_' + c["node"] + '" style="width:90px;" class="ping" id="ping_test_td_' + c["node"] + '" style="text-align: center;">' + "不支持" + '</td>';
 		}else{
-			html = html + '<td id="ss_node_ping_' + c["node"] + '" style="width:78px;" class="ping" id="ping_test_td_' + c["node"] + '" style="text-align: center;">' + c["ping"] + '</td>';
+			html = html + '<td id="ss_node_ping_' + c["node"] + '" style="width:90px;" class="ping" id="ping_test_td_' + c["node"] + '" style="text-align: center;">' + c["ping"] + '</td>';
 		}
 		if (c["mode"] == 4 || c["use_kcp"] == 1) {
-			html = html + '<td id="ss_node_webtest_' + c["node"] + '" style="width:36px;color: #FFCC33" id="web_test_td_' + c["node"] + '">' + 'null' + '</td>';
+			html = html + '<td id="ss_node_webtest_' + c["node"] + '" style="width:54px;color: #FFCC33" id="web_test_td_' + c["node"] + '">' + 'null' + '</td>';
 		} else {
-			html = html + '<td id="ss_node_webtest_' + c["node"] + '" style="width:36px;" id="web_test_td_' + c["node"] + '">' + c["webtest"] + '</td>';
+			html = html + '<td id="ss_node_webtest_' + c["node"] + '" style="width:54px;" id="web_test_td_' + c["node"] + '">' + c["webtest"] + '</td>';
 		}
 		html = html + '<td style="width:33px;">'
 		html = html + '<input style="margin:-2px 0px -4px -2px;" id="dd_node_' + c["node"] + '" class="edit_btn" type="button" onclick="return edit_conf_table(this);" value="">'
@@ -1654,9 +1650,9 @@ function refresh_html() {
 					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #33CC33;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
 				} else {
 					if(c["v2ray_use_json"] == "0" || c["v2ray_use_json"] == "1") { //判断节点为v2ray
-						if(c["v2ray_alterid"]) {	//vmess
+						if(c["v2ray_protocol"] == "vmess") {	//vmess
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #9900CC;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
-						}else {	//vless
+						}else if(c["v2ray_protocol"] == "vless") {	//vless
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #3c45f6;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
 						}
 					}else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
@@ -1674,9 +1670,9 @@ function refresh_html() {
 					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #33CC33;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
 				} else {
 					if(c["v2ray_use_json"] == "0" || c["v2ray_use_json"] == "1") { //判断节点为v2ray
-						if(c["v2ray_alterid"]) {	//vmess
+						if(c["v2ray_protocol"] == "vmess") {	//vmess
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #9900CC;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
-						}else {	//vless
+						}else if(c["v2ray_protocol"] == "vless")  {	//vless
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #3c45f6;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
 						}
 					} else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
@@ -1853,17 +1849,17 @@ function edit_conf_table(o) { //编辑节点功能，显示编辑面板
 			if(c["v2ray_use_json"] == "0" || c["v2ray_use_json"] == "1") { //判断节点为v2ray
 				$("#vpnc_settings").fadeIn(200);
 				E("v2rayTitle").style.display = "";
-				$("#v2rayTitle").html("编辑V2Ray账号");
+				$("#v2rayTitle").html("编辑v2ray账号");
 				tabclickhandler(3);
 			}else if(c["ss_v2ray_plugin"] || c["method"]) { //判断节点为SS （有 v2ray 插件的为 SS）
 				$("#vpnc_settings").fadeIn(200);
                 E("ssTitle").style.display = "";
-				$("#ssTitle").html("编辑ss账号");
+				$("#ssTitle").html("编辑SS账号");
 				tabclickhandler(0);
 			}else { // 其余的为 Trojan 节点
                 $("#vpnc_settings").fadeIn(200);
                 E("trojanTitle").style.display = "";
-                $("#trojanTitle").html("编辑 Trojan 配置");
+                $("#trojanTitle").html("编辑Trojan账号");
                 tabclickhandler(4);
 			}
 		}
@@ -3417,11 +3413,11 @@ function set_cron(action) {
 													<td>		
 														<table width="100%" border="0" align="left" cellpadding="0" cellspacing="0" class="vpnClientTitle">
 															<tr>
-													  		<td width="20%" align="center" id="ssTitle" onclick="tabclickhandler(0);">添加SS账号</td>
-													  		<td width="20%" align="center" id="ssrTitle" onclick="tabclickhandler(1);">添加SSR账号</td>
-													  		<td width="20%" align="center" id="gamev2Title" onclick="tabclickhandler(2);">添加koolgame账号</td>
+													  		<td width="20%" align="center" id="ssTitle" onclick="tabclickhandler(0);">添加SS配置</td>
+													  		<td width="20%" align="center" id="ssrTitle" onclick="tabclickhandler(1);">添加SSR配置</td>
+													  		<td width="20%" align="center" id="gamev2Title" onclick="tabclickhandler(2);">添加koolgame配置</td>
 													  		<td width="20%" align="center" id="v2rayTitle" onclick="tabclickhandler(3);">添加V2Ray配置</td>
-															<td width="20%" align="center" id="trojanTitle" onclick="tabclickhandler(4);">添加 Trojan 配置</td>
+															<td width="20%" align="center" id="trojanTitle" onclick="tabclickhandler(4);">添加Trojan配置</td>
 															</tr>
 														</table>
 													</td>
@@ -4078,12 +4074,11 @@ function set_cron(action) {
 											<table style="margin:-1px 0px 0px 0px;table-layout:fixed;" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable1">
 												<tr height="40px">
 													<th style="width:40px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(16)">模式</a></th>
-													<th style="width:90px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(17)">节点名称</a></th>
-													<th style="width:90px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(18)">服务器地址</a></th>
+													<th style="width:120px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(17)">节点名称</a></th>
+													<th style="width:120px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(18)">服务器地址</a></th>
 													<th style="width:37px;">端口</th>
-													<th style="width:90px;">加密方式</th>
-													<th style="width:78px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(19)">ping/丢包</a></th>
-													<th style="width:36px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(20)">延迟</a></th>
+													<th style="width:90px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(19)">ping/丢包</a></th>
+													<th style="width:54px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(20)">延迟</a></th>
 													<th style="width:33px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(21)">编辑</a></th>
 													<th style="width:33px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(22)">删除</a></th>
 													<th style="width:65px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(23)">使用</a></th>
@@ -4095,12 +4090,11 @@ function set_cron(action) {
 												<table id="ss_node_list_table" style="margin:-1px 0px 0px 0px;" width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable1">
 													<tr id="hide_when_folw" height="40px" style="display: none;">
 														<th style="width:40px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(16)">模式</a></th>
-														<th style="width:90px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(17)">节点名称</a></th>
-														<th style="width:90px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(18)">服务器地址</a></th>
+														<th style="width:120px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(17)">节点名称</a></th>
+														<th style="width:120px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(18)">服务器地址</a></th>
 														<th style="width:37px;">端口</th>
-														<th style="width:90px;">加密方式</th>
-														<th style="width:78px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(19)">ping/丢包</a></th>
-														<th style="width:36px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(20)">延迟</a></th>
+														<th style="width:90px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(19)">ping/丢包</a></th>
+														<th style="width:54px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(20)">延迟</a></th>
 														<th style="width:33px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(21)">编辑</a></th>
 														<th style="width:33px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(22)">删除</a></th>
 														<th style="width:65px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(23)">使用</a></th>

@@ -310,7 +310,7 @@ function LoadingSSProgress(seconds) {
 		document.getElementById("loading_block3").innerHTML = "应用负载均衡设置 ..."
 		$("#loading_block2").html("<li><font color='#ffcc00'>请勿刷新本页面，应用负载均衡设置 ...</font></li>");
 	} else if (action == 13) {
-		document.getElementById("loading_block3").innerHTML = "SSR节点订阅 ..."
+		document.getElementById("loading_block3").innerHTML = "Shadowsocks节点订阅 ..."
 		$("#loading_block2").html("<li><font color='#ffcc00'>请勿刷新本页面，正在订阅中 ...</font></li>");
 	} else if (action == 14) {
 		document.getElementById("loading_block3").innerHTML = "socks5代理设置 ..."

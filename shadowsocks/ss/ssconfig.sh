@@ -1227,7 +1227,16 @@ create_v2ray_json(){
 		# tcp和kcp下tlsSettings为null，ws和h2下tlsSettings
 		[ -z "$ss_basic_v2ray_mux_concurrency" ] && local ss_basic_v2ray_mux_concurrency=8
 		[ "$ss_basic_v2ray_network_security" == "none" ] && local ss_basic_v2ray_network_security=""
-		#if [ "$ss_basic_v2ray_network" == "ws" -o "$ss_basic_v2ray_network" == "h2" ];then
+
+		# incase multi-domain input
+		if [ "$(echo $ss_basic_v2ray_network_host | grep ",")" ]; then
+			ss_basic_v2ray_network_host=$(echo $ss_basic_v2ray_network_host | sed 's/,/", "/g')
+		fi
+
+		if [ "$ss_basic_v2ray_network" == "ws" -o "$ss_basic_v2ray_network" == "h2" ] && [ -z "$ss_basic_v2ray_network_tlshost" ] && [ -n "$ss_basic_v2ray_network_host" ]; then
+		 	local ss_basic_v2ray_network_tlshost="$ss_basic_v2ray_network_host"
+		fi
+
 		case "$ss_basic_v2ray_network_security" in
 		tls)
 			local tls="{
@@ -1246,12 +1255,7 @@ create_v2ray_json(){
 			local xtls="null"
 			;;
 		esac
-		#fi
-		# incase multi-domain input
-		if [ "$(echo $ss_basic_v2ray_network_host | grep ",")" ]; then
-			ss_basic_v2ray_network_host=$(echo $ss_basic_v2ray_network_host | sed 's/,/", "/g')
-		fi
-
+		
 		case "$ss_basic_v2ray_network" in
 		tcp)
 			if [ "$ss_basic_v2ray_headtype_tcp" == "http" ]; then
@@ -1557,6 +1561,9 @@ create_v2ray_json(){
 		vmess)
 			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.vnext[0].address)
 			;;
+		vless)
+			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.vnext[0].address)
+			;;			
 		socks)
 			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.servers[0].address)
 			;;
@@ -1639,7 +1646,7 @@ create_trojan_json(){
 		echo_date 生成Trojan配置文件...
 		 #trojan
 		 # inbounds area (23456 for socks5)  
-		cat >>"$V2RAY_CONFIG_FILE_TMP" <<-EOF
+		cat >"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 		{
 			"log": {
 				"access": "/dev/null",
@@ -1786,30 +1793,30 @@ start_trojan() {
 write_cron_job(){
 	sed -i '/ssupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	if [ "1" == "$ss_basic_rule_update" ]; then
-		echo_date 添加ss规则定时更新任务，每天"$ss_basic_rule_update_time"自动检测更新规则.
+		echo_date 添加shadowsocks规则定时更新任务，每天"$ss_basic_rule_update_time"自动检测更新规则.
 		cru a ssupdate "0 $ss_basic_rule_update_time * * * /bin/sh /koolshare/scripts/ss_rule_update.sh"
 	else
-		echo_date ss规则定时更新任务未启用！
+		echo_date shadowsocks规则定时更新任务未启用！
 	fi
 	sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	if [ "$ss_basic_node_update" = "1" ];then
 		if [ "$ss_basic_node_update_day" = "7" ];then
 			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * * /koolshare/scripts/ss_online_update.sh 3"
-			echo_date "设置订阅服务器自动更新订阅服务器在每天 $ss_basic_node_update_hr 点。"
+			echo_date "设置自动更新节点订阅在每天 $ss_basic_node_update_hr 点。"
 		else
 			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * ss_basic_node_update_day /koolshare/scripts/ss_online_update.sh 3"
-			echo_date "设置订阅服务器自动更新订阅服务器在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
+			echo_date "设置自动更新节点订阅在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
 		fi
 	fi
 }
 
 kill_cron_job(){
 	if [ -n "`cru l|grep ssupdate`" ];then
-		echo_date 删除ss规则定时更新任务...
+		echo_date 删除shadowsocks规则定时更新任务...
 		sed -i '/ssupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	fi
 	if [ -n "`cru l|grep ssnodeupdate`" ];then
-		echo_date 删除SSR定时订阅任务...
+		echo_date 删除节点定时订阅任务...
 		sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	fi
 }

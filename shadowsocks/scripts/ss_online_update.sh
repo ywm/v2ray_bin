@@ -239,6 +239,7 @@ add_ss_servers(){
 	#初始化
 	encrypt_method=""
 	ss_v2ray_tmp="0"
+	ss_v2ray_plugin_tmp="0"
 	ss_v2ray_opts_tmp=""
 	ss_kcp_support_tmp="0"
 	ss_udp_support_tmp="0"
@@ -290,6 +291,13 @@ get_ss_config(){
 	#v2ray plugin : simple obfs will not be supported anymore, v2ray plugin will replace it
 	# link format example
 	# plugin=v2ray;path=/s233;host=yes.herokuapp.com;tls
+
+	#	初始化
+	ss_v2ray_tmp="0"
+	ss_v2ray_plugin_tmp="0"	
+	ss_kcp_support_tmp="0"
+	ss_udp_support_tmp="0"
+
 
 	if [ -n "$(echo -n "$decode_link" | grep "?")" ];then
 		plugin=$(echo "$decode_link" |awk -F'?' '{print $2}')
@@ -769,7 +777,7 @@ add_trojan_servers(){
 	dbus set ssconf_basic_password_$trojanindex=$password
 	dbus set ssconf_basic_type_$trojanindex="4"
 #	dbus set ssconf_basic_v2ray_protocol_$trojanindex="trojan"
-	[ -n "$sni" ] && dbus set ssconf_basic_trojan_sni_$trojanindex="$sni" || dbus set ssconf_basic_trojan_sni_$trojanindex=""
+	dbus set ssconf_basic_trojan_sni_$trojanindex="$sni"
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$trojanindex=$ss_kcp_opts_tmp
@@ -1620,6 +1628,7 @@ remove_online(){
 		dbus remove ssconf_basic_v2ray_xray_$remove_nu
 		dbus remove ssconf_basic_weight_$remove_nu
 	done
+	remove_node_gap
 }
 
 case $ss_online_action in
