@@ -123,6 +123,7 @@ echo_version(){
 	echo "client_linux_arm5	20181114	kcptun"
 	echo "v2ray			$ss_basic_v2ray_version		$ss_basic_v2ray_date"
 	echo "xray			$ss_basic_xray_version		$ss_basic_xray_date"
+	echo "trojan-go		0.8.2		2021年4月1日编译"
 	echo -----------------------------------------------------------
 }
 
@@ -143,6 +144,7 @@ check_status(){
 	HAPROXY=`pidof haproxy`
 	V2RAY=`pidof v2ray`
 	XRAY=`pidof xray`
+	trojango=`pidof trojan-go`
 	HDP=`pidof https_dns_proxy`
 	DMQ=`pidof dnsmasq`
 	SMD=$(pidof smartdns)
@@ -184,6 +186,7 @@ check_status(){
 		echo -----------------------------------------------------------
 		echo "程序		状态	PID"
 		[ -n "$XRAY" ] && echo "xray		工作中	pid：$XRAY" || echo "xray	未运行"	
+		[ -n "$trojango" ] && echo "trojan-go		工作中	pid：$trojango" || echo "trojan-go	未运行"	
 	fi
 
 	if [ -z "$ss_basic_koolgame_udp" ];then

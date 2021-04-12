@@ -153,6 +153,8 @@ rm -rf /koolshare/bin/udp2raw
 rm -rf /koolshare/bin/speeder*
 rm -rf /koolshare/bin/v2ray
 rm -rf /koolshare/bin/v2ctl
+rm -rf /koolshare/bin/xray
+rm -rf /koolshare/bin/trojan-go
 rm -rf /koolshare/bin/jitterentropy-rngd
 rm -rf /koolshare/bin/haveged
 rm -rf /koolshare/bin/https_dns_proxy
@@ -235,8 +237,8 @@ dbus set softcenter_module_shadowsocks_description="科学上网 for merlin armv
 dbus set softcenter_module_shadowsocks_home_url="Main_Ss_Content.asp"
 
 # 设置v2ray 版本号
-dbus set ss_basic_v2ray_version=4.34.5
-dbus set ss_basic_v2ray_date=20210407
+dbus set ss_basic_v2ray_version=4.34.6
+dbus set ss_basic_v2ray_date=20210412
 
 echo_date 一点点清理工作...
 rm -rf /tmp/shadowsocks* >/dev/null 2>&1

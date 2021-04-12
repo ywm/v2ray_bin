@@ -13,6 +13,8 @@ LOG_FILE=/tmp/syslog.log
 CONFIG_FILE=/koolshare/ss/ss.json
 V2RAY_CONFIG_FILE_TMP="/tmp/v2ray_tmp.json"
 V2RAY_CONFIG_FILE="/koolshare/ss/v2ray.json"
+TROJANGO_CONFIG_FILE="/koolshare/ss/trojango.json"
+TROJANGO2_CONFIG_FILE="/koolshare/ss/trojango2.json"
 LOCK_FILE=/var/lock/koolss.lock
 DNSF_PORT=7913
 DNSC_PORT=53
@@ -162,6 +164,14 @@ kill_process(){
 		killall xray >/dev/null 2>&1
 		kill -9 "$xray_process" >/dev/null 2>&1
 	fi
+	trojango_process=`pidof trojan-go`
+	if [ -n "$trojango_process" ];then 
+		echo_date 关闭Trojan-Go进程...
+		# 有时候killall杀不了Trojan-Go进程，所以用不同方式杀两次
+		killall trojan-go >/dev/null 2>&1
+		kill -9 "$trojango_process" >/dev/null 2>&1
+	fi
+
 	ssredir=`pidof ss-redir`
 	if [ -n "$ssredir" ];then 
 		echo_date 关闭ss-redir进程...
@@ -465,6 +475,9 @@ start_sslocal(){
 		else
 			ss-local -l 23456 -c $CONFIG_FILE $ARG_V2RAY_PLUGIN -u -f /var/run/sslocal1.pid >/dev/null 2>&1
 		fi
+	elif [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Trojan-Go" ]; then
+		echo_date 开启trojan-go，提供socks5代理端口：23456 
+		trojan-go -config $TROJANGO2_CONFIG_FILE >/dev/null 2>&1 &	
 	fi
 }
 
@@ -1642,7 +1655,7 @@ create_v2ray_json(){
 create_trojan_json(){
 	rm -rf "$V2RAY_CONFIG_FILE_TMP"
 	rm -rf "$V2RAY_CONFIG_FILE"
-	if  [ "$ss_basic_type" == "4" ]; then
+	if  [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Trojan" ]; then
 		echo_date 生成Trojan配置文件...
 		 #trojan
 		 # inbounds area (23456 for socks5)  
@@ -1721,6 +1734,123 @@ create_trojan_json(){
 	fi
 }
 
+
+create_trojango_json(){
+	rm -rf "$TROJANGO_CONFIG_FILE"
+	rm -rf "$TROJANGO2_CONFIG_FILE"
+	if  [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Trojan-Go" ]; then
+	if [ "$ss_basic_trojan_network" == "1" ]; then
+	[ -n "$ss_basic_v2ray_network_path" ] && local ss_basic_v2ray_network_path=$(echo "/$ss_basic_v2ray_network_path" | sed 's,//,/,')
+		local ws="{ \"enabled\": true,
+					\"path\":  \"$ss_basic_v2ray_network_path\",
+					\"host\":  \"$ss_basic_v2ray_network_host\"
+					}"
+	else
+		local ws="{ \"enabled\": false,
+					\"path\":  \"\",
+					\"host\":  \"\"
+					}"
+	fi
+		echo_date 生成Trojan Go配置文件...
+		 #trojan go
+		 # 3333 for nat  
+		cat >"$TROJANGO_CONFIG_FILE" <<-EOF
+			{
+				"run_type": "nat",
+				"local_addr": "0.0.0.0",
+				"local_port": 3333,
+				"remote_addr": "$ss_basic_server",
+				"remote_port": $ss_basic_port,
+				"log_level": 1,
+				"log_file": "/tmp/trojan-go_log.log",
+				"password": [
+				"$ss_basic_password"
+				],
+				"disable_http_check": false,
+				"udp_timeout": 60,
+				"ssl": {
+					"verify": true,
+					"verify_hostname": true,
+					"cert": "/rom/etc/ssl/certs/ca-certificates.crt",
+					"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+					"sni": "$ss_basic_trojan_sni",
+					"alpn": [
+					"http/1.1"
+					],
+					"session_ticket": true,
+					"reuse_session": true
+				},
+				"tcp": {
+					"no_delay": true,
+					"keep_alive": true,
+					"prefer_ipv4": true
+				},
+				"mux": {
+					"enabled": false,
+					"concurrency": 8,
+					"idle_timeout": 60
+				},
+				"websocket": $ws
+				,
+				"shadowsocks": {
+					"enabled": false,
+					"method": "AES-128-GCM",
+					"password": ""
+				}
+			}
+		EOF
+
+		 #  23456 for socks5  
+		cat >"$TROJANGO2_CONFIG_FILE" <<-EOF
+			{
+				"run_type": "client",
+				"local_addr": "127.0.0.1",
+				"local_port": 23456,
+				"remote_addr": "$ss_basic_server",
+				"remote_port": $ss_basic_port,
+				"log_level": 1,
+				"log_file": "/tmp/trojan-go_log.log",
+				"password": [
+				"$ss_basic_password"
+				],
+				"disable_http_check": false,
+				"udp_timeout": 60,
+				"ssl": {
+					"verify": true,
+					"verify_hostname": true,
+					"cert": "/rom/etc/ssl/certs/ca-certificates.crt",
+					"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+					"sni": "$ss_basic_trojan_sni",
+					"alpn": [
+					"http/1.1"
+					],
+					"session_ticket": true,
+					"reuse_session": true
+				},
+				"tcp": {
+					"no_delay": true,
+					"keep_alive": true,
+					"prefer_ipv4": true
+				},
+				"mux": {
+					"enabled": false,
+					"concurrency": 8,
+					"idle_timeout": 60
+				},
+				"websocket": $ws
+				,
+				"shadowsocks": {
+					"enabled": false,
+					"method": "AES-128-GCM",
+					"password": ""
+				}
+			}
+		EOF
+		
+		echo_date Trojan-Go配置文件写入成功到"$TROJANGO_CONFIG_FILE"
+	fi
+}
+
 start_v2ray() {
 	# v2ray start
 	cd /koolshare/bin
@@ -1788,6 +1918,24 @@ start_trojan() {
 		sleep 1
 	done
 	echo_date trojan启动成功，pid：$trojanPID
+}
+
+start_trojango() {
+	# trojango start
+	cd /koolshare/bin
+	trojan-go -config $TROJANGO_CONFIG_FILE >/dev/null 2>&1 &
+	local trojangoPID
+	local i=10
+	until [ -n "$trojangoPID" ]; do
+		i=$(($i - 1))
+		trojangoPID=`ps | grep -w trojan-go | grep -v "grep" | grep "$TROJANGO_CONFIG_FILE" | awk '{print $1}'`
+		if [ "$i" -lt 1 ]; then
+			echo_date "trojan-go进程启动失败！"
+			close_in_five
+		fi
+		sleep 1
+	done
+	echo_date trojan-go启动成功，pid：$trojangoPID
 }
 
 write_cron_job(){
@@ -2457,10 +2605,12 @@ apply_ss(){
 	# do not re generate json on router start, use old one
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" != "3" ] && [ "$ss_basic_type" != "4" ] && create_ss_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "3" ] && create_v2ray_json
-	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" ] && create_trojan_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && create_trojan_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && create_trojango_json
 	[ "$ss_basic_type" == "0" ] || [ "$ss_basic_type" == "1" ] && start_ss_redir
 	[ "$ss_basic_type" == "2" ] && start_koolgame
-	[ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" ] && start_v2ray_xray
+	[ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && start_v2ray_xray
+	[ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && start_trojango
 	[ "$ss_basic_type" != "2" ] && start_kcp
 	[ "$ss_basic_type" != "2" ] && start_dns
 	#===load nat start===

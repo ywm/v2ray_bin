@@ -11,7 +11,7 @@ alias echo_date='echo 【$(TZ=UTC-8 date -R +%Y年%m月%d日\ %X)】:'
 #main_url="https://raw.githubusercontent.com/hq450/fancyss/master/fancyss_arm"
 main_url="https://raw.githubusercontent.com/cary-sas/v2ray_bin/main/380_armv5_packge"
 backup_url=""
-socksopen_b=`netstat -nlp | grep -w 23456|grep -E "local|v2ray|xray"`
+socksopen_b=`netstat -nlp | grep -w 23456|grep -E "local|v2ray|xray|trojan-go"`
 if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
 	echo_date "代理有开启，将使用代理网络..."
 	alias curlxx='curl --connect-timeout 8  --socks5-hostname 127.0.0.1:23456 '

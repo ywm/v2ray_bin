@@ -41,6 +41,8 @@ cp /koolshare/bin/speeder* $TARGET_FOLDER/bin/
 cp /koolshare/bin/udp2raw $TARGET_FOLDER/bin/
 cp /koolshare/bin/v2ray $TARGET_FOLDER/bin/
 cp /koolshare/bin/v2ctl $TARGET_FOLDER/bin/
+cp /koolshare/bin/xray $TARGET_FOLDER/bin/
+cp /koolshare/bin/trojan-go $TARGET_FOLDER/bin/
 cp /koolshare/bin/haveged $TARGET_FOLDER/bin/
 cp /koolshare/bin/https_dns_proxy $TARGET_FOLDER/bin/
 cp /koolshare/bin/dnsmasq $TARGET_FOLDER/bin/

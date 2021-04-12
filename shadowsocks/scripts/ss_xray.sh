@@ -10,7 +10,7 @@ xray_CONFIG_FILE="/koolshare/ss/v2ray.json"
 #url_main="https://raw.githubusercontent.com/hq450/fancyss/master/xray_binary"
 url_main="https://raw.githubusercontent.com/cary-sas/v2ray_bin/main/380_armv5/xray"
 url_back=""
-socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray"`
+socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go"`
 
 if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
 	echo_date "代理有开启，将使用代理网络..."

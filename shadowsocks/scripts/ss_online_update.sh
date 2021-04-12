@@ -63,6 +63,8 @@ SOCKS_FLAG=0
 # ssconf_basic_type_
 # ssconf_basic_v2ray_protocol_
 # ssconf_basic_v2ray_xray_
+# ssconf_basic_trojan_binary_
+# ssconf_basic_trojan_network_
 # ssconf_basic_trojan_sni_
 # ==============================
 
@@ -157,6 +159,8 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" ] && echo dbus set ssconf_basic_v2ray_mux_enable_$q=$(dbus get ssconf_basic_v2ray_mux_enable_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" ] && echo dbus set ssconf_basic_v2ray_mux_concurrency_$q=$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_json_$nu)" ] && echo dbus set ssconf_basic_v2ray_json_$q=$(dbus get ssconf_basic_v2ray_json_$nu) >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && dbus set ssconf_basic_trojan_binary_$q=$(ssconf_basic_trojan_binary_$nu)  >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && dbus set ssconf_basic_trojan_network_$q=$(ssconf_basic_trojan_network_$nu)  >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_$q=$(ssconf_basic_trojan_sni_$nu)  >> /tmp/ss_conf.sh	
 		[ -n "$(dbus get ssconf_basic_type_$nu)" ] && echo dbus set ssconf_basic_type_$q=$(dbus get ssconf_basic_type_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_protocol_$nu)" ] && echo dbus set ssconf_basic_v2ray_protocol_$q=$(dbus get ssconf_basic_v2ray_protocol_$nu) >> /tmp/ss_conf.sh
@@ -723,7 +727,7 @@ get_trojan_config(){
 	group="$2"
 
 	if [ -n "$(echo -n "$decode_link" | grep "#")" ];then
-		remarks=$(echo -n $decode_link | awk -F'#' '{print $2}' | sed 's/[\r\n ]//g' ) # 因为订阅的 ss 里面有 \r\n ，所以需要先去除，否则就炸了，只能卸载重装	
+		remarks=$(echo -n $decode_link | awk -F'#' '{print $2}' | sed 's/[\r\n ]//g' ) # 因为订阅的 trojan 里面有 \r\n ，所以需要先去除，否则就炸了，只能卸载重装	
 		decode_link=$(echo -n $decode_link | awk -F'#' '{print $1}')		
 	else
 		remarks="$remarks" 
@@ -776,7 +780,7 @@ add_trojan_servers(){
 	dbus set ssconf_basic_port_$trojanindex=$server_port
 	dbus set ssconf_basic_password_$trojanindex=$password
 	dbus set ssconf_basic_type_$trojanindex="4"
-#	dbus set ssconf_basic_v2ray_protocol_$trojanindex="trojan"
+	dbus set ssconf_basic_trojan_binary_$trojanindex="Trojan"
 	dbus set ssconf_basic_trojan_sni_$trojanindex="$sni"
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
@@ -1004,6 +1008,161 @@ update_vless_config(){
 	fi
 }
 
+##################################################################################################
+# trojan go 节点添加解析并更新
+##################################################################################################
+get_trojan_go_config(){
+	decode_link=$(urldecode $1)	# 有些链接被 url 编码过，所以要先 url 解码
+	if [ -z "$decode_link" ];then
+		echo_date "解析失败！！！"
+		return 1
+	fi
+
+	group="$2"
+
+	if [ -n "$(echo -n "$decode_link" | grep "#")" ];then
+		remarks=$(echo -n $decode_link | awk -F'#' '{print $2}' | sed 's/[\r\n ]//g' ) # 因为订阅的 trojan_go 里面有 \r\n ，所以需要先去除，否则就炸了，只能卸载重装				
+	else
+		remarks="$remarks" 
+	fi
+
+	server=$(echo "$decode_link" |awk -F':' '{print $1}'|awk -F'@' '{print $2}')
+	server_port=$(echo "$decode_link" |awk -F':' '{print $2}' | awk -F'[/?]' '{print $1}')
+	password=$(echo "$decode_link" |awk -F':' '{print $1}'|awk -F'@' '{print $1}')
+	password=`echo $password|base64_encode`
+	v2ray_net=$(echo "$decode_link" | tr '?&#' '\n' | grep 'type=' | awk -F'=' '{print $2}')
+	[ "$v2ray_net" == "ws" ] && v2ray_net=1 || v2ray_net=0
+	v2ray_path=$(echo "$decode_link" | tr '?&#' '\n' | grep 'path=' | awk -F'=' '{print $2}')
+	v2ray_host=$(echo "$decode_link" | tr '?&#' '\n' | grep 'host=' | awk -F'=' '{print $2}')
+	sni=$(echo "$decode_link" | tr '?&#' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
+
+
+	#20201024---
+	ss_kcp_support_tmp="0"
+	ss_udp_support_tmp="0"
+	ss_kcp_opts_tmp=""
+	ss_sskcp_server_tmp=""
+	ss_sskcp_port_tmp=""
+	ss_ssudp_server=""
+	ss_ssudp_port_tmp=""
+	ss_ssudp_mtu_tmp=""
+	ss_udp_opts_tmp=""
+
+	#把全部服务器节点编码后写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
+	[ -n "$group" ] && group_base64=`echo $trojan_go_group | base64_encode | sed 's/ -//g'`
+	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`	
+	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	
+	
+	#echo ------
+	#echo group: $group
+	#echo remarks: $remarks
+	#echo server: $server
+	#echo server_port: $server_port
+	#echo password: $password
+	#echo ------
+	echo "$group" >> /tmp/all_group_info.txt
+	[ -n "$group" ] && return 0 || return 1
+	[ -z "$server" -o -z "$remarks" -o -z "$server_port" -o -z "$password" ] && return 1 || return 0
+}
+
+add_trojan_go_servers(){
+	trojangoindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
+#	echo_date "添加 Trojan-Go节点：$remarks"
+	[ -z "$1" ] && dbus set ssconf_basic_group_$trojangoindex=$group
+	dbus set ssconf_basic_name_$trojangoindex=$remarks
+	dbus set ssconf_basic_mode_$trojangoindex=$ssr_subscribe_mode
+	dbus set ssconf_basic_server_$trojangoindex=$server
+	dbus set ssconf_basic_port_$trojangoindex=$server_port
+	dbus set ssconf_basic_password_$trojangoindex=$password
+	dbus set ssconf_basic_type_$trojangoindex="4"
+	dbus set ssconf_basic_trojan_binary_$trojangoindex="Trojan-Go"
+	dbus set ssconf_basic_trojan_network_$trojangoindex=$v2ray_net  
+	[ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$trojangoindex=$v2ray_host
+	[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$trojangoindex=$v2ray_path
+	dbus set ssconf_basic_trojan_sni_$trojangoindex="$sni"
+	
+	
+	dbus set ssconf_basic_ss_kcp_support_$trojangoindex=$ss_kcp_support_tmp
+	dbus set ssconf_basic_ss_udp_support_$trojangoindex=$ss_udp_support_tmp
+	dbus set ssconf_basic_ss_kcp_opts_$trojangoindex=$ss_kcp_opts_tmp
+	dbus set ssconf_basic_ss_sskcp_server_$trojangoindex=$ss_sskcp_server_tmp
+	dbus set ssconf_basic_ss_sskcp_port_$trojangoindex=$ss_sskcp_port_tmp
+	dbus set ssconf_basic_ss_ssudp_server_$trojangoindex=$ss_ssudp_server_tmp
+	dbus set ssconf_basic_ss_ssudp_port_$trojangoindex=$ss_ssudp_port_tmp
+	dbus set ssconf_basic_ss_ssudp_mtu_$trojangoindex=$ss_ssudp_mtu_tmp
+	dbus set ssconf_basic_ss_udp_opts_$trojangoindex=$ss_udp_opts_tmp
+	
+	echo_date "Trojan Go节点：新增加 【$remarks】 到节点列表第 $trojangoindex 位。"
+}
+
+update_trojan_go_config(){
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	if [ "$isadded_server" == "0" ]; then
+		add_trojan_go_servers
+		let addnum6+=1
+		let addnum+=1
+	else
+		# 如果在本地的订阅节点中已经有该节点（用group和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+
+		local i=0
+		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
+		local_remarks=$(dbus get ssconf_basic_name_$index)
+		[ "$local_remarks" != "$remarks" ] && dbus set ssconf_basic_name_$index=$remarks && let i+=1
+		local_server=$(dbus get ssconf_basic_server_$index)
+		[ "$local_server" != "$server" ] && dbus set ssconf_basic_server_$index=$server && let i+=1
+		local_server_port=$(dbus get ssconf_basic_port_$index)
+		[ "$local_server_port" != "$server_port" ] && dbus set ssconf_basic_port_$index=$server_port && let i+=1
+		local_password=$(dbus get ssconf_basic_password_$index)
+		[ "$local_password" != "$password" ] && dbus set ssconf_basic_password_$index=$password && let i+=1
+		
+		local_v2ray_net=$(dbus get ssconf_basic_trojan_network_$index)
+		[ "$local_v2ray_net" != "$v2ray_net" ] && dbus set ssconf_basic_trojan_network_$index=$v2ray_net && let i+=1
+		
+		local_v2ray_host=$(dbus get ssconf_basic_v2ray_network_host_$index)
+		[ "$local_v2ray_host" != "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$index=$v2ray_host && let i+=1
+
+		local_v2ray_path=$(dbus get ssconf_basic_v2ray_network_path_$index)
+		[ "$local_v2ray_path" != "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$index=$v2ray_path && let i+=1
+				
+		local_sni=$(dbus get ssconf_basic_trojan_sni_$index)
+		[ "$local_sni" != "$sni" ] && dbus set ssconf_basic_trojan_sni_$index=$sni && let i+=1
+
+		local_ss_kcp_support_tmp=$(dbus get ssconf_basic_ss_kcp_support_$index)
+		[ "$local_ss_kcp_support_tmp" != "$ss_kcp_support_tmp" ] && dbus set ssconf_basic_ss_kcp_support_$index=$ss_kcp_support_tmp && let i+=1
+		
+		local_ss_udp_support_tmp=$(dbus get ssconf_basic_ss_udp_support_$index)
+		[ "$local_ss_udp_support_tmp" != "$ss_udp_support_tmp" ] && dbus set ssconf_basic_ss_udp_support_$index=$ss_udp_support_tmp && let i+=1
+
+		local_ss_kcp_opts_tmp=$(dbus get ssconf_basic_ss_kcp_opts_$index)
+		[ "$local_ss_kcp_opts_tmp" != "$ss_kcp_opts_tmp" ] && dbus set ssconf_basic_ss_kcp_opts_$index=$ss_kcp_opts_tmp && let i+=1
+		
+		local_ss_sskcp_port_tmp=$(dbus get ssconf_basic_ss_sskcp_port_$index)
+		[ "$local_ss_sskcp_port_tmp" != "$ss_sskcp_port_tmp" ] && dbus set ssconf_basic_ss_sskcp_port_$index=$ss_sskcp_port_tmp && let i+=1
+		
+		local_ss_sskcp_server_tmp=$(dbus get ssconf_basic_ss_sskcp_server_$index)
+		[ "$local_ss_sskcp_server_tmp" != "$ss_sskcp_server_tmp" ] && dbus set ssconf_basic_ss_sskcp_server_$index=$ss_sskcp_server_tmp && let i+=1
+
+		local_ss_ssudp_server_tmp=$(dbus get ssconf_basic_ss_ssudp_server_$index)
+		[ "$local_ss_ssudp_server_tmp" != "$ss_ssudp_server_tmp" ] && dbus set ssconf_basic_ss_ssudp_server_$index=$ss_ssudp_server_tmp && let i+=1
+
+		local_ss_ssudp_port_tmp=$(dbus get ssconf_basic_ss_ssudp_port_$index)
+		[ "$local_ss_ssudp_port_tmp" != "$ss_ssudp_port_tmp" ] && dbus set ssconf_basic_ss_ssudp_port_$index=$ss_ssudp_port_tmp && let i+=1
+
+		local_ss_ssudp_mtu_tmp=$(dbus get ssconf_basic_ss_ssudp_mtu_$index)
+		[ "$local_ss_ssudp_mtu_tmp" != "$ss_ssudp_mtu_tmp" ] && dbus set ssconf_basic_ss_ssudp_mtu_$index=$ss_ssudp_mtu_tmp && let i+=1
+		
+		local_ss_udp_opts_tmp=$(dbus get ssconf_basic_ss_udp_opts_$index)
+		[ "$local_ss_udp_opts_tmp" != "$ss_udp_opts_tmp" ] && dbus set ssconf_basic_ss_udp_opts_$index=$ss_udp_opts_tmp && let i+=1
+
+		if [ "$i" -gt "0" ];then
+			echo_date "修改 Trojan Go节点：【$remarks】" && let updatenum6+=1 && let updatenum+=1
+		else
+			echo_date "Trojan Go节点：【$remarks】 参数未发生变化，跳过！"
+		fi
+	fi
+}
 
 del_none_exist(){
 # "删除订阅服务器已经不存在的节点"
@@ -1024,8 +1183,10 @@ del_none_exist(){
 					let delnum3+=1
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "3" ] && [ "`dbus get ssconf_basic_v2ray_protocol_$localindex`" = "vless" ];then	 #vless
 					let delnum5+=1
-				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ];then	#trojan
-					let delnum4+=1		
+				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ] && [ "`dbus get ssconf_basic_trojan_binary_$localindex`" = "Trojan" ];then	 #trojan
+					let delnum4+=1	
+				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ] && [ "`dbus get ssconf_basic_trojan_binary_$localindex`" = "Trojan-Go" ];then	 #trojan go
+					let delnum6+=1			
 				fi
 				
 					dbus remove ssconf_basic_group_$localindex
@@ -1054,6 +1215,8 @@ del_none_exist(){
 					dbus remove ssconf_basic_ss_v2ray_$localindex
 					dbus remove ssconf_basic_ss_v2ray_plugin_$localindex
 					dbus remove ssconf_basic_ss_v2ray_plugin_opts_$localindex
+					dbus remove ssconf_basic_trojan_binary_$localindex	
+					dbus remove ssconf_basic_trojan_network_$localindex											
 					dbus remove ssconf_basic_trojan_sni_$localindex
 					dbus remove ssconf_basic_type_$localindex
 					dbus remove ssconf_basic_use_kcp_$localindex
@@ -1144,7 +1307,9 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" ] && dbus set ssconf_basic_v2ray_mux_enable_"$y"="$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" && dbus remove ssconf_basic_v2ray_mux_enable_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" ] && dbus set ssconf_basic_v2ray_mux_concurrency_"$y"="$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" && dbus remove ssconf_basic_v2ray_mux_concurrency_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_json_$nu)" ] && dbus set ssconf_basic_v2ray_json_"$y"="$(dbus get ssconf_basic_v2ray_json_$nu)" && dbus remove ssconf_basic_v2ray_json_$nu
-				[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_"$y"="$(ssconf_basic_trojan_sni_$nu)" && dbus remove sssconf_basic_trojan_sni_$nu
+				[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && dbus set ssconf_basic_trojan_binary_"$y"="$(ssconf_basic_trojan_binary_$nu)" && dbus remove ssconf_basic_trojan_binary_$nu
+				[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && dbus set ssconf_basic_trojan_network_"$y"="$(ssconf_basic_trojan_network_$nu)" && dbus remove ssconf_basic_trojan_network_$nu
+				[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_"$y"="$(ssconf_basic_trojan_sni_$nu)" && dbus remove ssconf_basic_trojan_sni_$nu
 				[ -n "$(dbus get ssconf_basic_type_$nu)" ] && dbus set ssconf_basic_type_"$y"="$(dbus get ssconf_basic_type_$nu)" && dbus remove ssconf_basic_type_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_protocol_$nu)" ] && dbus set ssconf_basic_v2ray_protocol_"$y"="$(dbus get ssconf_basic_v2ray_protocol_$nu)" && dbus remove ssconf_basic_v2ray_protocol_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && dbus set ssconf_basic_v2ray_xray_"$y"="$(dbus get ssconf_basic_v2ray_xray_$nu)" && dbus remove ssconf_basic_v2ray_xray_$nu
@@ -1216,7 +1381,7 @@ get_oneline_rule_now(){
 	
 	if [ "$ss_basic_online_links_goss" == "1" ];then
 		open_socks_23456
-		socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray"`
+		socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go"`
 		if [ -n "$socksopen_b" ];then
 			echo_date "使用$(get_type_name $ss_basic_type)提供的socks代理网络下载..."
 			curl --connect-timeout 8 -s -L --socks5-hostname 127.0.0.1:23456 $ssr_subscribe_link > /tmp/ssr_subscribe_file.txt
@@ -1269,7 +1434,7 @@ get_oneline_rule_now(){
 		fi
 
 
-		NODE_NU_online=$(</tmp/ssr_subscribe_file_temp1.txt grep -cE '^ss://|^ssr://|^vmess://|^trojan://|^vless://')
+		NODE_NU_online=$(</tmp/ssr_subscribe_file_temp1.txt grep -cE '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://')
 		echo_date "检测到ShadowSocks节点格式，共计${NODE_NU_online}个节点..."
 
 		if [  "$NODE_NU_online" = "0" ] ; then
@@ -1285,15 +1450,15 @@ get_oneline_rule_now(){
 			remarks='AutoSuB'
 
 			# 提取节点
-			grep -E '^ss://|^ssr://|^vmess://|^trojan://|^vless://' /tmp/ssr_subscribe_file_temp1.txt >  /tmp/ssr_subscribe_file_temp2.txt &&  mv  /tmp/ssr_subscribe_file_temp2.txt  /tmp/ssr_subscribe_file_temp1.txt
+			grep -E '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://' /tmp/ssr_subscribe_file_temp1.txt >  /tmp/ssr_subscribe_file_temp2.txt &&  mv  /tmp/ssr_subscribe_file_temp2.txt  /tmp/ssr_subscribe_file_temp1.txt
 			
-			# 检测ss ssr vmess trojan vless
+			# 检测ss ssr vmess trojan vless trojan-go
 			while read -r line
 			do 
 				link=""
 				decode_link=""
 
-				NODE_FORMAT=$(echo $line | awk -F":" '{print $1}')
+				NODE_FORMAT=$(echo $line | awk -F":" '{print $1}' | sed 's/-/_/')
 				link=$(echo $line | cut -f3-  -d/)
 
 				if [ -n "$NODE_FORMAT" ] && [ -n "$link" ]; then
@@ -1327,6 +1492,9 @@ get_oneline_rule_now(){
 			 fi
 			 if [ "${addnum5}${updatenum5}${delnum5}" != "000" ];then 
 			 echo_date " 新增VLESS节点 $addnum5 个，修改 $updatenum5 个，删除 $delnum5 个；"
+			 fi
+			 if [ "${addnum6}${updatenum5}${delnum6}" != "000" ];then 
+			 echo_date " 新增Trojan-Go节点 $addnum6 个，修改 $updatenum6 个，删除 $delnum6 个；"
 			 fi
 			echo_date "现共有手动添加的ShadowSocks节点：$USER_ADD 个；"
 			echo_date "现共有来自订阅的ShadowSocks节点：$ONLINE_GET 个；"
@@ -1371,9 +1539,9 @@ start_update(){
 		echo_date "				服务器订阅程序(Shell by stones & sadog)"
 		echo_date "==================================================================="
 		echo_date "从 $url 获取订阅..."
-		addnum=0 ; addnum1=0 ; addnum2=0 ; addnum3=0 ; addnum4=0 ; addnum5=0
-		updatenum=0 ; updatenum1=0 ; updatenum2=0 ; updatenum3=0 ; updatenum4=0 ; updatenum5=0
-		delnum=0 ; delnum1=0 ; delnum2=0 ; delnum3=0 ; delnum4=0 ; delnum5=0
+		addnum=0 ; addnum1=0 ; addnum2=0 ; addnum3=0 ; addnum4=0 ; addnum5=0; addnum6=0
+		updatenum=0 ; updatenum1=0 ; updatenum2=0 ; updatenum3=0 ; updatenum4=0 ; updatenum5=0;updatenum6=0
+		delnum=0 ; delnum1=0 ; delnum2=0 ; delnum3=0 ; delnum4=0 ; delnum5=0; delnum6=0
 		
 		get_oneline_rule_now "$url"
 
@@ -1451,6 +1619,8 @@ start_update(){
 						dbus remove ssconf_basic_ss_v2ray_$conf_nu
 						dbus remove ssconf_basic_ss_v2ray_plugin_$conf_nu
 						dbus remove ssconf_basic_ss_v2ray_plugin_opts_$conf_nu
+						dbus remove ssconf_basic_trojan_binary_$conf_nu
+						dbus remove ssconf_basic_trojan_network_$conf_nu
 						dbus remove ssconf_basic_trojan_sni_$conf_nu
 						dbus remove ssconf_basic_type_$conf_nu
 						dbus remove ssconf_basic_use_kcp_$conf_nu
@@ -1528,7 +1698,7 @@ start_update(){
 add() {
 	echo_date "==================================================================="
 	usleep 250000
-	echo_date 通过SS/SSR/v2ray链接添加节点...
+	echo_date 通过SS/SSR/v2ray/Trojan链接添加节点...
 	rm -rf /tmp/ssr_subscribe_file.txt >/dev/null 2>&1
 	rm -rf /tmp/ssr_subscribe_file_temp1.txt >/dev/null 2>&1
 	rm -rf /tmp/all_localservers >/dev/null 2>&1
@@ -1544,7 +1714,7 @@ add() {
 			link=""
 			decode_link=""
 
-			NODE_FORMAT=$(echo $ssrlink | awk -F":" '{print $1}')
+			NODE_FORMAT=$(echo $ssrlink | awk -F":" '{print $1}' | sed 's/-/_/')
 			#echo $NODE_FORMAT
 			link=$(echo $ssrlink | cut -f3-  -d/)
 			#echo $link
@@ -1605,6 +1775,8 @@ remove_online(){
 		dbus remove ssconf_basic_ss_v2ray_$remove_nu
 		dbus remove ssconf_basic_ss_v2ray_plugin_$remove_nu
 		dbus remove ssconf_basic_ss_v2ray_plugin_opts_$remove_nu
+		dbus remove ssconf_basic_trojan_binary_$remove_nu
+		dbus remove ssconf_basic_trojan_network_$remove_nu
 		dbus remove ssconf_basic_trojan_sni_$remove_nu
 		dbus remove ssconf_basic_type_$remove_nu
 		dbus remove ssconf_basic_use_kcp_$remove_nu

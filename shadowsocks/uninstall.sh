@@ -44,6 +44,8 @@ rm -rf /koolshare/bin/udp2raw
 rm -rf /koolshare/bin/speeder*
 rm -rf /koolshare/bin/v2ray
 rm -rf /koolshare/bin/v2ctl
+rm -rf /koolshare/bin/xray
+rm -rf /koolshare/bin/trojan-go
 rm -rf /koolshare/bin/jitterentropy-rngd
 rm -rf /koolshare/bin/haveged
 rm -rf /koolshare/bin/https_dns_proxy

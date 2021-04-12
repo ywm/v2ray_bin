@@ -345,6 +345,122 @@ rm -rf /tmp/tmp_v2ray.json
 		EOF
 }
 
+
+create_trojango_json(){
+	rm -rf /tmp/tmp_trojango.json
+	rm -rf /tmp/tmp_trojango2.json
+	if [ "$(eval echo \$ssconf_basic_trojan_network_$nu)" == "1" ]; then
+		[ -n "$(eval echo \$ssconf_basic_v2ray_network_path_$nu)" ] && local ss_basic_v2ray_network_path=$(echo "/"$(eval echo \$ssconf_basic_v2ray_network_path_$nu)"" | sed 's,//,/,')
+		[ -n "$(eval echo \$ssconf_basic_v2ray_network_host_$nu)" ] && local ss_basic_v2ray_network_host=$(eval echo \$ssconf_basic_v2ray_network_host_$nu)
+		local ws="{ \"enabled\": true,
+					\"path\":  \"$ss_basic_v2ray_network_path\",
+					\"host\":  \"$ss_basic_v2ray_network_host\"
+					}"
+	else
+		local ws="{ \"enabled\": false,
+					\"path\":  \"\",
+					\"host\":  \"\"
+					}"
+	fi
+		echo_date 生成Trojan Go配置文件...
+		 #trojan go
+		 # 3335 for nat  
+		cat >"/tmp/tmp_trojango.json" <<-EOF
+			{
+				"run_type": "nat",
+				"local_addr": "0.0.0.0",
+				"local_port": 3335,
+				"remote_addr": "$array1",
+				"remote_port": $array2,
+				"log_level": 5,
+				"log_file": "/tmp/trojan-go_log.log",
+				"password": [
+				"$array3"
+				],
+				"disable_http_check": false,
+				"udp_timeout": 60,
+				"ssl": {
+					"verify": true,
+					"verify_hostname": true,
+					"cert": "/rom/etc/ssl/certs/ca-certificates.crt",
+					"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+					"sni": "$(eval echo \$ssconf_basic_trojan_sni_$nu)",
+					"alpn": [
+					"http/1.1"
+					],
+					"session_ticket": true,
+					"reuse_session": true
+				},
+				"tcp": {
+					"no_delay": true,
+					"keep_alive": true,
+					"prefer_ipv4": true
+				},
+				"mux": {
+					"enabled": false,
+					"concurrency": 8,
+					"idle_timeout": 60
+				},
+				"websocket": $ws
+				,
+				"shadowsocks": {
+					"enabled": false,
+					"method": "AES-128-GCM",
+					"password": ""
+				}
+			}
+		EOF
+
+
+		 #  23458 for socks5  
+		cat >"/tmp/tmp_trojango2.json" <<-EOF
+			{
+				"run_type": "client",
+				"local_addr": "127.0.0.1",
+				"local_port": 23458,
+				"remote_addr": "$array1",
+				"remote_port": $array2,
+				"log_level": 5,
+				"log_file": "/tmp/trojan-go_log.log",
+				"password": [
+				"$array3"
+				],
+				"disable_http_check": false,
+				"udp_timeout": 60,
+				"ssl": {
+					"verify": true,
+					"verify_hostname": true,
+					"cert": "/rom/etc/ssl/certs/ca-certificates.crt",
+					"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+					"sni": "$(eval echo \$ssconf_basic_trojan_sni_$nu)",
+					"alpn": [
+					"http/1.1"
+					],
+					"session_ticket": true,
+					"reuse_session": true
+				},
+				"tcp": {
+					"no_delay": true,
+					"keep_alive": true,
+					"prefer_ipv4": true
+				},
+				"mux": {
+					"enabled": false,
+					"concurrency": 8,
+					"idle_timeout": 60
+				},
+				"websocket": $ws
+				,
+				"shadowsocks": {
+					"enabled": false,
+					"method": "AES-128-GCM",
+					"password": ""
+				}
+			}
+		EOF
+	
+}
+
 start_webtest(){
 	array1=`dbus get ssconf_basic_server_$nu`
 	array2=`dbus get ssconf_basic_port_$nu`
@@ -359,7 +475,8 @@ start_webtest(){
 	array11=`dbus get ssconf_basic_mode_$nu`
 	array12=`dbus get ssconf_basic_type_$nu`	
 	array13=`dbus get ssconf_basic_v2ray_protocol_$nu`
-	
+	array14=`dbus get ssconf_basic_trojan_binary_$nu`
+
 	if [ "$array10" != "" ];then
 		if [ "$array9" == "1" ];then
 			ARG_V2RAY_PLUGIN="--plugin v2ray-plugin --plugin-opts $array10"
@@ -409,7 +526,7 @@ start_webtest(){
 			kill -9 `ps|grep xray|grep 'tmp_v2ray'|awk '{print $1}'` >/dev/null 2>&1	
 			rm -rf /tmp/tmp_v2ray.json
 			
-		elif [ "$array12" == "4" ];then   #trojan
+		elif [ "$array12" == "4" -a "$array14" == "Trojan" ];then   #trojan
 			create_trojan_json 
 			xray run -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &
 			sleep 3
@@ -417,7 +534,19 @@ start_webtest(){
 			sleep 1
 			dbus set ssconf_basic_webtest_$nu=$result
 			kill -9 `ps|grep xray|grep 'tmp_v2ray'|awk '{print $1}'` >/dev/null 2>&1	
-			rm -rf /tmp/tmp_v2ray.json				
+			rm -rf /tmp/tmp_v2ray.json	
+
+		elif [ "$array12" == "4" -a "$array14" == "Trojan-Go" ];then   #trojan go
+			create_trojango_json 
+			trojan-go -config=/tmp/tmp_trojango.json >/dev/null 2>&1 &
+			trojan-go -config=/tmp/tmp_trojango2.json >/dev/null 2>&1 &
+			sleep 3
+			result=`curl -o /dev/null -s -w %{time_total}:%{speed_download} --connect-timeout 15 --socks5-hostname 127.0.0.1:23458 $ssconf_basic_test_domain`
+			sleep 1
+			dbus set ssconf_basic_webtest_$nu=$result
+			kill -9 `ps|grep 'trojan-go' | grep 'tmp_trojango'|awk '{print $1}'` >/dev/null 2>&1	
+			kill -9 `ps|grep 'trojan-go' | grep 'tmp_trojango2'|awk '{print $1}'` >/dev/null 2>&1
+			rm -rf /tmp/tmp_trojango.json /tmp/tmp_trojango2.json	 			
 		fi
 
 	else
