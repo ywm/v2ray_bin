@@ -585,7 +585,7 @@ function verifyFields(r) {
 	var http_on = E("ss_basic_v2ray_network").value == "tcp" && E("ss_basic_v2ray_headtype_tcp").value == "http";
 	//trojan-go also need use ws paramter
 	var host_on = E("ss_basic_v2ray_network").value == "ws" || E("ss_basic_v2ray_network").value == "h2" || http_on || E("ss_basic_trojan_network").value == "1" ;
-	var path_on = E("ss_basic_v2ray_network").value == "ws" || E("ss_basic_v2ray_network").value == "h2" || E("ss_basic_trojan_network").value == "1";
+	var path_on = E("ss_basic_v2ray_network").value == "ws" || E("ss_basic_v2ray_network").value == "h2" || E("ss_basic_trojan_network").value == "1" || E("ss_basic_v2ray_network").value == "kcp";
 	var tls_on = E("ss_basic_v2ray_network_security").value == "xtls" || E("ss_basic_v2ray_network_security").value == "tls";
 	var xtls_on = E("ss_basic_v2ray_network_security").value == "xtls";
 	showhide("pass_tr", (!v2ray_on));
@@ -601,10 +601,10 @@ function verifyFields(r) {
 	showhide("v2ray_network_basic_tr", (v2ray_on && json_off));
 	showhide("v2ray_headtype_tcp_basic_tr", (v2ray_on && json_off && E("ss_basic_v2ray_network").value == "tcp"));
 	showhide("v2ray_headtype_kcp_basic_tr", (v2ray_on && json_off && E("ss_basic_v2ray_network").value == "kcp"));
-	showhide("v2ray_network_host_basic_tr", (v2ray_on && json_off&& host_on));
+	showhide("v2ray_network_host_basic_tr", ((v2ray_on && json_off && host_on) || (trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go" && host_on)));
+	showhide("v2ray_network_path_basic_tr", ((v2ray_on && json_off && path_on) || (trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go" && path_on)));
 	showhide("v2ray_network_tlshost_basic_tr", (v2ray_on && json_off && tls_on));
 	showhide("v2ray_network_flow_basic_tr", (v2ray_on && json_off && xtls_on));
-	showhide("v2ray_network_path_basic_tr", (v2ray_on && json_off && path_on));
 	showhide("v2ray_network_security_basic_tr", (v2ray_on && json_off));
 	showhide("v2ray_mux_enable_basic_tr", (v2ray_on && json_off));
 	showhide("v2ray_mux_concurrency_basic_tr", (v2ray_on && json_off && E("ss_basic_v2ray_mux_enable").checked));
@@ -614,8 +614,8 @@ function verifyFields(r) {
 	showhide("trojan_binary_basic_tr", trojan_on);
 	showhide("trojan_network_basic_tr", (trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go"));
 	showhide("trojan_sni_basic_tr", trojan_on);
-	showhide("v2ray_network_host_basic_tr", (trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go" && host_on));
-	showhide("v2ray_network_path_basic_tr", (trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go" && path_on));
+	//showhide("v2ray_network_host_basic_tr", (trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go" && host_on));
+	//showhide("v2ray_network_path_basic_tr", (trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go" && path_on));
 	
 	// dns pannel
 	showhide("dns_plan_foreign", !koolgame_on);
@@ -683,7 +683,7 @@ function verifyFields(r) {
 			E('v2ray_json_tr').style.display = "none";
 			var http_on_2 = E("ss_node_table_v2ray_network").value == "tcp" && E("ss_node_table_v2ray_headtype_tcp").value == "http";
 			var host_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || http_on_2;
-			var path_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2";
+			var path_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || E("ss_node_table_v2ray_network").value == "kcp" ;
 			var tls_on_2 = E("ss_node_table_v2ray_network_security").value == "tls" || E("ss_node_table_v2ray_network_security").value == "xtls";
 			var xtls_on_2 = E("ss_node_table_v2ray_network_security").value == "xtls";
 			showhide("v2ray_headtype_tcp_tr", (E("ss_node_table_v2ray_network").value == "tcp"));
@@ -1394,7 +1394,7 @@ function tabclickhandler(_type) {
 			E('v2ray_json_tr').style.display = "none";
 			var http_on_2 = E("ss_node_table_v2ray_network").value == "tcp" && E("ss_node_table_v2ray_headtype_tcp").value == "http";
 			var host_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || http_on_2;
-			var path_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2"
+			var path_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || E("ss_node_table_v2ray_network").value == "kcp";
 			var tlshost_on_2 = E("ss_node_table_v2ray_network_security").value == "tls" || E("ss_node_table_v2ray_network_security").value == "xtls"
 			var xtlshost_on_2 = E("ss_node_table_v2ray_network_security").value == "xtls"
 			showhide("v2ray_headtype_tcp_tr", (E("ss_node_table_v2ray_network").value == "tcp"));
@@ -3746,7 +3746,7 @@ function set_cron(action) {
 																</td>
 															</tr>
 															<tr id="v2ray_network_path_tr" style="display: none;">
-																<th width="35%">路径 (path)</th>
+																<th width="35%">路径 (path) | kcp seed</th>
 																<td>
 																	<input type="text" name="ss_node_table_v2ray_network_path" id="ss_node_table_v2ray_network_path"  class="input_ss_table" placeholder="没有请留空" style="width:342px;" maxlength="300" value=""/>
 																</td>
@@ -4102,7 +4102,7 @@ function set_cron(action) {
 												</tr>
 												<tr id="v2ray_network_path_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(29)"><font color="#ffcc00">&nbsp;&nbsp;* 路径 (path)</font></a>
+														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(29)"><font color="#ffcc00">&nbsp;&nbsp;* 路径 (path) | kcp seed</font></a>
 													</th>
 													<td>
 														<input type="text" name="ss_basic_v2ray_network_path" id="ss_basic_v2ray_network_path" class="input_ss_table"  placeholder="没有请留空" maxlength="300" value=""/>

@@ -1314,6 +1314,7 @@ create_v2ray_json(){
 				\"congestion\": false,
 				\"readBufferSize\": 2,
 				\"writeBufferSize\": 2,
+				\"seed\": \"$ss_basic_v2ray_network_path\",
 				\"header\": {
 				\"type\": \"$ss_basic_v2ray_headtype_kcp\",
 				\"request\": null,

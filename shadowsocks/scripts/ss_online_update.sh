@@ -430,7 +430,6 @@ update_ss_config(){
 # ssr 节点添加解析并更新
 ##################################################################################################
 add_ssr_servers(){
-	usleep 250000
 	ssrindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
 	dbus set ssconf_basic_name_$ssrindex=$remarks
 	[ -z "$1" ] && dbus set ssconf_basic_group_$ssrindex=$group
@@ -573,7 +572,7 @@ get_vmess_config(){
 			;;
 		kcp)
 			v2ray_host=""
-			v2ray_path=""
+			v2ray_path=$(echo "$decode_link" | jq -r .path)
 			;;
 		ws)
 			v2ray_host_tmp=$(echo "$decode_link" |jq -r .host)
@@ -621,7 +620,6 @@ get_vmess_config(){
 }
 
 add_vmess_servers(){
-	usleep 250000
 	v2rayindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
 	[ -z "$1" ] && dbus set ssconf_basic_group_$v2rayindex=$v2ray_group
 	dbus set ssconf_basic_type_$v2rayindex=3
@@ -647,6 +645,7 @@ add_vmess_servers(){
 	kcp)
 		# kcp协议设置【 kcp伪装类型 (type)】
 		dbus set ssconf_basic_v2ray_headtype_kcp_$v2rayindex=$v2ray_type
+		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$v2rayindex=$v2ray_path
 		;;
 	ws|h2)
 		# ws/h2协议设置【 伪装域名 (host))】和【路径 (path)】
@@ -694,7 +693,9 @@ update_vmess_config(){
 		kcp)
 			# kcp协议
 			local_v2ray_type=$(dbus get ssconf_basic_v2ray_headtype_kcp_$index)
+			local_v2ray_path=$(dbus get ssconf_basic_v2ray_network_path_$index)
 			[ "$local_v2ray_type" != "$v2ray_type" ] && dbus set ssconf_basic_v2ray_headtype_kcp_$index=$v2ray_type && let i+=1
+			[ "$local_v2ray_path" != "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$index=$v2ray_path && let i+=1
 			;;
 		ws|h2)
 			# ws/h2协议
@@ -740,6 +741,8 @@ get_trojan_config(){
 	#20201024+++
 	sni=$(echo "$decode_link" | tr '?#&' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
 	peer=$(echo "$decode_link" | tr '?#&' '\n' | grep 'peer=' | awk -F'=' '{print $2}')
+	v2ray_net=0
+	binary="Trojan"
 #	echo_date "服务器：$server" >> $LOG_FILE
 #	echo_date "端口：$server_port" >> $LOG_FILE
 #	echo_date "密码：$password" >> $LOG_FILE
@@ -780,8 +783,9 @@ add_trojan_servers(){
 	dbus set ssconf_basic_port_$trojanindex=$server_port
 	dbus set ssconf_basic_password_$trojanindex=$password
 	dbus set ssconf_basic_type_$trojanindex="4"
-	dbus set ssconf_basic_trojan_binary_$trojanindex="Trojan"
+	dbus set ssconf_basic_trojan_binary_$trojanindex=$binary
 	dbus set ssconf_basic_trojan_sni_$trojanindex="$sni"
+	dbus set ssconf_basic_trojan_network_$trojanindex=$v2ray_net
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$trojanindex=$ss_kcp_opts_tmp
@@ -815,6 +819,12 @@ update_trojan_config(){
 		local_password=$(dbus get ssconf_basic_password_$index)
 		[ "$local_password" != "$password" ] && dbus set ssconf_basic_password_$index=$password && let i+=1
 
+		local_binary=$(dbus get ssconf_basic_trojan_binary_$index)
+		[ "$local_binary" != "$binary" ] && dbus set ssconf_basic_trojan_binary_$index=$binary && let i+=1
+		
+		local_v2ray_net=$(dbus get ssconf_basic_trojan_network_$index)
+		[ "$local_v2ray_net" != "$v2ray_net" ] && dbus set ssconf_basic_trojan_network_$index=$v2ray_net && let i+=1
+		
 		local_sni=$(dbus get ssconf_basic_trojan_sni_$index)
 		[ "$local_sni" != "$sni" ] && dbus set ssconf_basic_trojan_sni_$index=$sni && let i+=1
 
@@ -913,7 +923,6 @@ get_vless_config(){
 }
 
 add_vless_servers(){
-	usleep 250000
 	v2rayindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
 	[ -z "$1" ] && dbus set ssconf_basic_group_$v2rayindex=$vless_group
 	dbus set ssconf_basic_type_$v2rayindex=3
@@ -1035,7 +1044,7 @@ get_trojan_go_config(){
 	v2ray_path=$(echo "$decode_link" | tr '?&#' '\n' | grep 'path=' | awk -F'=' '{print $2}')
 	v2ray_host=$(echo "$decode_link" | tr '?&#' '\n' | grep 'host=' | awk -F'=' '{print $2}')
 	sni=$(echo "$decode_link" | tr '?&#' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
-
+	binary="Trojan-Go"
 
 	#20201024---
 	ss_kcp_support_tmp="0"
@@ -1076,12 +1085,11 @@ add_trojan_go_servers(){
 	dbus set ssconf_basic_port_$trojangoindex=$server_port
 	dbus set ssconf_basic_password_$trojangoindex=$password
 	dbus set ssconf_basic_type_$trojangoindex="4"
-	dbus set ssconf_basic_trojan_binary_$trojangoindex="Trojan-Go"
+	dbus set ssconf_basic_trojan_binary_$trojangoindex=$binary
 	dbus set ssconf_basic_trojan_network_$trojangoindex=$v2ray_net  
 	[ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$trojangoindex=$v2ray_host
 	[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$trojangoindex=$v2ray_path
 	dbus set ssconf_basic_trojan_sni_$trojangoindex="$sni"
-	
 	
 	dbus set ssconf_basic_ss_kcp_support_$trojangoindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojangoindex=$ss_udp_support_tmp
@@ -1116,6 +1124,9 @@ update_trojan_go_config(){
 		[ "$local_server_port" != "$server_port" ] && dbus set ssconf_basic_port_$index=$server_port && let i+=1
 		local_password=$(dbus get ssconf_basic_password_$index)
 		[ "$local_password" != "$password" ] && dbus set ssconf_basic_password_$index=$password && let i+=1
+		
+		local_binary=$(dbus get ssconf_basic_trojan_binary_$index)
+		[ "$local_binary" != "$binary" ] && dbus set ssconf_basic_trojan_binary_$index=$binary && let i+=1
 		
 		local_v2ray_net=$(dbus get ssconf_basic_trojan_network_$index)
 		[ "$local_v2ray_net" != "$v2ray_net" ] && dbus set ssconf_basic_trojan_network_$index=$v2ray_net && let i+=1
@@ -1800,7 +1811,6 @@ remove_online(){
 		dbus remove ssconf_basic_v2ray_xray_$remove_nu
 		dbus remove ssconf_basic_weight_$remove_nu
 	done
-	remove_node_gap
 }
 
 case $ss_online_action in
