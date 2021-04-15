@@ -69,51 +69,6 @@ get_latest_version_backup(){
 	exit 1
 }
 
-# get_latest_version_backup(){
-# 	rm -rf /tmp/xray_latest_info.txt
-# 	echo_date "检测xray最新版本..."
-# 	curl --connect-timeout 8 -s $url_back/latest.txt > /tmp/xray_latest_info.txt
-# 	if [ "$?" == "0" ];then
-# 		if [ -z "`cat /tmp/xray_latest_info.txt`" ];then
-# 			echo_date "获取xray最新版本信息失败！退出！"
-# 			echo_date "==================================================================="
-# 			echo XU6J03M6
-# 			exit 1
-# 		fi
-# 		if [ -n "`cat /tmp/xray_latest_info.txt|grep "404"`" ];then
-# 			echo_date "获取xray最新版本信息失败！退出！"
-# 			echo_date "==================================================================="
-# 			echo XU6J03M6
-# 			exit 1
-# 		fi
-# 		V2VERSION=`cat /tmp/xray_latest_info.txt | sed 's/v//g'`
-# 		echo_date "检测到xray最新版本：v$V2VERSION"
-# 		if [ ! -f "/koolshare/bin/xray" -o ! -f "/koolshare/bin/v2ctl" ];then
-# 			echo_date "xray安装文件丢失！重新下载！"
-# 			CUR_VER="0"
-# 		else
-# 			CUR_VER=`xray -version 2>/dev/null | head -n 1 | cut -d " " -f2 | sed 's/v//g'` || 0
-# 			echo_date "当前已安装xray版本：v$CUR_VER"
-# 		fi
-# 		COMP=`versioncmp $V2VERSION $CUR_VER`
-# 		if [ "$COMP" == "1" ];then
-# 			[ "$CUR_VER" != "0" ] && echo_date "xray已安装版本号低于最新版本，开始更新程序..."
-# 			update_now_backup v$V2VERSION
-# 		else
-# 			xray_LOCAL_VER=`/koolshare/bin/xray -version 2>/dev/null | head -n 1 | cut -d " " -f2`
-# 			xray_LOCAL_DATE=`/koolshare/bin/xray -version 2>/dev/null | head -n 1 | cut -d " " -f5`
-# 			[ -n "$xray_LOCAL_VER" ] && dbus set ss_basic_xray_version="$xray_LOCAL_VER"
-# 			[ -n "$xray_LOCAL_DATE" ] && dbus set ss_basic_xray_date="$xray_LOCAL_DATE"
-# 			echo_date "xray已安装版本已经是最新，退出更新程序!"
-# 		fi
-# 	else
-# 		echo_date "获取xray最新版本信息失败！请检查到你的网络！"
-# 		echo_date "==================================================================="
-# 		echo XU6J03M6
-# 		exit 1
-# 	fi
-# }
-
 update_now(){
 	rm -rf /tmp/xray
 	mkdir -p /tmp/xray && cd /tmp/xray
@@ -154,50 +109,6 @@ update_now_backup(){
 	echo XU6J03M6
 	exit 1
 }
-
-# update_now_backup(){
-# 	rm -rf /tmp/xray
-# 	mkdir -p /tmp/xray && cd /tmp/xray
-# 
-# 	echo_date "开始下载校验文件：md5sum.txt"
-# 	wget --no-check-certificate --timeout=20 -qO - $url_back/$1/md5sum.txt > /tmp/xray/md5sum.txt
-# 	if [ "$?" != "0" ];then
-# 		echo_date "md5sum.txt下载失败！"
-# 		md5sum_ok=0
-# 	else
-# 		md5sum_ok=1
-# 		echo_date "md5sum.txt下载成功..."
-# 	fi
-# 	
-# 	echo_date "开始下载xray程序"
-# 	wget --no-check-certificate --timeout=20 --tries=1 $url_back/$1/xray
-# 	if [ "$?" != "0" ];then
-# 		echo_date "xray下载失败！"
-# 		xray_ok=0
-# 	else
-# 		xray_ok=1
-# 		echo_date "xray程序下载成功..."
-# 	fi
-# 
-# 	echo_date "开始下载v2ctl程序"
-# 	wget --no-check-certificate --timeout=20 --tries=1 $url_back/$1/v2ctl
-# 	if [ "$?" != "0" ];then
-# 		echo_date "v2ctl下载失败！"
-# 		v2ctl_ok=0
-# 	else
-# 		v2ctl_ok=1
-# 		echo_date "v2ctl程序下载成功..."
-# 	fi
-# 
-# 	if [ "$md5sum_ok=1" ] && [ "$xray_ok=1" ] && [ "$v2ctl_ok=1" ];then
-# 		check_md5sum
-# 	else
-# 		echo_date "下载失败，请检查你的网络！"
-# 		echo_date "==================================================================="
-# 		echo XU6J03M6
-# 		exit 1
-# 	fi
-# }
 
 check_md5sum(){
 	cd /tmp/xray

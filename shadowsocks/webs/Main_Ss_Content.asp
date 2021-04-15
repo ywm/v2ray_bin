@@ -1243,6 +1243,7 @@ function tabclickhandler(_type) {
 		E('v2ray_headtype_kcp_tr').style.display = "none";
 		E('v2ray_network_path_tr').style.display = "none";
 		E('v2ray_network_host_tr').style.display = "none";
+		E('v2ray_network_tlshost_tr').style.display = "none";
 		E('v2ray_network_security_tr').style.display = "none";
 		E('v2ray_mux_enable_tr').style.display = "none";
 		E('v2ray_mux_concurrency_tr').style.display = "none";
@@ -1279,6 +1280,7 @@ function tabclickhandler(_type) {
 		E('v2ray_headtype_kcp_tr').style.display = "none";
 		E('v2ray_network_path_tr').style.display = "none";
 		E('v2ray_network_host_tr').style.display = "none";
+		E('v2ray_network_tlshost_tr').style.display = "none";
 		E('v2ray_network_security_tr').style.display = "none";
 		E('v2ray_mux_enable_tr').style.display = "none";
 		E('v2ray_mux_concurrency_tr').style.display = "none";
@@ -1313,6 +1315,7 @@ function tabclickhandler(_type) {
 		E('v2ray_headtype_kcp_tr').style.display = "none";
 		E('v2ray_network_path_tr').style.display = "none";
 		E('v2ray_network_host_tr').style.display = "none";
+		E('v2ray_network_tlshost_tr').style.display = "none";
 		E('v2ray_network_security_tr').style.display = "none";
 		E('v2ray_mux_enable_tr').style.display = "none";
 		E('v2ray_mux_concurrency_tr').style.display = "none";

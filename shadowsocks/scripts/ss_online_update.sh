@@ -159,9 +159,9 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" ] && echo dbus set ssconf_basic_v2ray_mux_enable_$q=$(dbus get ssconf_basic_v2ray_mux_enable_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" ] && echo dbus set ssconf_basic_v2ray_mux_concurrency_$q=$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_json_$nu)" ] && echo dbus set ssconf_basic_v2ray_json_$q=$(dbus get ssconf_basic_v2ray_json_$nu) >> /tmp/ss_conf.sh
-		[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && dbus set ssconf_basic_trojan_binary_$q=$(ssconf_basic_trojan_binary_$nu)  >> /tmp/ss_conf.sh
-		[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && dbus set ssconf_basic_trojan_network_$q=$(ssconf_basic_trojan_network_$nu)  >> /tmp/ss_conf.sh
-		[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_$q=$(ssconf_basic_trojan_sni_$nu)  >> /tmp/ss_conf.sh	
+		[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && echo dbus set ssconf_basic_trojan_binary_$q=$(dbus get ssconf_basic_trojan_binary_$nu)  >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && echo dbus set ssconf_basic_trojan_network_$q=$(dbus get ssconf_basic_trojan_network_$nu)  >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && echo dbus set ssconf_basic_trojan_sni_$q=$(dbus get ssconf_basic_trojan_sni_$nu)  >> /tmp/ss_conf.sh	
 		[ -n "$(dbus get ssconf_basic_type_$nu)" ] && echo dbus set ssconf_basic_type_$q=$(dbus get ssconf_basic_type_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_protocol_$nu)" ] && echo dbus set ssconf_basic_v2ray_protocol_$q=$(dbus get ssconf_basic_v2ray_protocol_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && echo dbus set ssconf_basic_v2ray_xray_$q=$(dbus get ssconf_basic_v2ray_xray_$nu) >> /tmp/ss_conf.sh
@@ -548,34 +548,34 @@ get_vmess_config(){
 	fi
 	#decode_link="$1"
 	v2ray_group="$2"
-	v2ray_v=$(echo "$decode_link" | jq -r .v)
-	v2ray_ps=$(echo "$decode_link" | jq -r .ps | sed 's/[ \t]*//g')
-	v2ray_add=$(echo "$decode_link" | jq -r .add | sed 's/[ \t]*//g')
-	v2ray_port=$(echo "$decode_link" | jq -r .port | sed 's/[ \t]*//g')
-	v2ray_id=$(echo "$decode_link" | jq -r .id | sed 's/[ \t]*//g')
-	v2ray_aid=$(echo "$decode_link" | jq -r .aid | sed 's/[ \t]*//g')
-	v2ray_net=$(echo "$decode_link" | jq -r .net)
-	v2ray_type=$(echo "$decode_link" | jq -r .type)
-	v2ray_tls_tmp=$(echo "$decode_link" | jq -r .tls)
+	v2ray_v=$(echo "$decode_link" | sed -E 's/.*"v":"?([^,"]*)"?.*/\1/')
+	v2ray_ps=$(echo "$decode_link" | sed -E 's/.*"ps":"?([^,"]*)"?.*/\1/')
+	v2ray_add=$(echo "$decode_link" | sed 's/[ \t]*//g' | sed -E 's/.*"add":"?([^,"]*)"?.*/\1/')
+	v2ray_port=$(echo "$decode_link" | sed -E 's/.*"port":"?([^,"]*)"?.*/\1/')
+	v2ray_id=$(echo "$decode_link" | sed -E 's/.*"id":"?([^,"]*)"?.*/\1/')
+	v2ray_aid=$(echo "$decode_link" | sed -E 's/.*"aid":"?([^,"]*)"?.*/\1/')
+	v2ray_net=$(echo "$decode_link" | sed -E 's/.*"net":"?([^,"]*)"?.*/\1/')
+	v2ray_type=$(echo "$decode_link" | sed -E 's/.*"type":"?([^,"]*)"?.*/\1/')
+	v2ray_tls_tmp=$(echo "$decode_link" | sed -E 's/.*"tls":"?([^,"]*)"?.*/\1/')
 	[ "$v2ray_tls_tmp"x == "tls"x ] && v2ray_tls="tls" || v2ray_tls="none"
 	
 	if [ "$v2ray_v" == "2" ];then
 		#echo_date "new format"
-		v2ray_path=$(echo "$decode_link" |jq -r .path)
-		v2ray_host=$(echo "$decode_link" |jq -r .host)
+		v2ray_path=$(echo "$decode_link" | sed -E 's/.*"path":"?([^,"]*)"?.*/\1/')
+		v2ray_host=$(echo "$decode_link" | sed -E 's/.*"host":"?([^,"]*)"?.*/\1/')
 	else
 		#echo_date "old format"
 		case $v2ray_net in
 		tcp)
-			v2ray_host=$(echo "$decode_link" |jq -r .host)
+			v2ray_host=$(echo "$decode_link" | sed -E 's/.*"host":"?([^,"]*)"?.*/\1/')
 			v2ray_path=""
 			;;
 		kcp)
 			v2ray_host=""
-			v2ray_path=$(echo "$decode_link" | jq -r .path)
+			v2ray_path=$(echo "$decode_link" | sed -E 's/.*"path":"?([^,"]*)"?.*/\1/')
 			;;
 		ws)
-			v2ray_host_tmp=$(echo "$decode_link" |jq -r .host)
+			v2ray_host_tmp=$(echo "$decode_link" | sed -E 's/.*"host":"?([^,"]*)"?.*/\1/')
 			if [ -n "$v2ray_host_tmp" ];then
 				format_ws=`echo $v2ray_host_tmp|grep -E ";"`
 				if [ -n "$format_ws" ];then
@@ -589,7 +589,7 @@ get_vmess_config(){
 			;;
 		h2)
 			v2ray_host=""
-			v2ray_path=$(echo "$decode_link" |jq -r .path)
+			v2ray_path=$(echo "$decode_link" | sed -E 's/.*"path":"?([^,"]*)"?.*/\1/')
 			;;
 		esac
 	fi
@@ -1318,9 +1318,9 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" ] && dbus set ssconf_basic_v2ray_mux_enable_"$y"="$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" && dbus remove ssconf_basic_v2ray_mux_enable_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" ] && dbus set ssconf_basic_v2ray_mux_concurrency_"$y"="$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" && dbus remove ssconf_basic_v2ray_mux_concurrency_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_json_$nu)" ] && dbus set ssconf_basic_v2ray_json_"$y"="$(dbus get ssconf_basic_v2ray_json_$nu)" && dbus remove ssconf_basic_v2ray_json_$nu
-				[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && dbus set ssconf_basic_trojan_binary_"$y"="$(ssconf_basic_trojan_binary_$nu)" && dbus remove ssconf_basic_trojan_binary_$nu
-				[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && dbus set ssconf_basic_trojan_network_"$y"="$(ssconf_basic_trojan_network_$nu)" && dbus remove ssconf_basic_trojan_network_$nu
-				[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_"$y"="$(ssconf_basic_trojan_sni_$nu)" && dbus remove ssconf_basic_trojan_sni_$nu
+				[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && dbus set ssconf_basic_trojan_binary_"$y"="$(dbus get ssconf_basic_trojan_binary_$nu)" && dbus remove ssconf_basic_trojan_binary_$nu
+				[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && dbus set ssconf_basic_trojan_network_"$y"="$(dbus get ssconf_basic_trojan_network_$nu)" && dbus remove ssconf_basic_trojan_network_$nu
+				[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_"$y"="$(dbus get ssconf_basic_trojan_sni_$nu)" && dbus remove ssconf_basic_trojan_sni_$nu
 				[ -n "$(dbus get ssconf_basic_type_$nu)" ] && dbus set ssconf_basic_type_"$y"="$(dbus get ssconf_basic_type_$nu)" && dbus remove ssconf_basic_type_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_protocol_$nu)" ] && dbus set ssconf_basic_v2ray_protocol_"$y"="$(dbus get ssconf_basic_v2ray_protocol_$nu)" && dbus remove ssconf_basic_v2ray_protocol_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && dbus set ssconf_basic_v2ray_xray_"$y"="$(dbus get ssconf_basic_v2ray_xray_$nu)" && dbus remove ssconf_basic_v2ray_xray_$nu
@@ -1826,6 +1826,7 @@ case $ss_online_action in
 	set_lock
 	detect
 	remove_online
+	remove_node_gap
 	unset_lock
 	;;
 2)
