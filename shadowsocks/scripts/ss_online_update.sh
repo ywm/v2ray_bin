@@ -282,7 +282,7 @@ get_ss_config(){
 		password=$(echo $password | base64_encode)
    else
 		paraminfo=$(base64decode_link `echo -n "$decode_link" | awk -F'#' '{print $1}'`)
-		server=$(echo "$paraminfo" |awk -F'[@:]' '{print $(NF-1}')
+		server=$(echo "$paraminfo" |awk -F'[@:]' '{print $(NF-1)}')
 		server_port=$(echo "$paraminfo" |awk -F'[:]' '{print $NF}')
 	#   首段的加密方式跟密码进行解码，method_password=aes-128-gcm:VXPipi29nxMO
 	#	method_password=$(echo "$decode_link" |awk -F'[@:]' '{print $1}' | sed 's/-/+/g; s/_/\//g')
