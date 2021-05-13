@@ -629,6 +629,7 @@ start_dns(){
 			sed '/^#/d /^$/d' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
 		#fi
 		smartdns -c /tmp/smartdns.conf >/dev/null 2>&1 &
+		start_sslocal
 	elif [ "$ss_dns_china" == "13" ] && [ "$ss_foreign_dns" != "9" ]; then
 		# 国内启用SmartDNS，国外不启用SmartDNS （此情况下，如果是gfwlist模式则不用cdn.conf；如果是大陆白名单模式则是根据国外DNS的选择而决定是否使用cdn.conf）
 		echo_date "开启SmartDNS，用于DNS解析..."
@@ -649,6 +650,7 @@ start_dns(){
 			sed '/^#/d /^$/d /china/d' /koolshare/ss/rules/smartdns_template.conf > /tmp/smartdns.conf
 		#fi
 		smartdns -c /tmp/smartdns.conf >/dev/null 2>&1 &
+		start_sslocal
 	fi
 
 	# direct
