@@ -10,7 +10,7 @@ this project will update bin and package for arm_380_v5
 * 支持混合节点订阅，
 * 支持同时订阅多个链接，回车隔开，
 * 支持ss:// vless:// trojan:// trojan-go://格式订阅和导入，
-* 支持smartDNS，
+* 支持smartDNS (不熟悉配置请勿选择)，
 * 支持在线更新
 
 目前xray已经可以完全替代v2ray了，xray支持vmess，vless和trojan。  
