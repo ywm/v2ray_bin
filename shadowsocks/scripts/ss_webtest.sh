@@ -486,10 +486,18 @@ start_webtest(){
 	fi
 	
 	if [ "$array11" == "1" ] || [ "$array11" == "2" ] || [ "$array11" == "3" ] || [ "$array11" == "5" ];then
+       # Resolve domain name to IP for SS and SSR
+		if [ "$array12" == "1" ] || [ "$array12" == "0" ];then   
+			IFIP=`echo $array1|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
+			if [ -z "$IFIP" ];then
+				server_ip=`nslookup "$array1" 9.9.9.9 | sed '1,4d' | awk '{print $3}' | grep -v :|awk 'NR==1{print}'`
+			fi 
+		fi
+
 		if [ "$array12" == "1" ];then   #ssr
 			cat > /tmp/tmp_ss.json <<-EOF
 			{
-			    "server":"$array1",
+			    "server":"$server_ip",
 			    "server_port":$array2,
 			    "local_port":23458,
 			    "password":"$array3",
@@ -506,16 +514,22 @@ start_webtest(){
 			# result=`curl -o /dev/null -s -w %{time_connect}:%{time_starttransfer}:%{time_total}:%{speed_download} --socks5-hostname 127.0.0.1:23458 https://www.google.com/`
 			sleep 1
 			dbus set ssconf_basic_webtest_$nu=$result
-			kill -9 `ps|grep rss-local|grep 23458|awk '{print $1}'` >/dev/null 2>&1
+			kill -9 `ps|grep -w rss-local|grep 23458|awk '{print $1}'` >/dev/null 2>&1
 			rm -rf /tmp/tmp_ss.json
+			
 		elif [ "$array12" == "0" ];then   #ss
-			ss-local -b 0.0.0.0 -l 23458 -s $array1 -p $array2 -k $array3 -m $array4 -u $ARG_OTA $ARG_V2RAY_PLUGIN -f /var/run/sslocal3.pid >/dev/null 2>&1
+			ss-local -b 0.0.0.0 -l 23458 -s $server_ip -p $array2 -k $array3 -m $array4 -u $ARG_OTA $ARG_V2RAY_PLUGIN -f /var/run/sslocal3.pid >/dev/null 2>&1
 			sleep 3
 			result=`curl -o /dev/null -s -w %{time_total}:%{speed_download} --connect-timeout 15 --socks5-hostname 127.0.0.1:23458 $ssconf_basic_test_domain`
 			sleep 1
 			dbus set ssconf_basic_webtest_$nu=$result
-			kill -9 `ps|grep ss-local|grep 23458|awk '{print $1}'` >/dev/null 2>&1
-			
+			ss_local_pid=$(ps|grep -w ss-local|grep 23458|awk '{print $1}')			
+			if [ -n "$ARG_V2RAY_PLUGIN" ];then 
+				v2ray_plugin_pid=$(top -b -n 1 | grep 'v2ray-plugin' | awk -v ss_local_pid="$ss_local_pid"  '$2 == ss_local_pid {print $1}')
+				kill -9 $v2ray_plugin_pid  >/dev/null 2>&1
+			fi	
+			kill -9 $ss_local_pid >/dev/null 2>&1
+
 		elif [ "$array12" == "3" ];then   #v2ray
 			create_v2ray_json 
 			xray run -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &

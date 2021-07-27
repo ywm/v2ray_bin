@@ -108,10 +108,10 @@ echo_version(){
 	echo ① 程序版本（插件版本：$SOFVERSION）：
 	echo -----------------------------------------------------------
 	echo "程序			版本		备注"
-	echo "ss-redir		3.3.0		2019年6月20日编译"
-	echo "ss-tunnel		3.3.0		2019年6月20日编译"
-	echo "ss-local		3.3.0		2019年6月20日编译"
-	echo "v2ray-plugin		1.1.0		2019年2月16日编译"
+	echo "ss-redir		3.3.5		2020年9月15日编译"
+	echo "ss-tunnel		3.3.5		2020年9月15日编译"
+	echo "ss-local		3.3.5		2020年9月15日编译"
+	echo "v2ray-plugin		1.3.1		2020年6月01日编译"
 	echo "ssrr-redir		3.5.3 		2018年11月25日编译"
 	echo "ssrr-tunnel		3.5.3 		2018年11月25日编译"
 	echo "ssrr-local		3.5.3 		2018年11月25日编译"
@@ -131,9 +131,10 @@ check_status(){
 	#echo
 	SS_REDIR=`pidof ss-redir`
 	SS_TUNNEL=`pidof ss-tunnel`
-	SS_LOCAL=`ps|grep ss-local|grep 23456|awk '{print $1}'`
+	SS_LOCAL=`ps|grep -w ss-local|grep 23456|awk '{print $1}'`
+	V2RAY_PLUGIN=`pidof v2ray-plugin`
 	SSR_REDIR=`pidof rss-redir`
-	SSR_LOCAL=`ps|grep rss-local|grep 23456|awk '{print $1}'`
+	SSR_LOCAL=`ps|grep -w rss-local|grep 23456|awk '{print $1}'`
 	SSR_TUNNEL=`pidof rss-tunnel`
 	KOOLGAME=`pidof koolgame`
 	DNS2SOCKS=`pidof dns2socks`
@@ -157,6 +158,7 @@ check_status(){
 		echo -----------------------------------------------------------
 		echo "程序		状态	PID"
 		[ -n "$SS_REDIR" ] && echo "ss-redir	工作中	pid：$SS_REDIR" || echo "ss-redir	未运行"
+		[ -n "$V2RAY_PLUGIN" ] && echo "v2ray-plugin	工作中	pid：$V2RAY_PLUGIN" || echo "v2ray-plugin	未运行"
 	elif [ "$ss_basic_type" == "1" ];then
 		echo_version
 		echo

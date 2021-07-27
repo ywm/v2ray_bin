@@ -295,6 +295,7 @@ get_ss_config(){
 	#v2ray plugin : simple obfs will not be supported anymore, v2ray plugin will replace it
 	# link format example
 	# plugin=v2ray;path=/s233;host=yes.herokuapp.com;tls
+	# plugin=V2ray-plugin;path=/s233;host=yes.herokuapp.com;tls#nodename4test
 
 	#	初始化
 	ss_v2ray_tmp="0"
@@ -304,10 +305,10 @@ get_ss_config(){
 
 
 	if [ -n "$(echo -n "$decode_link" | grep "?")" ];then
-		plugin=$(echo "$decode_link" |awk -F'?' '{print $2}')
-		plugin_type=$(echo "$plugin" | tr ';' '\n' | grep 'plugin=' | awk -F'=' '{print $2}')	
+		plugin=$(echo "$decode_link" |awk -F'[?#]' '{print $2}')
+		plugin_type=$(echo "$plugin" | tr ';' '\n' | grep 'plugin=' | awk -F'=' '{print $2}' | tr '[A-Z]' '[a-z]')	
 
-		if [ -n "$plugin" ] && [ "$plugin_type" == "v2ray" ];then
+		if [ -n "$plugin" ] && [ -z "${plugin_type##*v2ray*}" ] ;then
 			ss_v2ray_tmp="1"
 			ss_v2ray_opts_tmp="$(echo $plugin | cut -d";" -f2-)"
 			ss_v2ray_plugin_tmp="1"
@@ -951,6 +952,12 @@ add_vless_servers(){
 		#  @@ 不确定这个变量是否需要添加
 		# [ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$v2rayindex=$v2ray_host 
 		;;
+				
+	kcp)
+		# kcp协议设置【 kcp伪装类型 (type)】
+		dbus set ssconf_basic_v2ray_headtype_kcp_$v2rayindex=$v2ray_type
+		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$v2rayindex=$v2ray_path
+		;;
 
 	ws|h2)
 		# ws/h2协议设置【 伪装域名 (host))】和【路径 (path)】
@@ -1000,6 +1007,14 @@ update_vless_config(){
 		#	local_v2ray_host=$(dbus get ssconf_basic_v2ray_network_host_$index)
 		#		[ "$local_v2ray_host" != "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$index=$v2ray_host && let i+=1					
 			;;
+		kcp)
+			# kcp协议
+			local_v2ray_type=$(dbus get ssconf_basic_v2ray_headtype_kcp_$index)
+			local_v2ray_path=$(dbus get ssconf_basic_v2ray_network_path_$index)
+			[ "$local_v2ray_type" != "$v2ray_type" ] && dbus set ssconf_basic_v2ray_headtype_kcp_$index=$v2ray_type && let i+=1
+			[ "$local_v2ray_path" != "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$index=$v2ray_path && let i+=1
+			;;
+
 		ws|h2)
 			# ws/h2协议
 			local_v2ray_host=$(dbus get ssconf_basic_v2ray_network_host_$index)
@@ -1813,6 +1828,23 @@ remove_online(){
 	done
 }
 
+change_cru(){
+	echo ==================================================================================================
+	sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
+	if [ "$ss_basic_node_update" = "1" ];then
+		if [ "$ss_basic_node_update_day" = "7" ];then
+			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * * /bin/sh /koolshare/scripts/ss_online_update.sh 3"
+			echo_date "设置自动更新订阅服务在每天 $ss_basic_node_update_hr 点。"
+		else
+			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * $ss_basic_node_update_day /bin/sh /koolshare/scripts/ss_online_update.sh 3"
+			echo_date "设置自动更新订阅服务在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
+		fi
+	else
+		echo_date "关闭自动更新订阅服务！"
+		sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
+	fi
+}
+
 case $ss_online_action in
 0)
 	# 删除所有节点
@@ -1836,19 +1868,7 @@ case $ss_online_action in
 	local_groups=`dbus list ssconf_basic_|grep group|cut -d "=" -f2|sort -u|wc -l`
 	online_group=`dbus get ss_online_links|base64_decode|sed 's/$/\n/'|sed '/^$/d'|wc -l`
 	echo_date "保存订阅节点成功，现共有 $online_group 组订阅来源，当前节点列表内已经订阅了 $local_groups 组..."
-	sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
-	if [ "$ss_basic_node_update" = "1" ];then
-		if [ "$ss_basic_node_update_day" = "7" ];then
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * * /koolshare/scripts/ss_online_update.sh 3"
-			echo_date "设置自动更新订阅服务在每天 $ss_basic_node_update_hr 点。"
-		else
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * ss_basic_node_update_day /koolshare/scripts/ss_online_update.sh 3"
-			echo_date "设置自动更新订阅服务在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
-		fi
-	else
-		echo_date "关闭自动更新订阅服务！"
-		sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
-	fi
+	change_cru
 	unset_lock
 	;;
 3)
@@ -1856,6 +1876,7 @@ case $ss_online_action in
 	set_lock
 	detect
 	echo_date "开始订阅"
+	change_cru
 	start_update
 	unset_lock
 	;;

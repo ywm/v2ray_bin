@@ -274,6 +274,11 @@ kill_process(){
 		echo_date 关闭haveged进程...
 		killall haveged >/dev/null 2>&1
 	fi
+	plugin_process=`pidof v2ray-plugin`
+	if [ -n "$plugin_process" ];then 
+		echo_date 关闭v2ray-plugin进程...
+		killall v2ray-plugin >/dev/null 2>&1
+	fi
 }
 
 # ================================= ss prestart ===========================
@@ -1955,7 +1960,7 @@ write_cron_job(){
 			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * * /koolshare/scripts/ss_online_update.sh 3"
 			echo_date "设置自动更新节点订阅在每天 $ss_basic_node_update_hr 点。"
 		else
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * ss_basic_node_update_day /koolshare/scripts/ss_online_update.sh 3"
+			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * $ss_basic_node_update_day /koolshare/scripts/ss_online_update.sh 3"
 			echo_date "设置自动更新节点订阅在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
 		fi
 	fi
