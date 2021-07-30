@@ -257,7 +257,7 @@ add_ss_servers(){
 }
 
 get_ss_config(){
-	decode_link=$(urldecode $1)	# 有些链接被 url 编码过，所以要先 url 解码
+	decode_link="$(urldecode $1 |sed 's/[\r\n ]//g' )"	# 有些链接被 url 编码过，所以要先 url 解码
 	if [ -z "$decode_link" ];then
 		echo_date "解析失败！！！"
 		return 1
@@ -276,14 +276,16 @@ get_ss_config(){
    if [ -n "$(echo -n "$decode_link" | awk -F'#' '{print $1}' | grep '@')" ];then
 		paraminfo=$(base64decode_link `echo -n "$decode_link" | awk -F'@' '{print $1}'`)
 		server=$(echo "$decode_link" |awk -F'[@?#]' '{print $2}'| awk -F':' '{print $1}')
-		server_port=$(echo "$decode_link" |awk -F'[@?#]' '{print $2}'| awk -F':' '{print $2}')
+		server_port=$(echo "$decode_link" |awk -F'[@?#]' '{print $2}'| awk -F'[:/]' '{print $2}')
 		encrypt_method=$(echo "$paraminfo" |awk -F':' '{print $1}')
 		password=$(echo "$paraminfo" |awk -F':' '{print $2}')
 		password=$(echo $password | base64_encode)
-   else
+   else  
+   		#	ss://YWVzLTI1Ni1nY206THh6ZkFWZktiUHFReDRTRENhdDdFSnlFQDg0LjE3LjM0LjQ0OjQ3NjQ0#Japan 4 🇯🇵 (t.me/SurfShark_ALA)
+		#   aes-256-gcm:LxzfAVfKbPqQx4SDCat7EJyE@84.17.34.44:47644#Japan 4 🇯🇵 (t.me/SurfShark_ALA)
 		paraminfo=$(base64decode_link `echo -n "$decode_link" | awk -F'#' '{print $1}'`)
-		server=$(echo "$paraminfo" |awk -F'[@:]' '{print $(NF-1)}')
-		server_port=$(echo "$paraminfo" |awk -F'[:]' '{print $NF}')
+		server=$(echo "$paraminfo" |awk -F'[@:?]' '{print $3}')
+		server_port=$(echo "$paraminfo" |awk -F'[:@/?]' '{print $4}')
 	#   首段的加密方式跟密码进行解码，method_password=aes-128-gcm:VXPipi29nxMO
 	#	method_password=$(echo "$decode_link" |awk -F'[@:]' '{print $1}' | sed 's/-/+/g; s/_/\//g')
 	#	method_password=$(base64decode_link $(echo "$method_password"))
@@ -308,7 +310,7 @@ get_ss_config(){
 		plugin=$(echo "$decode_link" |awk -F'[?#]' '{print $2}')
 		plugin_type=$(echo "$plugin" | tr ';' '\n' | grep 'plugin=' | awk -F'=' '{print $2}' | tr '[A-Z]' '[a-z]')	
 
-		if [ -n "$plugin" ] && [ -z "${plugin_type##*v2ray*}" ] ;then
+		if [ -n "$plugin" ] && [ -z "${plugin_type##*v2ray*}" ] && [ -n "$plugin_type" ];then
 			ss_v2ray_tmp="1"
 			ss_v2ray_opts_tmp="$(echo $plugin | cut -d";" -f2-)"
 			ss_v2ray_plugin_tmp="1"
