@@ -312,12 +312,12 @@ resolv_server_ip(){
 		if [ -z "$IFIP" ];then
 			# 服务器地址强制由114解析，以免插件还未开始工作而导致解析失败
 			echo "server=/$ss_basic_server/$(get_server_resolver)#53" > /jffs/configs/dnsmasq.d/ss_server.conf
-			echo_date 尝试解析SS服务器的ip地址，DNS：$(get_server_resolver)
+			echo_date 尝试解析节点服务器的ip地址，DNS：$(get_server_resolver)
 			server_ip=`nslookup "$ss_basic_server" $(get_server_resolver) | sed '1,4d' | awk '{print $3}' | grep -v :|awk 'NR==1{print}'`
 			if [ "$?" == "0" ];then
 				server_ip=`echo $server_ip|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
 			else
-				echo_date SS服务器域名解析失败！
+				echo_date 节点服务器域名解析失败！
 				echo_date 尝试用resolveip方式解析，DNS：系统
 				server_ip=`resolveip -4 -t 2 $ss_basic_server|awk 'NR==1{print}'`
 				if [ "$?" == "0" ];then
@@ -326,7 +326,7 @@ resolv_server_ip(){
 			fi
 
 			if [ -n "$server_ip" ];then
-				echo_date SS服务器的ip地址解析成功：$server_ip
+				echo_date 节点服务器的ip地址解析成功：$server_ip
 				# 解析并记录一次ip，方便插件触发重启设定工作
 				echo "address=/$ss_basic_server/$server_ip" > /tmp/ss_host.conf
 				# 去掉此功能，以免ip发生变更导致问题，或者影响域名对应的其它二级域名
@@ -336,12 +336,12 @@ resolv_server_ip(){
 				dbus set ss_basic_server_ip="$server_ip"
 			else
 				dbus remvoe ss_basic_server_ip
-				echo_date SS服务器的ip地址解析失败，将由ss-redir自己解析.
+				echo_date 节点服务器的ip地址解析失败，将由ss-redir自己解析.
 			fi
 		else
 			ss_basic_server_ip="$ss_basic_server"
 			dbus set ss_basic_server_ip=$ss_basic_server
-			echo_date 检测到你的SS服务器已经是IP格式：$ss_basic_server,跳过解析... 
+			echo_date 检测到你的节点服务器已经是IP格式：$ss_basic_server,跳过解析... 
 		fi
 	fi
 }
@@ -560,8 +560,8 @@ start_dns(){
 			else
 				ss-tunnel -c $CONFIG_FILE -l $DNSF_PORT -L $ss_sstunnel_user $ARG_V2RAY_PLUGIN -u -f /var/run/sstunnel.pid >/dev/null 2>&1
 			fi
-		elif [ "$ss_basic_type" == "3" ];then
-			echo_date V2Ray下不支持ss-tunnel，改用dns2socks！
+		elif [ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" ];then
+			echo_date V2Ray或Trojan 下不支持ss-tunnel，改用dns2socks！
 			dbus set ss_foreign_dns=3
 			start_sslocal
 			echo_date 开启dns2socks，用于dns解析...
@@ -1060,17 +1060,12 @@ start_ss_redir(){
 	if [ "$ss_basic_type" == "1" ];then
 		echo_date 开启ssr-redir进程，用于透明代理.
 		BIN=rss-redir
-		ARG_V2RAY_PLUGIN=""
 	elif  [ "$ss_basic_type" == "0" ];then
 		# ss-libev需要大于160的熵才能正常工作
 		start_haveged
 		echo_date 开启ss-redir进程，用于透明代理.
-		if [ "$ss_basic_ss_v2ray_plugin" == "0" ];then
-			BIN=ss-redir
-			ARG_V2RAY_PLUGIN=""
-		else
-			BIN=ss-redir
-		fi
+		ss_arg
+		BIN=ss-redir
 	fi
 
 	if [ "$ss_basic_udp_boost_enable" == "1" ];then
@@ -1230,6 +1225,78 @@ get_path(){
 		echo "null"
 	fi
 }
+
+resolve_node_ip4json(){	
+	
+	# 检测用户json的服务器ip地址
+		node_protocol=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].protocol)
+		case $node_protocol in
+		vmess)
+			node_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.vnext[0].address)
+			;;
+		vless)
+			node_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.vnext[0].address)
+			;;			
+		socks)
+			node_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.servers[0].address)
+			;;
+		trojan)
+			node_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.servers[0].address)
+			;;
+		shadowsocks)
+			node_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.servers[0].address)
+			;;
+		*)
+			node_server=""
+			;;
+		esac
+
+		if [ -n "$node_server" -a "$node_server" != "null" ];then
+			IFIP_VS=`echo $node_server|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
+			if [ -n "$IFIP_VS" ];then
+				ss_basic_server_ip="$node_server"
+				echo_date "检测到你的json配置的${node_protocol}服务器是：$node_server"
+			else
+				echo_date "检测到你的json配置的${node_protocol}服务器：$node_server不是ip格式！"
+				echo_date "为了确保${node_protocol}的正常工作，建议配置ip格式的${node_protocol}服务器地址！"
+				echo_date "尝试解析${node_protocol}服务器的ip地址，DNS：$(get_server_resolver)"
+				# 服务器地址强制由114解析，以免插件还未开始工作而导致解析失败
+				echo "server=/$node_server/$(get_server_resolver)#53" > /jffs/configs/dnsmasq.d/ss_server.conf
+				node_server_ip=`nslookup "$node_server" $(get_server_resolver) | sed '1,4d' | awk '{print $3}' | grep -v :|awk 'NR==1{print}'`
+				if [ "$?" == "0" ]; then
+					node_server_ip=`echo $node_server_ip|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
+				else
+					echo_date ${node_protocol}服务器域名解析失败！
+					echo_date 尝试用resolveip方式解析，DNS：系统
+					node_server_ip=`resolveip -4 -t 2 $ss_basic_server|awk 'NR==1{print}'`
+					if [ "$?" == "0" ];then
+						node_server_ip=`echo $node_server_ip|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
+					fi
+				fi
+
+				if [ -n "$node_server_ip" ];then
+					echo_date "${node_protocol}服务器的ip地址解析成功：$node_server_ip"
+					# 解析并记录一次ip，方便插件触发重启设定工作
+					echo "address=/$node_server/$node_server_ip" > /tmp/ss_host.conf
+					# 去掉此功能，以免ip发生变更导致问题，或者影响域名对应的其它二级域名
+					#ln -sf /tmp/ss_host.conf /jffs/configs/dnsmasq.d/ss_host.conf
+					ss_basic_server_ip="$node_server_ip"
+				else
+					echo_date "${node_protocol}服务器的ip地址解析失败!插件将继续运行，域名解析将由${node_protocol}自己进行！"
+					echo_date "请自行将${node_protocol}服务器的ip地址填入IP/CIDR白名单中!"
+					echo_date "为了确保${node_protocol}的正常工作，建议配置ip格式的${node_protocol}服务器地址！"
+					#close_in_five
+				fi
+			fi
+		else
+			echo_date "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+			echo_date "+       没有检测到你的${node_protocol}服务器地址，如果你确定你的配置是正确的        +"
+			echo_date "+   请自行将${node_protocol}服务器的ip地址填入【IP/CIDR】黑名单中，以确保正常使用   +"
+			echo_date "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+		fi
+	
+}
+
 
 create_v2ray_json(){
 	rm -rf "$V2RAY_CONFIG_FILE_TMP"
@@ -1577,68 +1644,7 @@ create_v2ray_json(){
 		echo_date V2Ray配置文件写入成功到"$V2RAY_CONFIG_FILE"
 
 		# 检测用户json的服务器ip地址
-		v2ray_protocal=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].protocol)
-		case $v2ray_protocal in
-		vmess)
-			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.vnext[0].address)
-			;;
-		vless)
-			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.vnext[0].address)
-			;;			
-		socks)
-			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.servers[0].address)
-			;;
-		shadowsocks)
-			v2ray_server=$(cat "$V2RAY_CONFIG_FILE" | jq -r .outbounds[0].settings.servers[0].address)
-			;;
-		*)
-			v2ray_server=""
-			;;
-		esac
-
-		if [ -n "$v2ray_server" -a "$v2ray_server" != "null" ];then
-			IFIP_VS=`echo $v2ray_server|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
-			if [ -n "$IFIP_VS" ];then
-				ss_basic_server_ip="$v2ray_server"
-				echo_date "检测到你的json配置的v2ray服务器是：$v2ray_server"
-			else
-				echo_date "检测到你的json配置的v2ray服务器：$v2ray_server不是ip格式！"
-				echo_date "为了确保v2ray的正常工作，建议配置ip格式的v2ray服务器地址！"
-				echo_date "尝试解析v2ray服务器的ip地址，DNS：$(get_server_resolver)"
-				# 服务器地址强制由114解析，以免插件还未开始工作而导致解析失败
-				echo "server=/$v2ray_server/$(get_server_resolver)#53" > /jffs/configs/dnsmasq.d/ss_server.conf
-				v2ray_server_ip=`nslookup "$v2ray_server" $(get_server_resolver) | sed '1,4d' | awk '{print $3}' | grep -v :|awk 'NR==1{print}'`
-				if [ "$?" == "0" ]; then
-					v2ray_server_ip=`echo $v2ray_server_ip|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
-				else
-					echo_date v2ray服务器域名解析失败！
-					echo_date 尝试用resolveip方式解析，DNS：系统
-					v2ray_server_ip=`resolveip -4 -t 2 $ss_basic_server|awk 'NR==1{print}'`
-					if [ "$?" == "0" ];then
-						v2ray_server_ip=`echo $v2ray_server_ip|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
-					fi
-				fi
-
-				if [ -n "$v2ray_server_ip" ];then
-					echo_date "v2ray服务器的ip地址解析成功：$v2ray_server_ip"
-					# 解析并记录一次ip，方便插件触发重启设定工作
-					echo "address=/$v2ray_server/$v2ray_server_ip" > /tmp/ss_host.conf
-					# 去掉此功能，以免ip发生变更导致问题，或者影响域名对应的其它二级域名
-					#ln -sf /tmp/ss_host.conf /jffs/configs/dnsmasq.d/ss_host.conf
-					ss_basic_server_ip="$v2ray_server_ip"
-				else
-					echo_date "v2ray服务器的ip地址解析失败!插件将继续运行，域名解析将由v2ray自己进行！"
-					echo_date "请自行将v2ray服务器的ip地址填入IP/CIDR白名单中!"
-					echo_date "为了确保v2ray的正常工作，建议配置ip格式的v2ray服务器地址！"
-					#close_in_five
-				fi
-			fi
-		else
-			echo_date "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-			echo_date "+       没有检测到你的v2ray服务器地址，如果你确定你的配置是正确的        +"
-			echo_date "+   请自行将v2ray服务器的ip地址填入【IP/CIDR】黑名单中，以确保正常使用   +"
-			echo_date "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-		fi
+		resolve_node_ip4json
 	fi
 
 	cd /koolshare/bin
@@ -1725,10 +1731,10 @@ create_trojan_json(){
 	#	cp "$V2RAY_CONFIG_FILE_TMP" /tmp/home/root/trojantmp.json
 		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
 			
-		echo_date V2Ray配置文件写入成功到"$V2RAY_CONFIG_FILE"
+		echo_date Trojan配置文件写入成功到"$V2RAY_CONFIG_FILE"
 			
 		cd /koolshare/bin
-		echo_date 测试XRay配置文件.....
+		echo_date 测试Trojan配置文件.....
 		result=$(xray -test -config="$V2RAY_CONFIG_FILE" | grep "Configuration OK.")
 		if [ -n "$result" ]; then
 			echo_date $result
@@ -2606,7 +2612,6 @@ apply_ss(){
 	#echo_date ------------------------- 启动 【科学上网】 ----------------------------
 	detect
 	resolv_server_ip
-	ss_arg
 	load_module
 	create_ipset
 	create_dnsmasq_conf

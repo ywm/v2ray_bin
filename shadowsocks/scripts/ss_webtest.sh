@@ -362,7 +362,7 @@ create_trojango_json(){
 					\"host\":  \"\"
 					}"
 	fi
-		echo_date 生成Trojan Go配置文件...
+
 		 #trojan go
 		 # 3335 for nat  
 		cat >"/tmp/tmp_trojango.json" <<-EOF

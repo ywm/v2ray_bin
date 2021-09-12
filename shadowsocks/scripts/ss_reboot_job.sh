@@ -72,12 +72,31 @@ set_ss_trigger_job(){
 	fi
 }
 
+get_server_resolver(){
+	[ "$ss_basic_server_resolver" == "1" ] && RESOLVER="114.114.114.114"
+	[ "$ss_basic_server_resolver" == "2" ] && RESOLVER="223.5.5.5"
+	[ "$ss_basic_server_resolver" == "3" ] && RESOLVER="223.6.6.6"
+	[ "$ss_basic_server_resolver" == "4" ] && RESOLVER="114.114.114.114"
+	[ "$ss_basic_server_resolver" == "5" ] && RESOLVER="114.114.115.115"
+	[ "$ss_basic_server_resolver" == "6" ] && RESOLVER="1.2.4.8"
+	[ "$ss_basic_server_resolver" == "7" ] && RESOLVER="210.2.4.8"
+	[ "$ss_basic_server_resolver" == "8" ] && RESOLVER="117.50.11.11"
+	[ "$ss_basic_server_resolver" == "9" ] && RESOLVER="117.50.22.22"
+	[ "$ss_basic_server_resolver" == "10" ] && RESOLVER="180.76.76.76"
+	[ "$ss_basic_server_resolver" == "11" ] && RESOLVER="119.29.29.29"
+	[ "$ss_basic_server_resolver" == "13" ] && RESOLVER="8.8.8.8"
+	[ "$ss_basic_server_resolver" == "12" ] && {
+		[ -n "$ss_basic_server_resolver_user" ] && RESOLVER="$ss_basic_server_resolver_user" || RESOLVER="114.114.114.114"
+	}
+	echo $RESOLVER
+}
+
 check_ip(){
 	if [ -f "/tmp/ss_host.conf" ];then
 		HOST=`cat /tmp/ss_host.conf | cut -d "/" -f2`
 		OLD_IP=`cat /tmp/ss_host.conf | cut -d "/" -f3`
 		if [ -n "$HOST" ] && [ -n "$OLD_IP" ];then
-			NEW_IP=`nslookup "$HOST" 114.114.114.114 | sed '1,4d' | awk '{print $3}' | grep -v :|awk 'NR==1{print}'`
+			NEW_IP=`nslookup "$HOST"  $get_server_resolver | sed '1,4d' | awk '{print $3}' | grep -v :|awk 'NR==1{print}'`
 			if [ "$?" == "0" ];then
 				NEW_IP=`echo $NEW_IP|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:"`
 			else
