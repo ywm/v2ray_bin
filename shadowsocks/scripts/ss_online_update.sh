@@ -156,6 +156,7 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_v2ray_network_path_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_path_$q=$(dbus get ssconf_basic_v2ray_network_path_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_host_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_host_$q=$(dbus get ssconf_basic_v2ray_network_host_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_security_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_security_$q=$(dbus get ssconf_basic_v2ray_network_security_$nu) >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_allowinsecure_$nu)" ] && echo dbus set ssconf_basic_allowinsecure_$q=$(dbus get ssconf_basic_allowinsecure_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" ] && echo dbus set ssconf_basic_v2ray_mux_enable_$q=$(dbus get ssconf_basic_v2ray_mux_enable_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" ] && echo dbus set ssconf_basic_v2ray_mux_concurrency_$q=$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_json_$nu)" ] && echo dbus set ssconf_basic_v2ray_json_$q=$(dbus get ssconf_basic_v2ray_json_$nu) >> /tmp/ss_conf.sh
@@ -552,7 +553,7 @@ get_vmess_config(){
 	#decode_link="$1"
 	v2ray_group="$2"
 	v2ray_v=$(echo "$decode_link" | sed -E 's/.*"v":"?([^,"]*)"?.*/\1/')
-	v2ray_ps=$(echo "$decode_link" | sed -E 's/.*"ps":"?([^,"]*)"?.*/\1/')
+	v2ray_ps=$(echo "$decode_link" | sed -n 's/\\"/\&quot;/g;s|.*"ps":"\([^"]*\)".*|\1|p' | sed 's/&quot;/\"/g')
 	v2ray_add=$(echo "$decode_link" | sed 's/[ \t]*//g' | sed -E 's/.*"add":"?([^,"]*)"?.*/\1/')
 	v2ray_port=$(echo "$decode_link" | sed -E 's/.*"port":"?([^,"]*)"?.*/\1/')
 	v2ray_id=$(echo "$decode_link" | sed -E 's/.*"id":"?([^,"]*)"?.*/\1/')
@@ -564,21 +565,21 @@ get_vmess_config(){
 	
 	if [ "$v2ray_v" == "2" ];then
 		#echo_date "new format"
-		v2ray_path=$(echo "$decode_link" | sed -E 's/.*"path":"?([^,"]*)"?.*/\1/')
-		v2ray_host=$(echo "$decode_link" | sed -E 's/.*"host":"?([^,"]*)"?.*/\1/')
+		v2ray_path=$(echo "$decode_link" | sed -n 's|.*"path":"\([^"]*\)".*|\1|p')
+		v2ray_host=$(echo "$decode_link" | sed -n 's|.*"host":"\([^"]*\)".*|\1|p')
 	else
 		#echo_date "old format"
 		case $v2ray_net in
 		tcp)
-			v2ray_host=$(echo "$decode_link" | sed -E 's/.*"host":"?([^,"]*)"?.*/\1/')
+			v2ray_host=$(echo "$decode_link" | sed -n 's|.*"host":"\([^"]*\)".*|\1|p')
 			v2ray_path=""
 			;;
 		kcp)
 			v2ray_host=""
-			v2ray_path=$(echo "$decode_link" | sed -E 's/.*"path":"?([^,"]*)"?.*/\1/')
+			v2ray_path=$(echo "$decode_link" | sed -n 's|.*"path":"\([^"]*\)".*|\1|p')
 			;;
 		ws)
-			v2ray_host_tmp=$(echo "$decode_link" | sed -E 's/.*"host":"?([^,"]*)"?.*/\1/')
+			v2ray_host_tmp=$(echo "$decode_link" | sed -n 's|.*"host":"\([^"]*\)".*|\1|p')
 			if [ -n "$v2ray_host_tmp" ];then
 				format_ws=`echo $v2ray_host_tmp|grep -E ";"`
 				if [ -n "$format_ws" ];then
@@ -592,7 +593,7 @@ get_vmess_config(){
 			;;
 		h2)
 			v2ray_host=""
-			v2ray_path=$(echo "$decode_link" | sed -E 's/.*"path":"?([^,"]*)"?.*/\1/')
+			v2ray_path=$(echo "$decode_link" | sed -n 's|.*"path":"\([^"]*\)".*|\1|p')
 			;;
 		esac
 	fi
@@ -628,6 +629,7 @@ add_vmess_servers(){
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vmess"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="v2ray"
+	dbus set ssconf_basic_allowinsecure_$v2rayindex=0	
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="auto"
@@ -789,6 +791,7 @@ add_trojan_servers(){
 	dbus set ssconf_basic_trojan_binary_$trojanindex=$binary
 	dbus set ssconf_basic_trojan_sni_$trojanindex="$sni"
 	dbus set ssconf_basic_trojan_network_$trojanindex=$v2ray_net
+	dbus set ssconf_basic_allowinsecure_$trojanindex=0
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$trojanindex=$ss_kcp_opts_tmp
@@ -931,6 +934,7 @@ add_vless_servers(){
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vless"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="xray"
+	dbus set ssconf_basic_allowinsecure_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="none"
@@ -1255,6 +1259,7 @@ del_none_exist(){
 					dbus remove ssconf_basic_v2ray_json_$localindex
 					dbus remove ssconf_basic_v2ray_mux_concurrency_$localindex
 					dbus remove ssconf_basic_v2ray_mux_enable_$localindex
+					dbus remove ssconf_basic_allowinsecure_$localindex
 					dbus remove ssconf_basic_v2ray_network_$localindex
 					dbus remove ssconf_basic_v2ray_network_flow_$localindex
 					dbus remove ssconf_basic_v2ray_network_host_$localindex
@@ -1332,6 +1337,7 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_v2ray_network_path_$nu)" ] && dbus set ssconf_basic_v2ray_network_path_"$y"="$(dbus get ssconf_basic_v2ray_network_path_$nu)" && dbus remove ssconf_basic_v2ray_network_path_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_host_$nu)" ] && dbus set ssconf_basic_v2ray_network_host_"$y"="$(dbus get ssconf_basic_v2ray_network_host_$nu)" && dbus remove ssconf_basic_v2ray_network_host_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_security_$nu)" ] && dbus set ssconf_basic_v2ray_network_security_"$y"="$(dbus get ssconf_basic_v2ray_network_security_$nu)" && dbus remove ssconf_basic_v2ray_network_security_$nu
+				[ -n "$(dbus get ssconf_basic_allowinsecure_$nu)" ] && dbus set ssconf_basic_allowinsecure_"$y"="$(dbus get ssconf_basic_allowinsecure_$nu)" && dbus remove ssconf_basic_allowinsecure_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" ] && dbus set ssconf_basic_v2ray_mux_enable_"$y"="$(dbus get ssconf_basic_v2ray_mux_enable_$nu)" && dbus remove ssconf_basic_v2ray_mux_enable_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" ] && dbus set ssconf_basic_v2ray_mux_concurrency_"$y"="$(dbus get ssconf_basic_v2ray_mux_concurrency_$nu)" && dbus remove ssconf_basic_v2ray_mux_concurrency_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_json_$nu)" ] && dbus set ssconf_basic_v2ray_json_"$y"="$(dbus get ssconf_basic_v2ray_json_$nu)" && dbus remove ssconf_basic_v2ray_json_$nu
@@ -1659,6 +1665,7 @@ start_update(){
 						dbus remove ssconf_basic_v2ray_json_$conf_nu
 						dbus remove ssconf_basic_v2ray_mux_concurrency_$conf_nu
 						dbus remove ssconf_basic_v2ray_mux_enable_$conf_nu
+						dbus remove ssconf_basic_allowinsecure_$conf_nu
 						dbus remove ssconf_basic_v2ray_network_$conf_nu
 						dbus remove ssconf_basic_v2ray_network_flow_$conf_nu
 						dbus remove ssconf_basic_v2ray_network_host_$conf_nu
@@ -1815,6 +1822,7 @@ remove_online(){
 		dbus remove ssconf_basic_v2ray_json_$remove_nu
 		dbus remove ssconf_basic_v2ray_mux_concurrency_$remove_nu
 		dbus remove ssconf_basic_v2ray_mux_enable_$remove_nu
+		dbus remove ssconf_basic_allowinsecure_$remove_nu
 		dbus remove ssconf_basic_v2ray_network_$remove_nu
 		dbus remove ssconf_basic_v2ray_network_flow_$remove_nu
 		dbus remove ssconf_basic_v2ray_network_host_$remove_nu

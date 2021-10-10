@@ -111,7 +111,7 @@ echo_version(){
 	echo "ss-redir		3.3.5		2020年9月15日编译"
 	echo "ss-tunnel		3.3.5		2020年9月15日编译"
 	echo "ss-local		3.3.5		2020年9月15日编译"
-	echo "v2ray-plugin		1.3.1		2020年6月01日编译"
+	echo "xray-plugin		1.4.0		2021年3月15日编译"
 	echo "ssrr-redir		3.5.3 		2018年11月25日编译"
 	echo "ssrr-tunnel		3.5.3 		2018年11月25日编译"
 	echo "ssrr-local		3.5.3 		2018年11月25日编译"

@@ -17,11 +17,11 @@ fi
 
 get_function_switch() {
 	case "$1" in
-		0)
-			echo "false"
-		;;
 		1)
 			echo "true"
+		;;
+		*)
+			echo "false"
 		;;
 	esac
 }
@@ -73,12 +73,13 @@ rm -rf /tmp/tmp_v2ray.json
 		case "$(eval echo \$ssconf_basic_v2ray_network_security_$nu)" in
 		tls)
 			local tls="{
-					\"allowInsecure\": true,
-					\"serverName\": \"$(eval echo \ssconf_basic_v2ray_network_tlshost_$nu)\"
+					\"allowInsecure\":  $(get_function_switch $(eval echo \$ssconf_basic_allowinsecure_$nu)),
+					\"serverName\": \"$(eval echo \$ssconf_basic_v2ray_network_tlshost_$nu)\"
 					}"
 			;;
 		xtls)
 			local xtls="{
+					\"allowInsecure\":  $(get_function_switch $(eval echo \$ssconf_basic_allowinsecure_$nu)),
 					\"serverName\": \"$(eval echo \$ssconf_basic_v2ray_network_tlshost_$nu)\"
 					}"
 			local vless_flow="\"flow\": \"$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)\","
@@ -336,6 +337,7 @@ rm -rf /tmp/tmp_v2ray.json
 				  "network": "tcp",
 				  "security": "tls",
 				  "tlsSettings": {
+					"allowInsecure": $(get_function_switch $(eval echo \$ssconf_basic_allowinsecure_$nu)),  
                     "serverName": "$(eval echo \$ssconf_basic_trojan_sni_$nu)"
                 }
 				}
