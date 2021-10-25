@@ -39,7 +39,7 @@ compile_pcre() {
     [ -d $prefix/pcre ] && return
 
     cd $cur_dir/build
-    wget $PCRE_FILE
+    wget --no-check-certificate $PCRE_FILE
     tar xvf pcre-$PCRE_VER.tar.gz
     cd pcre-$PCRE_VER
     CPPFLAGS="-DNEED_PRINTF" ./configure --prefix=$prefix/pcre --host=$host --enable-jit --enable-utf8 --enable-unicode-properties --disable-shared
