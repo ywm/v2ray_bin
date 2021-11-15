@@ -1312,7 +1312,7 @@ create_v2ray_json(){
 		local vless_flow=""
 
 		# tcp和kcp下tlsSettings为null，ws和h2下tlsSettings
-		[ -z "$ss_basic_v2ray_mux_concurrency" ] && local ss_basic_v2ray_mux_concurrency=8
+		[ -z "$(dbus get ss_basic_v2ray_mux_concurrency)" ] && local ss_basic_v2ray_mux_concurrency=8
 		[ "$ss_basic_v2ray_network_security" == "none" ] && local ss_basic_v2ray_network_security=""
 
 		# incase multi-domain input
@@ -1755,18 +1755,19 @@ create_trojango_json(){
 	rm -rf "$TROJANGO_CONFIG_FILE"
 	rm -rf "$TROJANGO2_CONFIG_FILE"
 	if  [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Trojan-Go" ]; then
-	if [ "$ss_basic_trojan_network" == "1" ]; then
-	[ -n "$ss_basic_v2ray_network_path" ] && local ss_basic_v2ray_network_path=$(echo "/$ss_basic_v2ray_network_path" | sed 's,//,/,')
-		local ws="{ \"enabled\": true,
-					\"path\":  \"$ss_basic_v2ray_network_path\",
-					\"host\":  \"$ss_basic_v2ray_network_host\"
-					}"
-	else
-		local ws="{ \"enabled\": false,
-					\"path\":  \"\",
-					\"host\":  \"\"
-					}"
-	fi
+		if [ "$ss_basic_trojan_network" == "1" ]; then
+		[ -n "$ss_basic_v2ray_network_path" ] && local ss_basic_v2ray_network_path=$(echo "/$ss_basic_v2ray_network_path" | sed 's,//,/,')
+			local ws="{ \"enabled\": true,
+						\"path\":  \"$ss_basic_v2ray_network_path\",
+						\"host\":  \"$ss_basic_v2ray_network_host\"
+						}"
+		else
+			local ws="{ \"enabled\": false,
+						\"path\":  \"\",
+						\"host\":  \"\"
+						}"
+		fi
+		[ -z "$(dbus get ss_basic_v2ray_mux_concurrency)" ] && local ss_basic_v2ray_mux_concurrency=8
 		echo_date 生成Trojan Go配置文件...
 		 #trojan go
 		 # 3333 for nat  
@@ -1802,8 +1803,8 @@ create_trojango_json(){
 					"prefer_ipv4": true
 				},
 				"mux": {
-					"enabled": false,
-					"concurrency": 8,
+					"enabled": $(get_function_switch $ss_basic_v2ray_mux_enable),
+					"concurrency": $ss_basic_v2ray_mux_concurrency,
 					"idle_timeout": 60
 				},
 				"websocket": $ws
@@ -1849,8 +1850,8 @@ create_trojango_json(){
 					"prefer_ipv4": true
 				},
 				"mux": {
-					"enabled": false,
-					"concurrency": 8,
+					"enabled": $(get_function_switch $ss_basic_v2ray_mux_enable),
+					"concurrency": $ss_basic_v2ray_mux_concurrency,
 					"idle_timeout": 60
 				},
 				"websocket": $ws

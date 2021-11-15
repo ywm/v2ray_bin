@@ -1111,7 +1111,7 @@ add_trojan_go_servers(){
 	[ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$trojangoindex=$v2ray_host
 	[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$trojangoindex=$v2ray_path
 	dbus set ssconf_basic_trojan_sni_$trojangoindex="$sni"
-	
+	dbus set ssconf_basic_v2ray_mux_enable_$trojangoindex=0
 	dbus set ssconf_basic_ss_kcp_support_$trojangoindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojangoindex=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$trojangoindex=$ss_kcp_opts_tmp

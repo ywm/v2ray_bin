@@ -98,16 +98,11 @@ update_now(){
 	if [ "$md5sum_ok=1" ] && [ "$xray_ok=1" ] ;then
 		check_md5sum
 	else
-		echo_date "使用备用服务器下载..."
-		update_now_backup $1
+		echo_date "下载失败，请检查你的网络！"
+		echo_date "==================================================================="
+		echo XU6J03M6
+		exit 1
 	fi
-}
-
-update_now_backup(){
-	echo_date "下载失败，请检查你的网络！"
-	echo_date "==================================================================="
-	echo XU6J03M6
-	exit 1
 }
 
 check_md5sum(){

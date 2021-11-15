@@ -234,7 +234,7 @@ rm -rf /tmp/tmp_v2ray.json
 					},
 					"mux": {
 					  "enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
-					  "concurrency": $ssconf_basic_v2ray_mux_concurrency
+					  "concurrency": $ss_basic_v2ray_mux_concurrency
 					}
 				  }
 				]
@@ -364,7 +364,7 @@ create_trojango_json(){
 					\"host\":  \"\"
 					}"
 	fi
-
+	[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8
 		 #trojan go
 		 # 3335 for nat  
 		cat >"/tmp/tmp_trojango.json" <<-EOF
@@ -399,8 +399,8 @@ create_trojango_json(){
 					"prefer_ipv4": true
 				},
 				"mux": {
-					"enabled": false,
-					"concurrency": 8,
+					"enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
+					"concurrency": $ssconf_basic_v2ray_mux_concurrency,
 					"idle_timeout": 60
 				},
 				"websocket": $ws
@@ -447,8 +447,8 @@ create_trojango_json(){
 					"prefer_ipv4": true
 				},
 				"mux": {
-					"enabled": false,
-					"concurrency": 8,
+					"enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
+					"concurrency": $ssconf_basic_v2ray_mux_concurrency,
 					"idle_timeout": 60
 				},
 				"websocket": $ws
