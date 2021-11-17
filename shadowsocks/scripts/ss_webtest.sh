@@ -58,6 +58,7 @@ rm -rf /tmp/tmp_v2ray.json
 		local tcp="null"
 		local ws="null"
 		local h2="null"
+		local grpc="null"
 		local tls="null"
 		local xtls="null"
 		local vless_flow=""
@@ -164,6 +165,12 @@ rm -rf /tmp/tmp_v2ray.json
 				\"host\": $(get_h2_host $local_header)
 				}"
 			;;
+		grpc)
+		local local_serviceName=$(eval echo \$ssconf_basic_v2ray_serviceName_$nu)
+			local grpc="{
+				\"serviceName\": $(get_path $local_serviceName) 
+				}"
+			;;	
 		esac
 		# log area
 		cat >"/tmp/tmp_v2ray.json" <<-EOF
@@ -272,7 +279,8 @@ rm -rf /tmp/tmp_v2ray.json
 					  "tcpSettings": $tcp,
 					  "kcpSettings": $kcp,
 					  "wsSettings": $ws,
-					  "httpSettings": $h2
+					  "httpSettings": $h2,
+					  "grpcSettings": $grpc
 					},
 					"mux": {
 					  "enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),

@@ -52,6 +52,7 @@ SOCKS_FLAG=0
 # ssconf_basic_v2ray_network_
 # ssconf_basic_v2ray_headtype_tcp_
 # ssconf_basic_v2ray_headtype_kcp_
+# ssconf_basic_v2ray_serviceName_
 # ssconf_basic_v2ray_network_path_
 # ssconf_basic_v2ray_network_host_
 # ssconf_basic_v2ray_network_security_
@@ -152,6 +153,7 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_v2ray_security_$nu)" ] && echo dbus set ssconf_basic_v2ray_security_$q=$(dbus get ssconf_basic_v2ray_security_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_$q=$(dbus get ssconf_basic_v2ray_network_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_headtype_tcp_$nu)" ] && echo dbus set ssconf_basic_v2ray_headtype_tcp_$q=$(dbus get ssconf_basic_v2ray_headtype_tcp_$nu) >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_v2ray_serviceName_$nu)" ] && echo dbus set ssconf_basic_v2ray_serviceName_$q=$(dbus get ssconf_basic_v2ray_serviceName_$nu) >> /tmp/ss_conf.sh		
 		[ -n "$(dbus get ssconf_basic_v2ray_headtype_kcp_$nu)" ] && echo dbus set ssconf_basic_v2ray_headtype_kcp_$q=$(dbus get ssconf_basic_v2ray_headtype_kcp_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_path_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_path_$q=$(dbus get ssconf_basic_v2ray_network_path_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_host_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_host_$q=$(dbus get ssconf_basic_v2ray_network_host_$nu) >> /tmp/ss_conf.sh
@@ -789,7 +791,7 @@ add_trojan_servers(){
 	dbus set ssconf_basic_password_$trojanindex=$password
 	dbus set ssconf_basic_type_$trojanindex="4"
 	dbus set ssconf_basic_trojan_binary_$trojanindex=$binary
-	dbus set ssconf_basic_trojan_sni_$trojanindex="$sni"
+	dbus set ssconf_basic_trojan_sni_$trojanindex=$sni
 	dbus set ssconf_basic_trojan_network_$trojanindex=$v2ray_net
 	dbus set ssconf_basic_allowinsecure_$trojanindex=0
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
@@ -904,7 +906,7 @@ get_vless_config(){
 	v2ray_path=$(echo "$decode_link" | tr '?&#' '\n' | grep 'path=' | awk -F'=' '{print $2}')
 	v2ray_host=$(echo "$decode_link" | tr '?&#' '\n' | grep 'host=' | awk -F'=' '{print $2}')
 	v2ray_tlshost=$(echo "$decode_link" | tr '?&#' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
-
+	v2ray_serviceName=$(echo "$decode_link" | tr '?&#' '\n' | grep 'serviceName=' | awk -F'=' '{print $2}')
 	#把全部服务器节点编码后写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
 	[ -n "$vless_group" ] && group_base64=`echo $vless_group | base64_encode | sed 's/ -//g'`
 	[ -n "$v2ray_add" ] && server_base64=`echo $v2ray_add | base64_encode | sed 's/ -//g'`	
@@ -921,6 +923,7 @@ get_vless_config(){
 	#echo v2ray_path: $v2ray_path
 	#echo v2ray_tls: $v2ray_tls
 	#echo v2ray_tlshost: $v2ray_tlshost
+	#echo v2ray_serviceName: $v2ray_serviceName
 	#echo ------
 	echo "$vless_group" >> /tmp/all_group_info.txt
 	[ -n "$vless_group" ] && return 0 || return 1
@@ -964,7 +967,10 @@ add_vless_servers(){
 		dbus set ssconf_basic_v2ray_headtype_kcp_$v2rayindex=$v2ray_type
 		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$v2rayindex=$v2ray_path
 		;;
-
+	grpc)
+		# grpc协议设置【 grpc伪装类型 (type)】
+		[ -n "$v2ray_serviceName" ] && dbus set ssconf_basic_v2ray_serviceName_$v2rayindex=$v2ray_serviceName
+		;;
 	ws|h2)
 		# ws/h2协议设置【 伪装域名 (host))】和【路径 (path)】
 		# ws + tls + CDN 会比较多，别的组合不熟悉
@@ -1020,7 +1026,11 @@ update_vless_config(){
 			[ "$local_v2ray_type" != "$v2ray_type" ] && dbus set ssconf_basic_v2ray_headtype_kcp_$index=$v2ray_type && let i+=1
 			[ "$local_v2ray_path" != "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$index=$v2ray_path && let i+=1
 			;;
-
+		grpc)
+			# grpc协议
+			local_v2ray_serviceName=$(dbus get ssconf_basic_v2ray_serviceName_$index)
+			[ "$local_v2ray_serviceName" != "$v2ray_serviceName" ] && dbus set ssconf_basic_v2ray_serviceName_$index=$v2ray_serviceName && let i+=1
+			;;
 		ws|h2)
 			# ws/h2协议
 			local_v2ray_host=$(dbus get ssconf_basic_v2ray_network_host_$index)
@@ -1264,6 +1274,7 @@ del_none_exist(){
 					dbus remove ssconf_basic_v2ray_network_flow_$localindex
 					dbus remove ssconf_basic_v2ray_network_host_$localindex
 					dbus remove ssconf_basic_v2ray_network_path_$localindex
+					dbus remove ssconf_basic_v2ray_serviceName_$localindex
 					dbus remove ssconf_basic_v2ray_network_security_$localindex
 					dbus remove ssconf_basic_v2ray_network_tlshost_$localindex
 					dbus remove ssconf_basic_v2ray_protocol_$localindex
@@ -1334,6 +1345,7 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_v2ray_network_$nu)" ] && dbus set ssconf_basic_v2ray_network_"$y"="$(dbus get ssconf_basic_v2ray_network_$nu)" && dbus remove ssconf_basic_v2ray_network_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_headtype_tcp_$nu)" ] && dbus set ssconf_basic_v2ray_headtype_tcp_"$y"="$(dbus get ssconf_basic_v2ray_headtype_tcp_$nu)" && dbus remove ssconf_basic_v2ray_headtype_tcp_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_headtype_kcp_$nu)" ] && dbus set ssconf_basic_v2ray_headtype_kcp_"$y"="$(dbus get ssconf_basic_v2ray_headtype_kcp_$nu)" && dbus remove ssconf_basic_v2ray_headtype_kcp_$nu
+				[ -n "$(dbus get ssconf_basic_v2ray_serviceName_$nu)" ] && dbus set ssconf_basic_v2ray_serviceName_"$y"="$(dbus get ssconf_basic_v2ray_serviceName_$nu)" && dbus remove ssconf_basic_v2ray_serviceName_$nu	
 				[ -n "$(dbus get ssconf_basic_v2ray_network_path_$nu)" ] && dbus set ssconf_basic_v2ray_network_path_"$y"="$(dbus get ssconf_basic_v2ray_network_path_$nu)" && dbus remove ssconf_basic_v2ray_network_path_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_host_$nu)" ] && dbus set ssconf_basic_v2ray_network_host_"$y"="$(dbus get ssconf_basic_v2ray_network_host_$nu)" && dbus remove ssconf_basic_v2ray_network_host_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_security_$nu)" ] && dbus set ssconf_basic_v2ray_network_security_"$y"="$(dbus get ssconf_basic_v2ray_network_security_$nu)" && dbus remove ssconf_basic_v2ray_network_security_$nu
@@ -1670,6 +1682,7 @@ start_update(){
 						dbus remove ssconf_basic_v2ray_network_flow_$conf_nu
 						dbus remove ssconf_basic_v2ray_network_host_$conf_nu
 						dbus remove ssconf_basic_v2ray_network_path_$conf_nu
+						dbus remove ssconf_basic_v2ray_serviceName_$conf_nu						
 						dbus remove ssconf_basic_v2ray_network_security_$conf_nu
 						dbus remove ssconf_basic_v2ray_network_tlshost_$conf_nu
 						dbus remove ssconf_basic_v2ray_protocol_$conf_nu
@@ -1818,6 +1831,7 @@ remove_online(){
 		dbus remove ssconf_basic_use_lb_$remove_nu
 		dbus remove ssconf_basic_v2ray_alterid_$remove_nu
 		dbus remove ssconf_basic_v2ray_headtype_kcp_$remove_nu
+		dbus remove ssconf_basic_v2ray_serviceName_$remove_nu
 		dbus remove ssconf_basic_v2ray_headtype_tcp_$remove_nu
 		dbus remove ssconf_basic_v2ray_json_$remove_nu
 		dbus remove ssconf_basic_v2ray_mux_concurrency_$remove_nu

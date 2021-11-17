@@ -1307,6 +1307,7 @@ create_v2ray_json(){
 		local tcp="null"
 		local ws="null"
 		local h2="null"
+		local grpc="null"
 		local tls="null"
 		local xtls="null"
 		local vless_flow=""
@@ -1410,6 +1411,11 @@ create_v2ray_json(){
 				\"host\": $(get_h2_host $ss_basic_v2ray_network_host)
 				}"
 			;;
+		grpc)
+			local grpc="{
+				\"serviceName\": $(get_path $ss_basic_v2ray_serviceName) 
+				}"
+			;;	
 		esac
 		# log area
 		cat >"$V2RAY_CONFIG_FILE_TMP" <<-EOF
@@ -1547,7 +1553,8 @@ create_v2ray_json(){
 					  "tcpSettings": $tcp,
 					  "kcpSettings": $kcp,
 					  "wsSettings": $ws,
-					  "httpSettings": $h2
+					  "httpSettings": $h2,
+					  "grpcSettings": $grpc
 					},
 					"mux": {
 					  "enabled": $(get_function_switch $ss_basic_v2ray_mux_enable),
@@ -1560,7 +1567,6 @@ create_v2ray_json(){
 		fi
 		echo_date 解析V2Ray配置文件...
 		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
-		
 		echo_date V2Ray配置文件写入成功到"$V2RAY_CONFIG_FILE"
 	elif [ "$ss_basic_v2ray_use_json" == "1" ]; then
 		echo_date 使用自定义的v2ray json配置文件...
