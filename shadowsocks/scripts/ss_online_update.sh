@@ -344,8 +344,9 @@ get_ss_config(){
 
 	[ -n "$group" ] && group_base64=`echo $group | base64_encode | sed 's/ -//g'`
 	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`
+	[ -n "$remarks" ] && remarks_base64=`echo $remarks | base64_encode | sed 's/ -//g'`
 	#把全部服务器节点写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
-	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
 	#echo ------
 	#echo group: $group
 	#echo remarks: $remarks
@@ -360,14 +361,14 @@ get_ss_config(){
 }
 
 update_ss_config(){
-	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
 		add_ss_servers
 		let addnum1+=1
 		let addnum+=1
 	else
-		# 如果在本地的订阅节点中已经有该节点（用group和server去判断），检测下配置是否更改，如果更改，则更新配置
-		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
 
 		local i=0
 		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
@@ -481,8 +482,9 @@ get_ssr_config(){
 	
 	[ -n "$group" ] && group_base64=`echo $group | base64_encode | sed 's/ -//g'`
 	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`	
+	[ -n "$remarks" ] && remarks_base64=`echo $remarks | base64_encode | sed 's/ -//g'`
 	#把全部服务器节点写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
-	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
 	#echo ------
 	#echo group: $group
 	#echo remarks: $remarks
@@ -501,8 +503,7 @@ get_ssr_config(){
 }
 
 update_ssr_config(){
-	#isadded_server=$(uci show shadowsocks | grep -c "server=\'$server\'")
-	isadded_server=$(</tmp/all_localservers grep $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
 		add_ssr_servers
 		[ "$ssr_subscribe_obfspara" == "0" ] && dbus set ssconf_basic_rss_obfs_param_$ssrindex=""
@@ -511,8 +512,8 @@ update_ssr_config(){
 		let addnum2+=1
 		let addnum+=1
 	else
-		# 如果在本地的订阅节点中没找到该节点，检测下配置是否更改，如果更改，则更新配置
-		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
 		local_remarks=$(dbus get ssconf_basic_name_$index)
 		local_server_port=$(dbus get ssconf_basic_port_$index)
 		local_protocol=$(dbus get ssconf_basic_rss_protocol_$index)
@@ -603,7 +604,8 @@ get_vmess_config(){
 	#把全部服务器节点编码后写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
 	[ -n "$v2ray_group" ] && group_base64=`echo $v2ray_group | base64_encode | sed 's/ -//g'`
 	[ -n "$v2ray_add" ] && server_base64=`echo $v2ray_add | base64_encode | sed 's/ -//g'`	
-	[ -n "$v2ray_group" ] && [ -n "$v2ray_add" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	[ -n "$v2ray_ps" ] && remarks_base64=`echo $v2ray_ps | base64_encode | sed 's/ -//g'`
+	[ -n "$v2ray_group" ] && [ -n "$v2ray_add" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
 
 	echo "$v2ray_group" >> /tmp/all_group_info.txt
 	[ -n "$v2ray_group" ] && return 0 || return 1
@@ -664,14 +666,14 @@ add_vmess_servers(){
 }
 
 update_vmess_config(){
-	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
 		add_vmess_servers
 		let addnum3+=1
 		let addnum+=1
 	else
-		# 如果在本地的订阅节点中已经有该节点（用group和server去判断），检测下配置是否更改，如果更改，则更新配置
-		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
 
 		local i=0
 		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
@@ -767,8 +769,9 @@ get_trojan_config(){
 
 	[ -n "$group" ] && group_base64=`echo $group | base64_encode | sed 's/ -//g'`
 	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`
+	[ -n "$remarks" ] && remarks_base64=`echo $remarks | base64_encode | sed 's/ -//g'`
 	#把全部服务器节点写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
-	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
 	#echo ------
 	#echo group: $group
 	#echo remarks: $remarks
@@ -807,14 +810,14 @@ add_trojan_servers(){
 }
 
 update_trojan_config(){
-	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
 		add_trojan_servers
 		let addnum4+=1
 		let addnum+=1
 	else
-		# 如果在本地的订阅节点中已经有该节点（用group和server去判断），检测下配置是否更改，如果更改，则更新配置
-		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
 
 		local i=0
 		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
@@ -910,7 +913,8 @@ get_vless_config(){
 	#把全部服务器节点编码后写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
 	[ -n "$vless_group" ] && group_base64=`echo $vless_group | base64_encode | sed 's/ -//g'`
 	[ -n "$v2ray_add" ] && server_base64=`echo $v2ray_add | base64_encode | sed 's/ -//g'`	
-	[ -n "$vless_group" ] && [ -n "$v2ray_add" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	[ -n "$v2ray_ps" ] && remarks_base64=`echo $v2ray_ps | base64_encode | sed 's/ -//g'`	
+	[ -n "$vless_group" ] && [ -n "$v2ray_add" ] && echo $server_base64 $group_base64 $remarks_base64>> /tmp/all_onlineservers
 
 	#echo ------
 	#echo v2ray_ps: $v2ray_ps
@@ -982,14 +986,14 @@ add_vless_servers(){
 }
 
 update_vless_config(){
-	isadded_server=$(</tmp/all_localservers  grep -w $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
 		add_vless_servers
 		let addnum5+=1
 		let addnum+=1
 	else
-		# 如果在本地的订阅节点中已经有该节点（用group和server去判断），检测下配置是否更改，如果更改，则更新配置
-		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
 
 		local i=0
 		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
@@ -1088,10 +1092,11 @@ get_trojan_go_config(){
 	ss_ssudp_mtu_tmp=""
 	ss_udp_opts_tmp=""
 
-	#把全部服务器节点编码后写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
 	[ -n "$group" ] && group_base64=`echo $trojan_go_group | base64_encode | sed 's/ -//g'`
 	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`	
-	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 >> /tmp/all_onlineservers
+	[ -n "$remarks" ] && remarks_base64=`echo $remarks | base64_encode | sed 's/ -//g'`
+	#把全部服务器节点写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
+	[ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
 	
 	
 	#echo ------
@@ -1136,14 +1141,14 @@ add_trojan_go_servers(){
 }
 
 update_trojan_go_config(){
-	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk '{print $1}' | grep -c $server_base64|head -n1)
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
 		add_trojan_go_servers
 		let addnum6+=1
 		let addnum+=1
 	else
-		# 如果在本地的订阅节点中已经有该节点（用group和server去判断），检测下配置是否更改，如果更改，则更新配置
-		local index=$(</tmp/all_localservers grep $group_base64 | grep $server_base64 |awk '{print $3}'|head -n1)
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
 
 		local i=0
 		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
@@ -1209,10 +1214,10 @@ update_trojan_go_config(){
 del_none_exist(){
 # "删除订阅服务器已经不存在的节点"
 	#[ -n "$group" ] && group_base64=`echo $group | base64_encode | sed 's/ -//g'`
-	for localserver in $(</tmp/all_localservers  grep $group_base64 |awk '{print $1}')
+	for localserver in $(</tmp/all_localservers  grep $group_base64 |awk '{print $1,$4}')
 	do
-		if [ "`</tmp/all_onlineservers grep -c $localserver`" -eq "0" ];then
-			del_index=`</tmp/all_localservers grep $localserver | awk '{print $3}'`
+		if [ "`</tmp/all_onlineservers  awk '{print $1,$3}' | grep -c "$localserver"`" -eq "0" ];then
+			del_index=`</tmp/all_localservers awk '{print $1,$4,$3}' | grep $localserver | awk '{print $3}'`
 			#for localindex in $(dbus list ssconf_basic_server|grep -v ssconf_basic_server_ip_|grep -w $localserver|cut -d "_" -f 4 |cut -d "=" -f1)
 			for localindex in $del_index
 			do
@@ -1487,7 +1492,7 @@ get_oneline_rule_now(){
 			return 3
 		else	
 			# use domain as group
-			group=`echo $ssr_subscribe_link|awk -F'[/:]' '{print $4}'`
+			group=`echo $ssr_subscribe_link|awk -F'[/:#]' '{print $4}'`
 			
 			# 储存对应订阅链接的group信息
 			dbus set ss_online_group_$z=$group
@@ -1518,7 +1523,7 @@ get_oneline_rule_now(){
 			# 去除订阅服务器上已经删除的节点
 			del_none_exist
 			# 节点重新排序
-			remove_node_gap
+			 remove_node_gap
 
 			USER_ADD=$(($(dbus list ssconf_basic_|grep _name_|wc -l) - $(dbus list ssconf_basic_|grep _group_|wc -l))) || 0
 			ONLINE_GET=$(dbus list ssconf_basic_|grep _group_|wc -l) || 0
@@ -1566,7 +1571,7 @@ start_update(){
 		for LOCAL_NODE in $LOCAL_NODES
 		do
 			# write: server group nu
-			echo `dbus get ssconf_basic_server_$LOCAL_NODE|base64_encode` `dbus get ssconf_basic_group_$LOCAL_NODE|base64_encode`| eval echo `sed 's/$/ $LOCAL_NODE/g'` >> /tmp/all_localservers
+			echo `dbus get ssconf_basic_server_$LOCAL_NODE|base64_encode` `dbus get ssconf_basic_group_$LOCAL_NODE|base64_encode`| eval echo `sed 's/$/ $LOCAL_NODE/g'` `dbus get ssconf_basic_name_$LOCAL_NODE|base64_encode`>> /tmp/all_localservers
 		done
 	else
 		touch /tmp/all_localservers
@@ -1857,10 +1862,10 @@ change_cru(){
 	sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	if [ "$ss_basic_node_update" = "1" ];then
 		if [ "$ss_basic_node_update_day" = "7" ];then
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * * /bin/sh /koolshare/scripts/ss_online_update.sh 3"
+			cru a ssnodeupdate "2 $ss_basic_node_update_hr * * * /bin/sh /koolshare/scripts/ss_online_update.sh 3"
 			echo_date "设置自动更新订阅服务在每天 $ss_basic_node_update_hr 点。"
 		else
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * $ss_basic_node_update_day /bin/sh /koolshare/scripts/ss_online_update.sh 3"
+			cru a ssnodeupdate "2 $ss_basic_node_update_hr * * $ss_basic_node_update_day /bin/sh /koolshare/scripts/ss_online_update.sh 3"
 			echo_date "设置自动更新订阅服务在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
 		fi
 	else
