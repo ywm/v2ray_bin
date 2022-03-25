@@ -598,6 +598,9 @@ get_vmess_config(){
 			v2ray_host=""
 			v2ray_path=$(echo "$decode_link" | sed -n 's|.*"path":"\([^"]*\)".*|\1|p')
 			;;
+		grpc)
+			v2ray_path=$(echo "$decode_link" | sed -n 's|.*"path":"\([^"]*\)".*|\1|p')
+			;;			
 		esac
 	fi
 
@@ -661,6 +664,10 @@ add_vmess_servers(){
 		[ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$v2rayindex=$v2ray_host
 		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$v2rayindex=$v2ray_path
 		;;
+	grpc)
+		# grpc协议设置【 grpc伪装类型 (type)】
+		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_serviceName_$v2rayindex=$v2ray_path
+		;;
 	esac
 	echo_date v2ray节点：新增加 【$v2ray_ps】 到节点列表第 $v2rayindex 位。
 }
@@ -712,6 +719,11 @@ update_vmess_config(){
 			local_v2ray_path=$(dbus get ssconf_basic_v2ray_network_path_$index)
 			[ "$local_v2ray_host" != "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$index=$v2ray_host && let i+=1
 			[ "$local_v2ray_path" != "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$index=$v2ray_path && let i+=1
+			;;
+		grpc)
+			# grpc协议
+			local_v2ray_serviceName=$(dbus get ssconf_basic_v2ray_serviceName_$index)
+			[ "$local_v2ray_serviceName" != "$v2ray_path" ] && dbus set ssconf_basic_v2ray_serviceName_$index=$v2ray_path && let i+=1
 			;;
 		esac
 
