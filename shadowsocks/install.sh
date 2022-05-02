@@ -29,83 +29,6 @@ if [ "$firmware_comp" == "1" ];then
 	exit 1
 fi
 
-upgrade_ss_conf(){
-	nodes=`dbus list ssc|grep port|cut -d "=" -f1|cut -d "_" -f4|sort -n`
-	for node in $nodes
-	do
-		if [ "`dbus get ssconf_basic_use_rss_$node`" == "1" ];then
-			#ssr
-			dbus remove ssconf_basic_ss_v2ray_plugin_$node
-			dbus remove ssconf_basic_ss_v2ray_plugin_opts_$node
-			dbus remove ssconf_basic_koolgame_udp_$node
-		else
-			if [ -n "`dbus get ssconf_basic_koolgame_udp_$node`" ];then
-				#koolgame
-				dbus remove ssconf_basic_rss_protocol_$node
-				dbus remove ssconf_basic_rss_protocol_param_$node
-				dbus remove ssconf_basic_rss_obfs_$node
-				dbus remove ssconf_basic_rss_obfs_param_$node
-				dbus remove ssconf_basic_ss_v2ray_plugin_$node
-				dbus remove ssconf_basic_ss_v2ray_plugin_opts_$node
-			else
-				#ss
-				dbus remove ssconf_basic_rss_protocol_$node
-				dbus remove ssconf_basic_rss_protocol_param_$node
-				dbus remove ssconf_basic_rss_obfs_$node
-				dbus remove ssconf_basic_rss_obfs_param_$node
-				dbus remove ssconf_basic_koolgame_udp_$node
-				[ -z "`dbus get ssconf_basic_ss_v2ray_plugin_$node`" ] && dbus set ssconf_basic_ss_v2ray_plugin_$node="0"
-			fi
-		fi
-		dbus remove ssconf_basic_use_rss_$node
-	done
-	
-	use_node=`dbus get ssconf_basic_node`
-	[ -z "$use_node" ] && use_node="1"
-	dbus remove ss_basic_server
-	dbus remove ss_basic_mode
-	dbus remove ss_basic_port
-	dbus remove ss_basic_method
-	dbus remove ss_basic_ss_v2ray_plugin
-	dbus remove ss_basic_ss_v2ray_plugin_opts
-	dbus remove ss_basic_rss_protocol
-	dbus remove ss_basic_rss_protocol_param
-	dbus remove ss_basic_rss_obfs
-	dbus remove ss_basic_rss_obfs_param
-	dbus remove ss_basic_koolgame_udp
-	dbus remove ss_basic_use_rss
-	dbus remove ss_basic_use_kcp
-	sleep 1
-	[ -n "`dbus get ssconf_basic_server_$node`" ] && dbus set ss_basic_server=`dbus get ssconf_basic_server_$node`
-	[ -n "`dbus get ssconf_basic_mode_$node`" ] && dbus set ss_basic_mode=`dbus get ssconf_basic_mode_$node`
-	[ -n "`dbus get ssconf_basic_port_$node`" ] && dbus set ss_basic_port=`dbus get ssconf_basic_port_$node`
-	[ -n "`dbus get ssconf_basic_method_$node`" ] && dbus set ss_basic_method=`dbus get ssconf_basic_method_$node`
-	[ -n "`dbus get ssconf_basic_ss_v2ray_plugin_$node`" ] && dbus set ss_basic_ss_v2ray_plugin=`dbus get ssconf_basic_ss_v2ray_plugin_$node`
-	[ -n "`dbus get ssconf_basic_ss_v2ray_plugin_opts_$node`" ] && dbus set ss_basic_ss_v2ray_plugin_opts=`dbus get ssconf_basic_ss_v2ray_plugin_opts_$node`
-	[ -n "`dbus get ssconf_basic_rss_protocol_$node`" ] && dbus set ss_basic_rss_protocol=`dbus get ssconf_basic_rss_protocol_$node`
-	[ -n "`dbus get ssconf_basic_rss_protocol_param_$node`" ] && dbus set ss_basic_rss_protocol_param=`dbus get ssconf_basic_rss_protocol_param_$node`
-	[ -n "`dbus get ssconf_basic_rss_obfs_$node`" ] && dbus set ss_basic_rss_obfs=`dbus get ssconf_basic_rss_obfs_$node`
-	[ -n "`dbus get ssconf_basic_rss_obfs_param_$node`" ] && dbus set ss_basic_rss_obfs_param=`dbus get ssconf_basic_rss_obfs_param_$node`
-	[ -n "`dbus get ssconf_basic_koolgame_udp_$node`" ] && dbus set ss_basic_koolgame_udp=`dbus get ssconf_basic_koolgame_udp_$node`
-	[ -n "`dbus get ssconf_basic_use_kcp_$node`" ] && dbus set ss_basic_koolgame_udp=`dbus get ssconf_basic_use_kcp_$node`
-}
-
-# 如果插件是从低于3.6.5版本升级上来，则需要升级一次数据格式，完全是为超级老的版本而留着
-[ -f "/usr/bin/versioncmp" ] && {
-	SS_VERSION_OLD=`dbus get ss_basic_version_local`
-	[ -z "$SS_VERSION_OLD" ] && SS_VERSION_OLD=3.6.5
-	ss_comp=`/usr/bin/versioncmp $SS_VERSION_OLD 3.6.5`
-	if [ "$ss_comp" == "1" ];then
-		echo_date ！！！！！！！！！！！！！！！！！！！！！！！！！！!
-		echo_date 检测到SS版本号为 $SS_VERSION_OLD !
-		echo_date 从3.6.5开始，SS插件和之前版本的数据格式不完全兼容 !
-		echo_date 此次升级将会尝试升级原先的数据 !
-		echo_date 如果你安装此版本后仍然有问题，请尝试清空ss数据后重新录入 !
-		echo_date ！！！！！！！！！！！！！！！！！！！！！！！！！！!
-		upgrade_ss_conf
-	fi
-}
-
 if [ "$ss_basic_enable" == "1" ];then
 	echo_date 先关闭科学上网插件，保证文件更新成功!
 	sh /koolshare/ss/ssconfig.sh stop
@@ -126,39 +49,11 @@ if [ -n "$MOUNTED" ];then
 fi
 
 echo_date 清理旧文件
+TARGET_BIN="base64_encode cdns chinadns  chinadns1 client_linux_arm5 dns2socks dnsmasq haproxy haveged httping https_dns_proxy jq koolbox koolgame pdu resolveip rss-local rss-redir smartdns speederv1 speederv2 ss-local ss-redir ss-tunnel trojan-go udp2raw v2ray v2ray-plugin xray"
 rm -rf /koolshare/ss/*
 rm -rf /koolshare/scripts/ss_*
 rm -rf /koolshare/webs/Main_Ss*
-rm -rf /koolshare/bin/ss-redir
-rm -rf /koolshare/bin/ss-tunnel
-rm -rf /koolshare/bin/ss-local
-rm -rf /koolshare/bin/rss-redir
-rm -rf /koolshare/bin/rss-tunnel
-rm -rf /koolshare/bin/rss-local
-rm -rf /koolshare/bin/obfs-local
-rm -rf /koolshare/bin/v2ray-plugin
-rm -rf /koolshare/bin/koolgame
-rm -rf /koolshare/bin/pdu
-rm -rf /koolshare/bin/haproxy
-rm -rf /koolshare/bin/pdnsd
-rm -rf /koolshare/bin/Pcap_DNSProxy
-rm -rf /koolshare/bin/dnscrypt-proxy
-rm -rf /koolshare/bin/dns2socks
-rm -rf /koolshare/bin/cdns
-rm -rf /koolshare/bin/client_linux_arm5
-rm -rf /koolshare/bin/chinadns
-rm -rf /koolshare/bin/chinadns1
-rm -rf /koolshare/bin/resolveip
-rm -rf /koolshare/bin/udp2raw
-rm -rf /koolshare/bin/speeder*
-rm -rf /koolshare/bin/v2ray
-rm -rf /koolshare/bin/v2ctl
-rm -rf /koolshare/bin/xray
-rm -rf /koolshare/bin/trojan-go
-rm -rf /koolshare/bin/jitterentropy-rngd
-rm -rf /koolshare/bin/haveged
-rm -rf /koolshare/bin/https_dns_proxy
-rm -rf /koolshare/bin/dnsmassq
+cd /koolshare/bin && rm -f $TARGET_BIN && cd /tmp
 rm -rf /koolshare/res/layer
 rm -rf /koolshare/res/shadowsocks.css
 rm -rf /koolshare/res/icon-shadowsocks.png
@@ -237,8 +132,8 @@ dbus set softcenter_module_shadowsocks_description="科学上网 for merlin armv
 dbus set softcenter_module_shadowsocks_home_url="Main_Ss_Content.asp"
 
 # 设置v2ray 版本号
-dbus set ss_basic_v2ray_version=4.35.9
-dbus set ss_basic_v2ray_date=20220429
+dbus set ss_basic_v2ray_version=4.36.0
+dbus set ss_basic_v2ray_date=20220502
 
 echo_date 一点点清理工作...
 rm -rf /tmp/shadowsocks* >/dev/null 2>&1

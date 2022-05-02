@@ -119,6 +119,8 @@ prepare(){
 	q=1
 	for nu in $valid_nus
 	do
+		[[ $nu -gt 1000 ]] && group_index_node=$((nu/1000*1000))
+		[[ $nu -gt 1000 ]] && [[ $nu -gt $group_index_node ]] && [[ $q -lt $group_index_node ]]  && q=$((q%1000+group_index_node))
 		[ -n "$(dbus get ssconf_basic_koolgame_udp_$nu)" ] && echo dbus set ssconf_basic_koolgame_udp_$q=$(dbus get ssconf_basic_koolgame_udp_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_method_$nu)" ] && echo dbus set ssconf_basic_method_$q=$(dbus get ssconf_basic_method_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_mode_$nu)" ] && echo dbus set ssconf_basic_mode_$q=$(dbus get ssconf_basic_mode_$nu) >> /tmp/ss_conf.sh
@@ -190,7 +192,7 @@ prepare(){
 	# -----------------
 	# 3 应用之前提取的干净的ss配置
 	echo_date 检查完毕！节点信息备份在/koolshare/configs/ss_conf.sh
-	</tmp/ss_conf.sh sed 's/=/=\"/' | sed 's/$/\"/g' > /koolshare/configs/ss_conf.sh
+	</tmp/ss_conf.sh sed -e 's/=/=\"/' -e 's/$/\"/g' > /koolshare/configs/ss_conf.sh
 	sh /koolshare/configs/ss_conf.sh
 	# ==============================
 }
@@ -218,30 +220,33 @@ urldecode(){
 # ss 节点添加解析并更新
 ##################################################################################################
 add_ss_servers(){
-	ss_index=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
+	[[ $1 -ge 1000 ]] &&  local group_index=$1
+	ssindex_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $ssindex_x -gt 1000 ]] && ssindex_x=$((ssindex_x%1000))
+	ssindex=$((ssindex_x+group_index))
 #	echo_date "添加 ss 节点：$remarks"
-	[ -z "$1" ] && dbus set ssconf_basic_group_$ss_index=$group
-	dbus set ssconf_basic_name_$ss_index=$remarks
-	dbus set ssconf_basic_mode_$ss_index=$ssr_subscribe_mode
-	dbus set ssconf_basic_server_$ss_index=$server
-	dbus set ssconf_basic_port_$ss_index=$server_port
-	dbus set ssconf_basic_method_$ss_index=$encrypt_method
-	dbus set ssconf_basic_password_$ss_index=$password
-	dbus set ssconf_basic_type_$ss_index="0"
-	dbus set ssconf_basic_ss_v2ray_$ss_index=$ss_v2ray_tmp
-	dbus set ssconf_basic_ss_v2ray_plugin_$ss_index=$ss_v2ray_plugin_tmp
-	dbus set ssconf_basic_ss_v2ray_plugin_opts_$ss_index=$ss_v2ray_opts_tmp
-	dbus set ssconf_basic_ss_kcp_support_$ss_index=$ss_kcp_support_tmp
-	dbus set ssconf_basic_ss_udp_support_$ss_index=$ss_udp_support_tmp
-	dbus set ssconf_basic_ss_kcp_opts_$ss_index=$ss_kcp_opts_tmp
-	dbus set ssconf_basic_ss_sskcp_server_$ss_index=$ss_sskcp_server_tmp
-	dbus set ssconf_basic_ss_sskcp_port_$ss_index=$ss_sskcp_port_tmp
-	dbus set ssconf_basic_ss_ssudp_server_$ss_index=$ss_ssudp_server_tmp
-	dbus set ssconf_basic_ss_ssudp_port_$ss_index=$ss_ssudp_port_tmp
-	dbus set ssconf_basic_ss_ssudp_mtu_$ss_index=$ss_ssudp_mtu_tmp
-	dbus set ssconf_basic_ss_udp_opts_$ss_index=$ss_udp_opts_tmp
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$ssindex=$group
+	dbus set ssconf_basic_name_$ssindex=$remarks
+	dbus set ssconf_basic_mode_$ssindex=$ssr_subscribe_mode
+	dbus set ssconf_basic_server_$ssindex=$server
+	dbus set ssconf_basic_port_$ssindex=$server_port
+	dbus set ssconf_basic_method_$ssindex=$encrypt_method
+	dbus set ssconf_basic_password_$ssindex=$password
+	dbus set ssconf_basic_type_$ssindex="0"
+	dbus set ssconf_basic_ss_v2ray_$ssindex=$ss_v2ray_tmp
+	dbus set ssconf_basic_ss_v2ray_plugin_$ssindex=$ss_v2ray_plugin_tmp
+	dbus set ssconf_basic_ss_v2ray_plugin_opts_$ssindex=$ss_v2ray_opts_tmp
+	dbus set ssconf_basic_ss_kcp_support_$ssindex=$ss_kcp_support_tmp
+	dbus set ssconf_basic_ss_udp_support_$ssindex=$ss_udp_support_tmp
+	dbus set ssconf_basic_ss_kcp_opts_$ssindex=$ss_kcp_opts_tmp
+	dbus set ssconf_basic_ss_sskcp_server_$ssindex=$ss_sskcp_server_tmp
+	dbus set ssconf_basic_ss_sskcp_port_$ssindex=$ss_sskcp_port_tmp
+	dbus set ssconf_basic_ss_ssudp_server_$ssindex=$ss_ssudp_server_tmp
+	dbus set ssconf_basic_ss_ssudp_port_$ssindex=$ss_ssudp_port_tmp
+	dbus set ssconf_basic_ss_ssudp_mtu_$ssindex=$ss_ssudp_mtu_tmp
+	dbus set ssconf_basic_ss_udp_opts_$ssindex=$ss_udp_opts_tmp
 
-	echo_date "SS节点：新增加【$remarks】到节点列表第 $ss_index 位。"
+	echo_date "SS节点：新增加【$remarks】到节点列表第 $ssindex_x 位。"
 
 	#初始化
 	encrypt_method=""
@@ -366,7 +371,7 @@ get_ss_config(){
 update_ss_config(){
 	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
-		add_ss_servers
+		add_ss_servers $1
 		let addnum1+=1
 		let addnum+=1
 	else
@@ -440,9 +445,12 @@ update_ss_config(){
 # ssr 节点添加解析并更新
 ##################################################################################################
 add_ssr_servers(){
-	ssrindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
+	[[ $1 -ge 1000 ]] &&  local group_index=$1 
+	ssrindex_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $ssrindex_x -gt 1000 ]] && ssrindex_x=$((ssrindex_x%1000))
+	ssrindex=$((ssrindex_x+group_index))
 	dbus set ssconf_basic_name_$ssrindex=$remarks
-	[ -z "$1" ] && dbus set ssconf_basic_group_$ssrindex=$group
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$ssrindex=$group
 	dbus set ssconf_basic_mode_$ssrindex=$ssr_subscribe_mode
 	dbus set ssconf_basic_server_$ssrindex=$server
 	dbus set ssconf_basic_port_$ssrindex=$server_port
@@ -453,7 +461,7 @@ add_ssr_servers(){
 	dbus set ssconf_basic_type_$ssrindex="1"
 	[ -n "$1" ] && dbus set ssconf_basic_rss_obfs_param_$ssrindex=${obfsparam%%#*}
 	dbus set ssconf_basic_password_$ssrindex=$password
-	echo_date SSR节点：新增加 【$remarks】 到节点列表第 $ssrindex 位。
+	echo_date SSR节点：新增加 【$remarks】 到节点列表第 $ssrindex_x 位。
 }
 
 get_ssr_config(){
@@ -511,7 +519,7 @@ get_ssr_config(){
 update_ssr_config(){
 	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
-		add_ssr_servers
+		add_ssr_servers $1
 		[ "$ssr_subscribe_obfspara" == "0" ] && dbus set ssconf_basic_rss_obfs_param_$ssrindex=""
 		[ "$ssr_subscribe_obfspara" == "1" ] && dbus set ssconf_basic_rss_obfs_param_$ssrindex="${obfsparam%%#*}"
 		[ "$ssr_subscribe_obfspara" == "2" ] && dbus set ssconf_basic_rss_obfs_param_$ssrindex="${ssr_subscribe_obfspara_val%%#*}"
@@ -562,8 +570,8 @@ get_vmess_config(){
 	#decode_link="$1"
 	v2ray_group="$2"
 	v2ray_v=$(echo "$decode_link" | sed -E 's/.*"v":"?([^,"]*)"?.*/\1/')
-	v2ray_ps=$(echo "$decode_link" | sed -n 's/\\"/\&quot;/g;s|.*"ps":"\([^"]*\)".*|\1|p' | sed 's/&quot;/\"/g')
-	v2ray_add=$(echo "$decode_link" | sed 's/[ \t]*//g' | sed -E 's/.*"add":"?([^,"]*)"?.*/\1/')
+	v2ray_ps="$(echo "$decode_link" | sed -n 's/\\"/\&quot;/g;s|.*"ps":"\([^"]*\)".*|\1|p' | sed -e 's/&quot;/\"/g' | awk '{$1=$1;print}')"
+	v2ray_add="$(echo "$decode_link" | sed 's/[ \t]*//g' | sed -E 's/.*"add":"?([^,"]*)"?.*/\1/')"
 	v2ray_port=$(echo "$decode_link" | sed -E 's/.*"port":"?([^,"]*)"?.*/\1/')
 	v2ray_id=$(echo "$decode_link" | sed -E 's/.*"id":"?([^,"]*)"?.*/\1/')
 	v2ray_aid=$(echo "$decode_link" | sed -E 's/.*"aid":"?([^,"]*)"?.*/\1/')
@@ -612,10 +620,10 @@ get_vmess_config(){
 
 	#把全部服务器节点编码后写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
 	[ -n "$v2ray_group" ] && group_base64=`echo $v2ray_group | base64_encode | sed 's/ -//g'`
-	[ -n "$v2ray_add" ] && server_base64=`echo $v2ray_add | base64_encode | sed 's/ -//g'`	
-	[ -n "$v2ray_ps" ] && remarks_base64=`echo $v2ray_ps | base64_encode | sed 's/ -//g'`
+	[ -n "$v2ray_add" ] && server_base64=`echo "$v2ray_add" | base64_encode | sed 's/ -//g'`	
+	[ -n "$v2ray_ps" ] && remarks_base64=`echo "$v2ray_ps" | base64_encode | sed 's/ -//g'`
 
-	[ -n "$node_regexp" ] && incNY=`echo $v2ray_ps $v2ray_add  | sed -n "$node_regexp"` || incNY="Y"
+	[ -n "$node_regexp" ] && incNY=`echo "$v2ray_ps" "$v2ray_add"  | sed -n "$node_regexp"` || incNY="Y"
 	[ -n "$incNY" ] && [ -n "$v2ray_group" ] && [ -n "$v2ray_add" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
 	[ -n "$incNY" ] && echo "$v2ray_group" >> /tmp/all_group_info.txt || return 2
 	[ -n "$v2ray_group" ] && return 0 || return 1
@@ -638,8 +646,11 @@ get_vmess_config(){
 }
 
 add_vmess_servers(){
-	v2rayindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
-	[ -z "$1" ] && dbus set ssconf_basic_group_$v2rayindex=$v2ray_group
+	[[ $1 -ge 1000 ]] &&  local group_index=$1 
+	v2rayindex_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $v2rayindex_x -gt 1000 ]] && v2rayindex_x=$((v2rayindex_x%1000))
+	v2rayindex=$((v2rayindex_x+group_index))	
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$v2rayindex=$v2ray_group
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vmess"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="v2ray"
@@ -648,7 +659,7 @@ add_vmess_servers(){
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="auto"
 	dbus set ssconf_basic_mode_$v2rayindex=$ssr_subscribe_mode
-	dbus set ssconf_basic_name_$v2rayindex=$v2ray_ps
+	dbus set ssconf_basic_name_$v2rayindex="$v2ray_ps"
 	dbus set ssconf_basic_port_$v2rayindex=$v2ray_port
 	dbus set ssconf_basic_server_$v2rayindex=$v2ray_add
 	dbus set ssconf_basic_v2ray_uuid_$v2rayindex=$v2ray_id
@@ -676,13 +687,13 @@ add_vmess_servers(){
 		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_serviceName_$v2rayindex=$v2ray_path
 		;;
 	esac
-	echo_date v2ray节点：新增加 【$v2ray_ps】 到节点列表第 $v2rayindex 位。
+	echo_date v2ray节点：新增加 【$v2ray_ps】 到节点列表第 $v2rayindex_x 位。
 }
 
 update_vmess_config(){
 	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
-		add_vmess_servers
+		add_vmess_servers $1
 		let addnum3+=1
 		let addnum+=1
 	else
@@ -691,10 +702,10 @@ update_vmess_config(){
 
 		local i=0
 		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
-		local_v2ray_ps=$(dbus get ssconf_basic_name_$index)
-		[ "$local_v2ray_ps" != "$v2ray_ps" ] && dbus set ssconf_basic_name_$index=$v2ray_ps && let i+=1
+		local_v2ray_ps="$(dbus get ssconf_basic_name_$index)"
+		[ "$local_v2ray_ps" != "$v2ray_ps" ] && dbus set ssconf_basic_name_$index="$v2ray_ps" && let i+=1
 		local_v2ray_add=$(dbus get ssconf_basic_server_$index)
-		[ "$local_v2ray_add" != "$v2ray_add" ] && dbus set ssconf_basic_server_$index=$v2ray_add && let i+=1
+		[ "$local_v2ray_add" != "$v2ray_add" ] && dbus set ssconf_basic_server_$index="$v2ray_add" && let i+=1
 		local_v2ray_port=$(dbus get ssconf_basic_port_$index)
 		[ "$local_v2ray_port" != "$v2ray_port" ] && dbus set ssconf_basic_port_$index=$v2ray_port && let i+=1
 		local_v2ray_id=$(dbus get ssconf_basic_v2ray_uuid_$index)
@@ -735,9 +746,9 @@ update_vmess_config(){
 		esac
 
 		if [ "$i" -gt "0" ];then
-			echo_date 修改v2ray节点：【$v2ray_ps】 && let updatenum3+=1 && let updatenum+=1
+			echo_date 修改v2ray节点：【"$v2ray_ps"】 && let updatenum3+=1 && let updatenum+=1
 		else
-			echo_date v2ray节点：【$v2ray_ps】 参数未发生变化，跳过！
+			echo_date v2ray节点：【"$v2ray_ps"】 参数未发生变化，跳过！
 		fi
 	fi
 }
@@ -806,9 +817,12 @@ get_trojan_config(){
 }
 
 add_trojan_servers(){
-	trojanindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
+	[[ $1 -ge 1000 ]] &&  local group_index=$1 
+	trojanindex_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $trojanindex_x -gt 1000 ]] && trojanindex_x=$((trojanindex_x%1000))
+	trojanindex=$((trojanindex_x+group_index))
 #	echo_date "添加 Trojan 节点：$remarks"
-	[ -z "$1" ] && dbus set ssconf_basic_group_$trojanindex=$group
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$trojanindex=$group
 	dbus set ssconf_basic_name_$trojanindex=$remarks
 	dbus set ssconf_basic_mode_$trojanindex=$ssr_subscribe_mode
 	dbus set ssconf_basic_server_$trojanindex=$server
@@ -828,13 +842,13 @@ add_trojan_servers(){
 	dbus set ssconf_basic_ss_ssudp_port_$trojanindex=$ss_ssudp_port_tmp
 	dbus set ssconf_basic_ss_ssudp_mtu_$trojanindex=$ss_ssudp_mtu_tmp
 	dbus set ssconf_basic_ss_udp_opts_$trojanindex=$ss_udp_opts_tmp
-	echo_date "Trojan 节点：新增加 【$remarks】 到节点列表第 $trojanindex 位。"
+	echo_date "Trojan 节点：新增加 【$remarks】 到节点列表第 $trojanindex_x 位。"
 }
 
 update_trojan_config(){
 	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
-		add_trojan_servers
+		add_trojan_servers $1
 		let addnum4+=1
 		let addnum+=1
 	else
@@ -959,8 +973,12 @@ get_vless_config(){
 }
 
 add_vless_servers(){
-	v2rayindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
-	[ -z "$1" ] && dbus set ssconf_basic_group_$v2rayindex=$vless_group
+	[[ $1 -ge 1000 ]] &&  local group_index=$1
+	v2rayindex_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $v2rayindex_x -gt 1000 ]] && v2rayindex_x=$((v2rayindex_x%1000))
+	v2rayindex=$((v2rayindex_x+group_index))	
+
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$v2rayindex=$vless_group
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vless"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="xray"
@@ -1005,13 +1023,13 @@ add_vless_servers(){
 		[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$v2rayindex=$v2ray_path
 		;;
 	esac
-	echo_date vless节点：新增加 【$v2ray_ps】 到节点列表第 $v2rayindex 位。
+	echo_date vless节点：新增加 【$v2ray_ps】 到节点列表第 $v2rayindex_x 位。
 }
 
 update_vless_config(){
 	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
-		add_vless_servers
+		add_vless_servers $1
 		let addnum5+=1
 		let addnum+=1
 	else
@@ -1138,9 +1156,12 @@ get_trojan_go_config(){
 }
 
 add_trojan_go_servers(){
-	trojangoindex=$(($(dbus list ssconf_basic_|grep _name_ | cut -d "=" -f1|cut -d "_" -f4|sort -rn|head -n1)+1))
+	[[ $1 -ge 1000 ]] &&  local group_index=$1
+	trojangoindex_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $trojangoindex_x -gt 1000 ]] && trojangoindex_x=$((trojangoindex_x%1000))
+	trojangoindex=$((trojangoindex_x+group_index))
 #	echo_date "添加 Trojan-Go节点：$remarks"
-	[ -z "$1" ] && dbus set ssconf_basic_group_$trojangoindex=$group
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$trojangoindex=$group
 	dbus set ssconf_basic_name_$trojangoindex=$remarks
 	dbus set ssconf_basic_mode_$trojangoindex=$ssr_subscribe_mode
 	dbus set ssconf_basic_server_$trojangoindex=$server
@@ -1163,13 +1184,13 @@ add_trojan_go_servers(){
 	dbus set ssconf_basic_ss_ssudp_mtu_$trojangoindex=$ss_ssudp_mtu_tmp
 	dbus set ssconf_basic_ss_udp_opts_$trojangoindex=$ss_udp_opts_tmp
 	
-	echo_date "Trojan Go节点：新增加 【$remarks】 到节点列表第 $trojangoindex 位。"
+	echo_date "Trojan Go节点：新增加 【$remarks】 到节点列表第 $trojangoindex_x 位。"
 }
 
 update_trojan_go_config(){
 	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
 	if [ "$isadded_server" == "0" ]; then
-		add_trojan_go_servers
+		add_trojan_go_servers $1
 		let addnum6+=1
 		let addnum+=1
 	else
@@ -1246,7 +1267,8 @@ del_none_exist(){
 			del_index=`</tmp/all_localservers awk '{print $1,$4,$3}' | grep $localserver | awk '{print $3}'`
 			#for localindex in $(dbus list ssconf_basic_server|grep -v ssconf_basic_server_ip_|grep -w $localserver|cut -d "_" -f 4 |cut -d "=" -f1)
 			for localindex in $del_index
-			do
+			do 
+			if [ -n "`dbus get ssconf_basic_name_$localindex`" ]; then
 				echo_date 删除节点：`dbus get ssconf_basic_name_$localindex` ，因为该节点在订阅服务器上已经不存在...
 				if [ "`dbus get ssconf_basic_type_$localindex`" = "0" ];then	#ss
 					let delnum1+=1
@@ -1257,9 +1279,9 @@ del_none_exist(){
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "3" ] && [ "`dbus get ssconf_basic_v2ray_protocol_$localindex`" = "vless" ];then	 #vless
 					let delnum5+=1
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ] && [ "`dbus get ssconf_basic_trojan_binary_$localindex`" = "Trojan" ];then	 #trojan
-					let delnum4+=1	
+					let delnum4+=1
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ] && [ "`dbus get ssconf_basic_trojan_binary_$localindex`" = "Trojan-Go" ];then	 #trojan go
-					let delnum6+=1			
+					let delnum6+=1
 				fi
 				
 					dbus remove ssconf_basic_group_$localindex
@@ -1289,7 +1311,7 @@ del_none_exist(){
 					dbus remove ssconf_basic_ss_v2ray_plugin_$localindex
 					dbus remove ssconf_basic_ss_v2ray_plugin_opts_$localindex
 					dbus remove ssconf_basic_trojan_binary_$localindex	
-					dbus remove ssconf_basic_trojan_network_$localindex											
+					dbus remove ssconf_basic_trojan_network_$localindex
 					dbus remove ssconf_basic_trojan_sni_$localindex
 					dbus remove ssconf_basic_type_$localindex
 					dbus remove ssconf_basic_use_kcp_$localindex
@@ -1316,30 +1338,33 @@ del_none_exist(){
 					dbus remove ssconf_basic_weight_$localindex
 
 				let delnum+=1
+			fi 
 			done
 		fi
 	done
 }
 
 remove_node_gap(){
-	SEQ=$(dbus list ssconf_basic_|grep _name_|cut -d "_" -f 4|cut -d "=" -f 1|sort -n)
-	MAX=$(dbus list ssconf_basic_|grep _name_|cut -d "_" -f 4|cut -d "=" -f 1|sort -rn|head -n1)
-	NODE_NU=$(dbus list ssconf_basic_|grep _name_|wc -l)
-	KCP_NODE=`dbus get ss_kcp_node`
+	local SEQ=$(dbus list ssconf_basic_|grep _name_|cut -d "_" -f 4|cut -d "=" -f 1|sort -n)
+	local MAX=$(dbus list ssconf_basic_|grep _name_|cut -d "_" -f 4|cut -d "=" -f 1|sort -rn|head -n1)
+	[[ $MAX -gt 1000 ]] && local MAX_adj=$((MAX%1000))
+	local NODE_NU=$(dbus list ssconf_basic_|grep _name_|wc -l)
+	local KCP_NODE=`dbus get ss_kcp_node`
 	
 	#echo_date 现有节点顺序：$SEQ
-	echo_date 最大节点序号：$MAX
+	echo_date 最大节点序号：$MAX_adj
 	echo_date 共有节点数量：$NODE_NU
 	
-	if [ "$MAX" != "$NODE_NU" ];then
+	if [ "$MAX_adj" != "$NODE_NU" ];then
 		echo_date 节点排序需要调整!
-		y=1
+		echo_date 节点排序调整中...... 耐心等待
+		local y=1
 		for nu in $SEQ
 		do
-			if [ "$y" == "$nu" ];then
-				echo_date 节点 $y 不需要调整 !
-			else
-				echo_date 调整节点 $nu 到 节点$y !
+			[[ $nu -gt 1000 ]] && group_index_node=$((nu/1000*1000)) 
+			[ "$y" != "$nu" ] && [[ $nu -gt $group_index_node ]] && [[ $y -lt $group_index_node ]]  && y=$((y%1000+group_index_node))
+			if [ "$y" != "$nu" ] ; then
+				#echo_date 调整节点 $nu 到 节点 $y !
 				[ -n "$(dbus get ssconf_basic_group_$nu)" ] && dbus set ssconf_basic_group_"$y"="$(dbus get ssconf_basic_group_$nu)" && dbus remove ssconf_basic_group_$nu
 				[ -n "$(dbus get ssconf_basic_method_$nu)" ] && dbus set ssconf_basic_method_"$y"="$(dbus get ssconf_basic_method_$nu)" && dbus remove ssconf_basic_method_$nu
 				[ -n "$(dbus get ssconf_basic_mode_$nu)" ] && dbus set ssconf_basic_mode_"$y"="$(dbus get ssconf_basic_mode_$nu)" && dbus remove ssconf_basic_mode_$nu
@@ -1393,7 +1418,7 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)" ] && dbus set ssconf_basic_v2ray_network_tlshost_"$y"="$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)"  && dbus remove ssconf_basic_v2ray_network_tlshost_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_flow_$nu)" ] && dbus set ssconf_basic_v2ray_network_flow_"$y"="$(dbus get ssconf_basic_v2ray_network_flow_$nu)"  && dbus remove ssconf_basic_v2ray_network_flow_$nu
 			
-				usleep 250000
+				usleep 100000
 				# change node nu
 				if [ "$nu" == "$ssconf_basic_node" ];then
 					dbus set ssconf_basic_node="$y"
@@ -1522,11 +1547,11 @@ get_oneline_rule_now(){
 			group=`echo $ssr_subscribe_link|awk -F'[/:#]' '{print $4}'`
 			
 			# 储存对应订阅链接的group信息
-			dbus set ss_online_group_$z=$group
+			dbus set ss_online_group_$url_count=$group
 			echo $group >> /tmp/group_info.txt
 			
 			remarks='AutoSuB'
-
+			group_index=$((url_count*1000))
 			# 提取节点
 			grep -E '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://' /tmp/ssr_subscribe_file_temp1.txt >  /tmp/ssr_subscribe_file_temp2.txt &&  mv  /tmp/ssr_subscribe_file_temp2.txt  /tmp/ssr_subscribe_file_temp1.txt
 			
@@ -1543,10 +1568,10 @@ get_oneline_rule_now(){
 					get_${NODE_FORMAT}_config $link "$group"
 					local get_res=$? 
 					if [ "$get_res" == "0" ]; then 
-						update_${NODE_FORMAT}_config 
-					elif [ "$get_res" == "2" ]; then
-						echo_date "节点名称不满足自定义关键字或正则表达式，被排除。"
-					else
+						update_${NODE_FORMAT}_config $group_index
+				#	elif [ "$get_res" == "2" ]; then
+					#	echo_date "节点名称不满足自定义关键字或正则表达式，被排除。"
+					elif [ "$get_res" == "1" ]; then
 						echo_date "检测到一个错误节点，已经跳过！"
 					fi
 				else
@@ -1554,10 +1579,8 @@ get_oneline_rule_now(){
 				fi	
 			done < /tmp/ssr_subscribe_file_temp1.txt
 			
-			# 去除订阅服务器上已经删除的节点
+			# 去除订阅服务器上已经删除，或者用户自定义表达式未包含的节点
 			del_none_exist
-			# 节点重新排序
-			 remove_node_gap
 
 			USER_ADD=$(($(dbus list ssconf_basic_|grep _name_|wc -l) - $(dbus list ssconf_basic_|grep _group_|wc -l))) || 0
 			ONLINE_GET=$(dbus list ssconf_basic_|grep _group_|wc -l) || 0
@@ -1598,7 +1621,7 @@ start_update(){
 	rm -f /tmp/all_onlineservers >/dev/null 2>&1
 	rm -f /tmp/all_group_info.txt >/dev/null 2>&1
 	rm -f /tmp/group_info.txt >/dev/null 2>&1
-	usleep 250000
+#	usleep 250000
 	echo_date 收集本地节点名到文件
 	LOCAL_NODES=`dbus list ssconf_basic_|grep _group_|cut -d "_" -f 4|cut -d "=" -f 1|sort -n`
 	if [ -n "$LOCAL_NODES" ];then
@@ -1611,14 +1634,14 @@ start_update(){
 		touch /tmp/all_localservers
 	fi
 	
-	z=0
-	online_url_nu=`dbus get ss_online_links|base64_decode|sed 's/$/\n/'|sed '/^$/d'|wc -l`
+	url_count=0
+	online_url_nu=`dbus get ss_online_links|base64_decode|sed -e 's/$/\n/' -e '/^$/d'|wc -l`
 	#echo_date online_url_nu $online_url_nu
-	until [ "$z" == "$online_url_nu" ]
+	until [ "$url_count" == "$online_url_nu" ]
 	do
-		z=$(($z+1))
-		#url=`dbus get ss_online_link_$z`
-		url=`dbus get ss_online_links|base64_decode|awk '{print $1}'|sed -n "$z p"|sed '/^#/d'`
+		url_count=$((url_count+1))
+
+		url=`dbus get ss_online_links|base64_decode|awk '{print $1}'|sed -n "$url_count p"|sed '/^#/d'`
 		[ -z "$url" ] && continue
 		echo_date "==================================================================="
 		echo_date "				服务器订阅程序(Shell by stones & sadog)"
@@ -1638,33 +1661,33 @@ start_update(){
 			echo_date "无法获取产品信息！请检查你的服务商是否更换了订阅链接！"
 			rm -rf /tmp/ssr_subscribe_file.txt >/dev/null 2>&1 &
 			let DEL_SUBSCRIBE+=1
-			sleep 2
+			sleep 1
 			echo_date "退出订阅程序..."
 			;;
 		3)
 			echo_date "该订阅链接不包含任何节点信息！请检查你的服务商是否更换了订阅链接！"
 			rm -rf /tmp/ssr_subscribe_file.txt >/dev/null 2>&1 &
 			let DEL_SUBSCRIBE+=1
-			sleep 2
+			sleep 1
 			echo_date "退出订阅程序..."
 			;;
 		4)
 			echo_date "订阅地址错误！检测到你输入的订阅地址并不是标准网址格式！"
 			rm -rf /tmp/ssr_subscribe_file.txt >/dev/null 2>&1 &
 			let DEL_SUBSCRIBE+=1
-			sleep 2
+			sleep 1
 			echo_date "退出订阅程序..."
 			;;
 		1|*)
 			echo_date "下载订阅失败...请检查你的网络..."
 			rm -rf /tmp/ssr_subscribe_file.txt >/dev/null 2>&1 &
 			let DEL_SUBSCRIBE+=1
-			sleep 2
+			sleep 1
 			echo_date "退出订阅程序..."
 			;;
 		esac
 	done
-
+	remove_node_gap
 	if [ "$DEL_SUBSCRIBE" == "0" ];then
 		# 尝试删除去掉订阅链接对应的节点
 		local_groups=`dbus list ssconf_basic_group_|cut -d "=" -f2|sort -u`
@@ -1793,7 +1816,7 @@ add() {
 	rm -rf /tmp/all_group_info.txt >/dev/null 2>&1
 	rm -rf /tmp/group_info.txt >/dev/null 2>&1
 	#echo_date 添加链接为：`dbus get ss_base64_links`
-	ssrlinks=`dbus get ss_base64_links|sed 's/$/\n/'|sed '/^$/d'`
+	ssrlinks=`dbus get ss_base64_links | sed -e 's/$/\n/' -e '/^$/d'`
 	
 	for ssrlink in $ssrlinks
 	do
@@ -1929,7 +1952,7 @@ case $ss_online_action in
 	set_lock
 	detect
 	local_groups=`dbus list ssconf_basic_|grep group|cut -d "=" -f2|sort -u|wc -l`
-	online_group=`dbus get ss_online_links|base64_decode|sed 's/$/\n/'|sed '/^$/d'|wc -l`
+	online_group=`dbus get ss_online_links|base64_decode|sed -e 's/$/\n/' -e '/^$/d'|wc -l`
 	echo_date "保存订阅节点成功，现共有 $online_group 组订阅来源，当前节点列表内已经订阅了 $local_groups 组..."
 	change_cru
 	unset_lock

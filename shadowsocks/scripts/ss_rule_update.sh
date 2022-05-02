@@ -181,7 +181,7 @@ change_cru(){
 
 case $ss_basic_update_action in
 1)
-	#svae only
+	#save only
 	change_cru
 	# incase next time auto update failed
 	dbus remove ss_basic_update_action

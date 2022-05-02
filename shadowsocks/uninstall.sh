@@ -15,41 +15,12 @@ if [ -n "$MOUNTED" ];then
 	umount /usr/sbin/dnsmasq
 	service restart_dnsmasq >/dev/null 2>&1
 fi
+TARGET_BIN="base64_encode cdns chinadns  chinadns1 client_linux_arm5 dns2socks dnsmasq haproxy haveged httping https_dns_proxy jq koolbox koolgame pdu resolveip rss-local rss-redir smartdns speederv1 speederv2 ss-local ss-redir ss-tunnel trojan-go udp2raw v2ray v2ray-plugin xray"
 
 rm -rf /koolshare/ss/*
 rm -rf /koolshare/scripts/ss_*
 rm -rf /koolshare/webs/Main_Ss*
-rm -rf /koolshare/bin/ss-redir
-rm -rf /koolshare/bin/ss-tunnel
-rm -rf /koolshare/bin/ss-local
-rm -rf /koolshare/bin/rss-redir
-rm -rf /koolshare/bin/rss-tunnel
-rm -rf /koolshare/bin/rss-local
-rm -rf /koolshare/bin/obfs-local
-rm -rf /koolshare/bin/v2ray-plugin
-rm -rf /koolshare/bin/koolgame
-rm -rf /koolshare/bin/pdu
-rm -rf /koolshare/bin/haproxy
-rm -rf /koolshare/bin/pdnsd
-rm -rf /koolshare/bin/Pcap_DNSProxy
-rm -rf /koolshare/bin/dnscrypt-proxy
-rm -rf /koolshare/bin/dns2socks
-rm -rf /koolshare/bin/cdns
-rm -rf /koolshare/bin/client_linux_arm5
-rm -rf /koolshare/bin/chinadns
-rm -rf /koolshare/bin/chinadns1
-rm -rf /koolshare/bin/smartdns
-rm -rf /koolshare/bin/resolveip
-rm -rf /koolshare/bin/udp2raw
-rm -rf /koolshare/bin/speeder*
-rm -rf /koolshare/bin/v2ray
-rm -rf /koolshare/bin/v2ctl
-rm -rf /koolshare/bin/xray
-rm -rf /koolshare/bin/trojan-go
-rm -rf /koolshare/bin/jitterentropy-rngd
-rm -rf /koolshare/bin/haveged
-rm -rf /koolshare/bin/https_dns_proxy
-rm -rf /koolshare/bin/dnsmasq
+cd /koolshare/bin && rm -f $TARGET_BIN && cd /tmp
 rm -rf /koolshare/res/layer
 rm -rf /koolshare/res/shadowsocks.css
 rm -rf /koolshare/res/icon-shadowsocks.png
