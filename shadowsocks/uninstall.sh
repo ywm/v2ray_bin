@@ -15,7 +15,7 @@ if [ -n "$MOUNTED" ];then
 	umount /usr/sbin/dnsmasq
 	service restart_dnsmasq >/dev/null 2>&1
 fi
-TARGET_BIN="base64_encode cdns chinadns  chinadns1 client_linux_arm5 dns2socks dnsmasq haproxy haveged httping https_dns_proxy jq koolbox koolgame pdu resolveip rss-local rss-redir smartdns speederv1 speederv2 ss-local ss-redir ss-tunnel trojan-go udp2raw v2ray v2ray-plugin xray"
+TARGET_BIN="base64_encode cdns chinadns  chinadns1 client_linux_arm5 dns2socks dnsmasq haproxy haveged httping https_dns_proxy jq koolbox koolgame pdu resolveip rss-local rss-redir smartdns speederv1 speederv2 ss-local ss-redir ss-tunnel trojan-go udp2raw v2ray v2ray-plugin obfs-local xray"
 
 rm -rf /koolshare/ss/*
 rm -rf /koolshare/scripts/ss_*

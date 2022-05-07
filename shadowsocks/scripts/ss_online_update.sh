@@ -307,6 +307,9 @@ get_ss_config(){
 	# plugin=v2ray;path=/s233;host=yes.herokuapp.com;tls
 	# plugin=V2ray-plugin;path=/s233;host=yes.herokuapp.com;tls#nodename4test
 
+	#simple-obfs : Deprecated. Followed by v2ray-plugin.
+    # plugin=simple-obfs;obfs=http;obfs-host=www.bing.com
+
 	#	初始化
 	ss_v2ray_tmp="0"
 	ss_v2ray_plugin_tmp="0"	
@@ -317,33 +320,28 @@ get_ss_config(){
 	if [ -n "$(echo -n "$decode_link" | grep "?")" ];then
 		plugin=$(echo "$decode_link" |awk -F'[?#]' '{print $2}')
 		plugin_type=$(echo "$plugin" | tr ';' '\n' | grep 'plugin=' | awk -F'=' '{print $2}' | tr '[A-Z]' '[a-z]')	
+		ss_kcp_support_tmp="0"
+		ss_udp_support_tmp="0"
+		ss_kcp_opts_tmp=""
+		ss_sskcp_server_tmp=""
+		ss_sskcp_port_tmp=""
+		ss_ssudp_server_tmp=""
+		ss_ssudp_port_tmp=""
+		ss_ssudp_mtu_tmp=""
+		ss_udp_opts_tmp=""
 
 		if [ -n "$plugin" ] && [ -z "${plugin_type##*v2ray*}" ] && [ -n "$plugin_type" ];then
 			ss_v2ray_tmp="1"
 			ss_v2ray_opts_tmp="$(echo $plugin | cut -d";" -f2-)"
 			ss_v2ray_plugin_tmp="1"
-			ss_kcp_support_tmp="0"
-			ss_udp_support_tmp="0"
-			ss_kcp_opts_tmp=""
-			ss_sskcp_server_tmp=""
-			ss_sskcp_port_tmp=""
-			ss_ssudp_server_tmp=""
-			ss_ssudp_port_tmp=""
-			ss_ssudp_mtu_tmp=""
-			ss_udp_opts_tmp=""			
+		elif [ -n "$plugin" ] && [ -z "${plugin_type##*obfs*}" ] && [ -n "$plugin_type" ];then
+			ss_v2ray_tmp="2"
+			ss_v2ray_opts_tmp="$(echo $plugin | cut -d";" -f2-)"
+			ss_v2ray_plugin_tmp="2"					
 		else 
 			ss_v2ray_tmp="0"
 			ss_v2ray_opts_tmp=""
 			ss_v2ray_plugin_tmp="0"	
-			ss_kcp_support_tmp="0"
-			ss_udp_support_tmp="0"
-			ss_kcp_opts_tmp=""
-			ss_sskcp_server_tmp=""
-			ss_sskcp_port_tmp=""
-			ss_ssudp_server_tmp=""
-			ss_ssudp_port_tmp=""
-			ss_ssudp_mtu_tmp=""
-			ss_udp_opts_tmp=""
 		fi
 	fi
 
@@ -1843,22 +1841,22 @@ add() {
 
 remove_all(){
 	# 2 清除已有的ss节点配置
-	echo_date 删除所有节点信息！
+	echo_date 删除所有节点信息中！
 	confs=`dbus list ssconf_basic_ | cut -d "=" -f 1`
 	for conf in $confs
 	do
-		echo_date 移除$conf
+	#	echo_date 移除$conf
 		dbus remove $conf
 	done
 }
 
 remove_online(){
 	# 2 清除已有的ss节点配置
-	echo_date 删除所有订阅节点信息...自添加的节点不受影响！
+	echo_date 删除所有订阅节点信息中...自添加的节点不受影响！
 	remove_nus=`dbus list ssconf_basic_|grep _group_ | cut -d "=" -f 1 | cut -d "_" -f4 | sort -n`
 	for remove_nu in $remove_nus
 	do
-		echo_date 移除第 $remove_nu 节点...
+	#	echo_date 移除第 $remove_nu 节点...
 		dbus remove ssconf_basic_group_$remove_nu
 		dbus remove ssconf_basic_koolgame_udp_$remove_nu
 		dbus remove ssconf_basic_lbmode_$remove_nu

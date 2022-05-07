@@ -491,6 +491,8 @@ start_webtest(){
 	if [ "$array10" != "" ];then
 		if [ "$array9" == "1" ];then
 			ARG_V2RAY_PLUGIN="--plugin v2ray-plugin --plugin-opts $array10"
+		elif [ "$array9" == "2" ];then
+			ARG_V2RAY_PLUGIN="--plugin obfs-local --plugin-opts $array10"
 		else
 			ARG_V2RAY_PLUGIN=""
 		fi
@@ -536,7 +538,7 @@ start_webtest(){
 			dbus set ssconf_basic_webtest_$nu=$result
 			ss_local_pid=$(ps|grep -w ss-local|grep 23458|awk '{print $1}')			
 			if [ -n "$ARG_V2RAY_PLUGIN" ];then 
-				v2ray_plugin_pid=$(top -b -n 1 | grep 'v2ray-plugin' | awk -v ss_local_pid="$ss_local_pid"  '$2 == ss_local_pid {print $1}')
+				v2ray_plugin_pid=$(top -b -n 1 | grep -E 'v2ray-plugin|obfs-local' | awk -v ss_local_pid="$ss_local_pid"  '$2 == ss_local_pid {print $1}')
 				kill -9 $v2ray_plugin_pid  >/dev/null 2>&1
 			fi	
 			kill -9 $ss_local_pid >/dev/null 2>&1

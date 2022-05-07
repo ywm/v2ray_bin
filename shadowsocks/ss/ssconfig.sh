@@ -351,6 +351,8 @@ ss_arg(){
 	if [ -n "$ss_basic_ss_v2ray_plugin_opts" ];then
 		if [ "$ss_basic_ss_v2ray_plugin" == "1" ];then
 			ARG_V2RAY_PLUGIN="--plugin v2ray-plugin --plugin-opts $ss_basic_ss_v2ray_plugin_opts"
+		elif [ "$ss_basic_ss_v2ray_plugin" == "2" ];then
+			ARG_V2RAY_PLUGIN="--plugin obfs-local --plugin-opts $ss_basic_ss_v2ray_plugin_opts"	
 		else
 			ARG_V2RAY_PLUGIN=""
 		fi
@@ -1775,6 +1777,7 @@ create_trojango_json(){
 						}"
 		fi
 		[ -z "$(dbus get ss_basic_v2ray_mux_concurrency)" ] && local ss_basic_v2ray_mux_concurrency=8
+#		[ -z "$(dbus get ss_basic_trojan_sni)" ] && [ "$(dbus get ss_basic_server)" != "$ss_basic_v2ray_network_host" ] && local ss_basic_trojan_sni="$ss_basic_v2ray_network_host"
 		echo_date 生成Trojan Go配置文件...
 		 #trojan go
 		 # 3333 for nat  
@@ -1783,9 +1786,9 @@ create_trojango_json(){
 				"run_type": "nat",
 				"local_addr": "0.0.0.0",
 				"local_port": 3333,
-				"remote_addr": "$ss_basic_server",
+				"remote_addr": "$(dbus get ss_basic_server)",
 				"remote_port": $ss_basic_port,
-				"log_level": 1,
+				"log_level": 3,
 				"log_file": "/tmp/trojan-go_log.log",
 				"password": [
 				"$ss_basic_password"
@@ -1795,8 +1798,6 @@ create_trojango_json(){
 				"ssl": {
 					"verify": true,
 					"verify_hostname": true,
-					"cert": "/rom/etc/ssl/certs/ca-certificates.crt",
-					"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
 					"sni": "$ss_basic_trojan_sni",
 					"alpn": [
 					"http/1.1"
@@ -1830,9 +1831,9 @@ create_trojango_json(){
 				"run_type": "client",
 				"local_addr": "127.0.0.1",
 				"local_port": 23456,
-				"remote_addr": "$ss_basic_server",
+				"remote_addr": "$(dbus get ss_basic_server)",
 				"remote_port": $ss_basic_port,
-				"log_level": 1,
+				"log_level": 3,
 				"log_file": "/tmp/trojan-go_log.log",
 				"password": [
 				"$ss_basic_password"
@@ -1842,8 +1843,6 @@ create_trojango_json(){
 				"ssl": {
 					"verify": true,
 					"verify_hostname": true,
-					"cert": "/rom/etc/ssl/certs/ca-certificates.crt",
-					"cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
 					"sni": "$ss_basic_trojan_sni",
 					"alpn": [
 					"http/1.1"

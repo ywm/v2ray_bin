@@ -22,6 +22,8 @@ start_socks5(){
 	if [ "$ss_local_v2ray_plugin_opts" != "" ];then
 		if [ "$ss_local_v2ray_plugin" == "1" ];then
 			ARG_V2RAY_PLUGIN="--plugin v2ray-plugin --plugin-opts $ss_local_v2ray_plugin_opts"
+		elif [ "$ss_basic_ss_v2ray_plugin" == "2" ];then
+			ARG_V2RAY_PLUGIN="--plugin obfs-local --plugin-opts $ss_local_v2ray_plugin_opts"		
 		else
 			ARG_V2RAY_PLUGIN=""
 		fi

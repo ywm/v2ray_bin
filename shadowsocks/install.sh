@@ -49,7 +49,7 @@ if [ -n "$MOUNTED" ];then
 fi
 
 echo_date 清理旧文件
-TARGET_BIN="base64_encode cdns chinadns  chinadns1 client_linux_arm5 dns2socks dnsmasq haproxy haveged httping https_dns_proxy jq koolbox koolgame pdu resolveip rss-local rss-redir smartdns speederv1 speederv2 ss-local ss-redir ss-tunnel trojan-go udp2raw v2ray v2ray-plugin xray"
+TARGET_BIN="base64_encode cdns chinadns  chinadns1 client_linux_arm5 dns2socks dnsmasq haproxy haveged httping https_dns_proxy jq koolbox koolgame pdu resolveip rss-local rss-redir smartdns speederv1 speederv2 ss-local ss-redir ss-tunnel trojan-go udp2raw v2ray v2ray-plugin obfs-local xray"
 rm -rf /koolshare/ss/*
 rm -rf /koolshare/scripts/ss_*
 rm -rf /koolshare/webs/Main_Ss*
@@ -132,8 +132,8 @@ dbus set softcenter_module_shadowsocks_description="科学上网 for merlin armv
 dbus set softcenter_module_shadowsocks_home_url="Main_Ss_Content.asp"
 
 # 设置v2ray 版本号
-dbus set ss_basic_v2ray_version=4.36.0
-dbus set ss_basic_v2ray_date=20220502
+dbus set ss_basic_v2ray_version=4.36.1
+dbus set ss_basic_v2ray_date=20220507
 
 echo_date 一点点清理工作...
 rm -rf /tmp/shadowsocks* >/dev/null 2>&1

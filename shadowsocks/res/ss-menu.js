@@ -596,6 +596,12 @@ function openssHint(itemNum) {
 		statusmenu = "<b>传输层安全性协议</b>"
 		statusmenu += "</br></br>建议为 xtls-rprx-direct"
 		_caption = "流控 (flow)";
+	} else if (itemNum == 112) {
+		width = "750px";
+		statusmenu = "勾选后，不会检查远端主机所提供的 TLS 证书的有效性</b>"
+		statusmenu += "</br>自建节点，服务端证书不可以是 Let's Encrypt证书，因为设备已经不再受支持"
+		statusmenu += "</br></br>如果是用机场，建议勾选"
+		_caption = "是否允许不安全连接";
 		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');		
 	} else if (itemNum == 31) {
 		width = "400px";

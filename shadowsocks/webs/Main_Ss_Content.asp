@@ -611,7 +611,6 @@ function verifyFields(r) {
 	showhide("v2ray_network_tlshost_basic_tr", (v2ray_on && json_off && tls_on));
 	showhide("v2ray_network_flow_basic_tr", (v2ray_on && json_off && xtls_on));
 	showhide("v2ray_network_security_basic_tr", (v2ray_on && json_off));
-	showhide("allowinsecure_basic_tr", ((tls_on || E("ss_basic_trojan_binary").value == "Trojan") && json_off));	
 	showhide("v2ray_mux_enable_basic_tr", ((trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go")|| (v2ray_on && json_off)));
 	showhide("v2ray_mux_concurrency_basic_tr", (((trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go") || (v2ray_on && json_off)) && E("ss_basic_v2ray_mux_enable").checked));
 	showhide("v2ray_json_basic_tr", (v2ray_on && json_on));
@@ -623,8 +622,11 @@ function verifyFields(r) {
 	// dns pannel
 	showhide("dns_plan_foreign", !koolgame_on);
 	showhide("dns_plan_foreign_game2", koolgame_on);	
+
+	showhide("allowinsecure_basic_tr", ((trojan_on && E("ss_basic_trojan_binary").value == "Trojan") || (v2ray_on && json_off && tls_on)));	
 	//node add/edit pannel
 	if (save_flag == "shadowsocks") {
+		E('allowinsecure_tr').style.display = "none";
 		showhide("ss_v2ray_plugin_support", ($("#ss_node_table_mode").val() != "3"));
 		showhide("ss_v2ray_plugin_opts_support", ($("#ss_node_table_mode").val() != "3" && $("#ss_node_table_ss_v2ray_plugin").val() != "0"));
 	}
@@ -3666,16 +3668,17 @@ function set_cron(action) {
 																</td>	
 															</tr>
 															<tr id="ss_v2ray_plugin_support" style="display: none;">
-																<th>v2ray-plugin</th>
+																<th>SIP003 plugin</th>
 																<td>
 																	<select name="ss_node_table_ss_v2ray_plugin" id="ss_node_table_ss_v2ray_plugin" class="input_option" style="width:350px;margin:0px 0px 0px 2px;" onchange="verifyFields(this, 1);">
 																		<option value="0" selected>关闭</option>
-																		<option value="1">启用</option>
+																		<option value="1">v2ray-plugin</option>
+																		<option value="2">simple-obfs</option>																		
 																	</select>
 																</td>
 															</tr>
 															<tr id="ss_v2ray_plugin_opts_support" style="display: none;">
-																<th>v2ray-plugin参数</th>
+																<th>SIP003 plugin参数</th>
 																<td>
 																	<input type="text" name="ss_node_table_ss_v2ray_plugin_opts" id="ss_node_table_ss_v2ray_plugin_opts" placeholder="tls;host=cloudfront.com"  class="input_ss_table" style="width:342px;" maxlength="100" value=""/>
 																</td>
@@ -4017,16 +4020,17 @@ function set_cron(action) {
 													</td>
 												</tr>
 												<tr id="ss_v2ray_plugin">
-													<th width="35%">v2ray-plugin</th>
+													<th width="35%">SIP003 plugin</th>
 													<td>
 														<select id="ss_basic_ss_v2ray_plugin" name="ss_basic_ss_v2ray_plugin" style="width:164px;margin:0px 0px 0px 2px;" class="input_option"  onchange="verifyFields(this, 1);" >
 															<option class="content_input_fd" value="0">关闭</option>
-															<option class="content_input_fd" value="1">启用</option>
+															<option class="content_input_fd" value="1">v2ray-plugin</option>
+															<option class="content_input_fd" value="2">simple-obfs</option>
 														</select>
 													</td>
 												</tr>
 												<tr id="ss_v2ray_plugin_opts">
-													<th width="35%">v2ray-plugin参数</th>
+													<th width="35%">SIP003 plugin参数</th>
 													<td>
 														<input type="text" name="ss_basic_ss_v2ray_plugin_opts" id="ss_basic_ss_v2ray_plugin_opts" placeholder="tls;host=cloudfront.com"  class="input_ss_table" maxlength="100" value=""/>
 													</td>
@@ -4226,7 +4230,7 @@ function set_cron(action) {
 												</tr>
 												<tr id="allowinsecure_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(31)">允许不安全</a>
+														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(112)">允许不安全</a>
 													</th>
 													<td>
 														<input type="checkbox" id="ss_basic_allowinsecure" name="ss_basic_allowinsecure" onclick="verifyFields(this, 1);" value="0">

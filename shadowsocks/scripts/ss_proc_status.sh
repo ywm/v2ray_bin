@@ -133,6 +133,7 @@ check_status(){
 	SS_TUNNEL=`pidof ss-tunnel`
 	SS_LOCAL=`ps|grep -w ss-local|grep 23456|awk '{print $1}'`
 	V2RAY_PLUGIN=`pidof v2ray-plugin`
+	OBFS_PLUGIN=`pidof obfs-local`
 	SSR_REDIR=`pidof rss-redir`
 	SSR_LOCAL=`ps|grep -w rss-local|grep 23456|awk '{print $1}'`
 	SSR_TUNNEL=`pidof rss-tunnel`
@@ -159,6 +160,7 @@ check_status(){
 		echo "程序		状态	PID"
 		[ -n "$SS_REDIR" ] && echo "ss-redir	工作中	pid：$SS_REDIR" || echo "ss-redir	未运行"
 		[ -n "$V2RAY_PLUGIN" ] && echo "v2ray-plugin	工作中	pid：$V2RAY_PLUGIN" || echo "v2ray-plugin	未运行"
+		[ -n "$OBFS_PLUGIN" ] && echo "simple-obfs	工作中	pid：$OBFS_PLUGIN" || echo "simple-obfs	未运行"
 	elif [ "$ss_basic_type" == "1" ];then
 		echo_version
 		echo

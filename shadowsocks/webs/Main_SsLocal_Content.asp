@@ -261,16 +261,17 @@ function count_down_close() {
 												</td>
 											</tr>
 											<tr id="ss_v2ray_plugin">
-												<th width="35%">v2ray-plugin</th>
+												<th width="35%">SIP003 plugin</th>
 												<td>
 													<select id="ss_local_v2ray_plugin" name="ss_local_v2ray_plugin" style="width:164px;margin:0px 0px 0px 2px;" class="input_option"  onchange="update_visibility();" >
 														<option class="content_input_fd" value="0">关闭</option>
-														<option class="content_input_fd" value="1">启用</option>
+														<option class="content_input_fd" value="1">v2ray-plugin</option>
+														<option class="content_input_fd" value="2">simple-obfs</option>														
 													</select>
 												</td>
 											</tr>
 											<tr id="ss_v2ray_plugin_opts">
-												<th width="35%">v2ray-plugin参数</th>
+												<th width="35%">SIP003 plugin参数</th>
 												<td>
 													<input type="text" name="ss_local_v2ray_plugin_opts" id="ss_local_v2ray_plugin_opts" placeholder="tls;host=cloudfront.com"  class="input_ss_table" maxlength="100" value=""></input>
 												</td>
