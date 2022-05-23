@@ -214,6 +214,11 @@ kill_process(){
 		echo_date 关闭chinadns1进程...
 		killall chinadns1 >/dev/null 2>&1
 	fi
+	chinadnsNG_process=$(pidof chinadns-ng)
+	if [ -n "$chinadnsNG_process" ]; then
+		echo_date 关闭chinadns-ng进程...
+		killall chinadns-ng >/dev/null 2>&1
+	fi
 	cdns_process=`pidof cdns`
 	if [ -n "$cdns_process" ];then 
 		echo_date 关闭cdns进程...
@@ -466,7 +471,10 @@ get_dns_name() {
 			echo "koolgame内置"
 		;;
 		9)
-		echo "SmartDNS"
+			echo "SmartDNS"
+		;;
+		10)
+			echo "ChinaDNS-NG"
 		;;
 	esac
 }
@@ -590,6 +598,14 @@ start_dns(){
 		fi
 	fi
 
+	#start chinadns_ng
+	if [ "$ss_foreign_dns" == "10" ]; then
+		start_sslocal
+		echo_date 开启dns2socks，用于chinadns-ng的国外上游...
+		dns2socks 127.0.0.1:23456 "$ss_chinadns1_user" 127.0.0.1:1055 >/dev/null 2>&1 &
+		</koolshare/ss/rules/gfwlist.conf sed -e '/^server=/d' -e 's/ipset=\/.//g' -e 's/\/gfwlist//g' > /tmp/gfwlist.txt
+		chinadns-ng -N -l ${DNSF_PORT} -c ${CDN}#${DNSC_PORT} -t 127.0.0.1#1055 -g /tmp/gfwlist.txt -m /koolshare/ss/rules/cdn.txt -M >/dev/null 2>&1 &
+	fi
 
 	#start https_dns_proxy
 	if [ "$ss_foreign_dns" == "6" ];then
@@ -1415,6 +1431,8 @@ create_v2ray_json(){
 			;;
 		grpc)
 			local grpc="{
+				\"multiMode\": true,
+  				\"idle_timeout\": 13,
 				\"serviceName\": $(get_path $ss_basic_v2ray_serviceName) 
 				}"
 			;;	

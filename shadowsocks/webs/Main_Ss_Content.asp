@@ -3198,36 +3198,20 @@ function save_online_nodes(action) {
 	push_data(dbus);
 }
 
-function v2ray_binary_update(){
+function ss_binary_update(binary_update){
 	db_ss["ss_basic_action"] = "15";
 	var dbus = {};
-	dbus["SystemCmd"] = "ss_v2ray.sh";
+	dbus["SystemCmd"] = "ss_v2ray_xray.sh";
+	dbus["ss_binary_update"] = binary_update;
 	dbus["action_mode"] = " Refresh ";
 	dbus["current_page"] = "Main_Ss_Content.asp";
+	if (binary_update == 1) {
+		varinfo= '<li>为了避免不必要的问题，请保证路由器和服务器上的V2Ray版本一致！</li><br /><li>你确定要更新V2Ray二进制吗？</li>'
+	} else if (binary_update == 2) {
+		varinfo= '<li>为了避免不必要的问题，请保证路由器和服务器上的Xray版本一致！</li><br /><li>你确定要更新Xray二进制吗？</li>'
+	} 
 	require(['/res/layer/layer.js'], function(layer) {
-		layer.confirm('<li>为了避免不必要的问题，请保证路由器和服务器上的v2ray版本一致！</li><br /><li>你确定要更新v2ray二进制吗？</li>', {
-			shade: 0.8,
-		}, function(index) {
-			$("#log_content3").attr("rows", "20");
-			push_data(dbus);
-			layer.close(index);
-			return true;
-			//save_online_nodes(action);
-		}, function(index) {
-			layer.close(index);
-			return false;
-		});
-	});
-}
-
-function xray_binary_update(){
-	db_ss["ss_basic_action"] = "15";
-	var dbus = {};
-	dbus["SystemCmd"] = "ss_xray.sh";
-	dbus["action_mode"] = " Refresh ";
-	dbus["current_page"] = "Main_Ss_Content.asp";
-	require(['/res/layer/layer.js'], function(layer) {
-		layer.confirm('<li>为了避免不必要的问题，请保证路由器和服务器上的Xray版本一致！</li><br /><li>你确定要更新Xray二进制吗？</li>', {
+		layer.confirm(varinfo, {
 			shade: 0.8,
 		}, function(index) {
 			$("#log_content3").attr("rows", "20");
@@ -4265,8 +4249,8 @@ function set_cron(action) {
 												<tr id="v2ray_binary_update_tr" style="display: none;">
 													<th width="35%">其它</th>
 													<td>
-														<a type="button" class="ss_btn" style="cursor:pointer" onclick="v2ray_binary_update(2)">更新V2Ray程序</V2R></a>
-														<a type="button" class="ss_btn" style="cursor:pointer" onclick="xray_binary_update(2)">更新XRay程序</V2R></a>
+														<a type="button" class="ss_btn" style="cursor:pointer" onclick="ss_binary_update(1)">更新V2Ray程序</V2R></a>
+														<a type="button" class="ss_btn" style="cursor:pointer" onclick="ss_binary_update(2)">更新XRay程序</V2R></a>
 													</td>
 												</tr>
 											</table>
@@ -4380,6 +4364,7 @@ function set_cron(action) {
 															<option value="7">v2ray_dns</option>
 															<option value="8">直连</option>
 															<option value="9">SmartDNS</option>
+															<option value="10">ChinaDNS-NG</option>
 														</select>
 														<input type="text" class="input_ss_table" id="ss_dns2socks_user" name="ss_dns2socks_user" style="width:160px" placeholder="需端口号如：8.8.8.8:53" value="8.8.8.8:53">
 														<input type="text" class="input_ss_table" id="ss_chinadns1_user" name="ss_chinadns1_user" style="width:160px" placeholder="需端口号如：8.8.8.8:53" value="8.8.8.8:53">

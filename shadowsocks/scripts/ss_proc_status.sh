@@ -58,6 +58,9 @@ get_dns_name() {
 		9)
 			echo "SmartDNS"
 		;;
+		10)
+			echo "ChinaDNS-NG"
+		;;
 	esac
 }
 
@@ -104,23 +107,24 @@ echo_version(){
 			ss_basic_xray_date="null"
 		fi
 	fi
-	
+ 
 	echo ① 程序版本（插件版本：$SOFVERSION）：
 	echo -----------------------------------------------------------
 	echo "程序			版本		备注"
 	echo "ss-redir		3.3.5		2020年9月15日编译"
 	echo "ss-tunnel		3.3.5		2020年9月15日编译"
 	echo "ss-local		3.3.5		2020年9月15日编译"
-	echo "xray-plugin		1.4.0		2021年3月15日编译"
+	echo "v2ray-plugin		4.45.0		2022年4月30日编译"
 	echo "ssrr-redir		3.5.3 		2018年11月25日编译"
 	echo "ssrr-tunnel		3.5.3 		2018年11月25日编译"
 	echo "ssrr-local		3.5.3 		2018年11月25日编译"
 	echo "haproxy			1.8.8 		2018年05月03日编译"
-	echo "dns2socks		V2.0 	"
+	echo "dns2socks		V2.0"
 	echo "cdns			1.0 		2017年12月09日编译"
 	echo "chinadns1		1.3.2 		2017年12月09日编译"
 	echo "chinadns2		2.0.0 		2017年12月09日编译"
-	echo "client_linux_arm5	20181114	kcptun"
+	echo "ChinaDNS-NG		1.0-beta.25 	2019年08月31日编译"
+	echo "client_linux_arm5	20210922	kcptun"
 	echo "v2ray			$ss_basic_v2ray_version		$ss_basic_v2ray_date"
 	echo "xray			$ss_basic_xray_version		$ss_basic_xray_date"
 	echo "trojan-go		0.10.6		2021年9月14日编译"
@@ -142,6 +146,7 @@ check_status(){
 	CDNS=`pidof cdns`
 	CHINADNS1=`pidof chinadns1`
 	CHINADNS=`pidof chinadns`
+	CHINADNSNG=`pidof chinadns-ng`
 	KCPTUN=`pidof client_linux_arm5`
 	HAPROXY=`pidof haproxy`
 	V2RAY=`pidof v2ray`
@@ -232,6 +237,8 @@ check_status(){
 			[ -n "$HDP" ] && echo "https_dns_proxy	工作中	pid：$HDP" || echo "https_dns_proxy	未运行"
 		elif [ "$ss_foreign_dns" == "9" ]; then
 			[ -n "$SMD" ] && echo "SmartDNS	工作中	pid：$SMD" || echo "SmartDNS	未运行"
+		elif [ "$ss_foreign_dns" == "10" ]; then
+			[ -n "$CHINADNSNG" ] && echo "ChinaDNS-NG	工作中	pid：$CHINADNSNG" || echo "ChinaDNS-NG	未运行"	
 		fi
 	fi
 	[ "$ss_dnschina" == "13" ] &&{

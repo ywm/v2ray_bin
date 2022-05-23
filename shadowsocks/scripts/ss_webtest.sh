@@ -168,6 +168,8 @@ rm -rf /tmp/tmp_v2ray.json
 		grpc)
 		local local_serviceName=$(eval echo \$ssconf_basic_v2ray_serviceName_$nu)
 			local grpc="{
+				\"multiMode\": true,
+  				\"idle_timeout\": 13,
 				\"serviceName\": $(get_path $local_serviceName) 
 				}"
 			;;	
