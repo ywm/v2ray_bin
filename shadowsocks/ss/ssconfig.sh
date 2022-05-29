@@ -746,6 +746,7 @@ create_dnsmasq_conf(){
 	rm -rf /tmp/custom.conf
 	rm -rf /tmp/wblist.conf
 	rm -rf /tmp/gfwlist.conf
+	rm -rf /tmp/gfwlist.txt
 	rm -rf /jffs/configs/dnsmasq.d/custom.conf
 	rm -rf /jffs/configs/dnsmasq.d/wblist.conf
 	rm -rf /jffs/configs/dnsmasq.d/cdn.conf
@@ -870,7 +871,7 @@ create_dnsmasq_conf(){
 		else
 			# 其它情况，均使用国外优先模式，以下区分是否加载cdn.conf
 			# if [ "$ss_foreign_dns" == "2" ] || [ "$ss_foreign_dns" == "5" ] || [ "$ss_foreign_dns" == "9" -a "$ss_dns_china" == "13" ]; then
-			if [ "$ss_foreign_dns" == "2" ] || [ "$ss_foreign_dns" == "5" -a "$ss_dns_china" != "13" ] || [ "$ss_foreign_dns" == "10" ]; then
+			if [ "$ss_foreign_dns" == "2" -o "$ss_foreign_dns" == "5" -a "$ss_dns_china" != "13" -o "$ss_foreign_dns" == "10" ]; then
 				# 因为chinadns1 chinadns2自带国内cdn，所以也不需要cdn.conf
 				echo_date 自动判断dns解析使用国外优先模式...
 				echo_date 国外解析方案【$(get_dns_name $ss_foreign_dns)】自带国内cdn，无需加载cdn.conf，路由器开销小...

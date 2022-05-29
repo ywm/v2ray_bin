@@ -1007,12 +1007,13 @@ function getAllConfigs() {
 		if (typeof db_ss[p + "_webtest_" + field] == "undefined") {
 			obj["webtest"] = '';
 		} else {
-			var time_total = parseFloat(db_ss[p + "_webtest_" + field].split(":")[0]).toFixed(2);
-			if (time_total == 0.00) {
-				obj["webtest"] = '<font color=#FFCC00">failed</font>';
-			} else {
-				obj["webtest"] = parseFloat(db_ss[p + "_webtest_" + field].split(":")[0]).toFixed(2) + " s";
-			}
+//			var time_total = parseFloat(db_ss[p + "_webtest_" + field].split(":")[0]).toFixed(2);
+//			if (time_total == 0.00) {
+//				obj["webtest"] = '<font color=#FFCC00">failed</font>';
+//			} else {
+//				obj["webtest"] = parseFloat(db_ss[p + "_webtest_" + field].split(":")[0]).toFixed(2) + " s";
+			obj["webtest"] = db_ss[p + "_webtest_" + field];
+//		}
 		}
 		//空值为0
 		if (typeof db_ss[p + "_use_kcp_" + field] == "undefined") {
@@ -4264,7 +4265,7 @@ function set_cron(action) {
 													<th style="width:120px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(18)">服务器地址</a></th>
 													<th style="width:37px;">端口</th>
 													<th style="width:69px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(19)">ping/丢包</a></th>
-													<th style="width:45px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(20)">延迟</a></th>
+													<th style="width:45px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(20)">下行测速</a></th>
 													<th style="width:33px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(21)">编辑</a></th>
 													<th style="width:33px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(22)">删除</a></th>
 													<th style="width:65px;"><a class="hintstyle" href="javascript:void(0);" onclick="openssHint(23)">使用</a></th>

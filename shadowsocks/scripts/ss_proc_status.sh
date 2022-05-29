@@ -238,6 +238,7 @@ check_status(){
 		elif [ "$ss_foreign_dns" == "9" ]; then
 			[ -n "$SMD" ] && echo "SmartDNS	工作中	pid：$SMD" || echo "SmartDNS	未运行"
 		elif [ "$ss_foreign_dns" == "10" ]; then
+			[ -n "$DNS2SOCKS" ] && echo "dns2socks	工作中	pid：$DNS2SOCKS" || echo "dns2socks	未运行"
 			[ -n "$CHINADNSNG" ] && echo "ChinaDNS-NG	工作中	pid：$CHINADNSNG" || echo "ChinaDNS-NG	未运行"	
 		fi
 	fi

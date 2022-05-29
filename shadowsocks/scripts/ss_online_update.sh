@@ -652,7 +652,7 @@ add_vmess_servers(){
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vmess"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="v2ray"
-	dbus set ssconf_basic_allowinsecure_$v2rayindex=0	
+	[ -n "$v2ray_group" ] && dbus set ssconf_basic_allowinsecure_$v2rayindex=1 || dbus set ssconf_basic_allowinsecure_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="auto"
@@ -661,7 +661,7 @@ add_vmess_servers(){
 	dbus set ssconf_basic_port_$v2rayindex=$v2ray_port
 	dbus set ssconf_basic_server_$v2rayindex=$v2ray_add
 	dbus set ssconf_basic_v2ray_uuid_$v2rayindex=$v2ray_id
-	dbus set ssconf_basic_v2ray_alterid_$v2rayindex=$v2ray_aid
+	[ -n "$v2ray_group" ] && dbus set ssconf_basic_v2ray_alterid_$v2rayindex=0 || dbus set ssconf_basic_v2ray_alterid_$v2rayindex=$v2ray_aid
 	dbus set ssconf_basic_v2ray_network_security_$v2rayindex=$v2ray_tls
 	dbus set ssconf_basic_v2ray_network_$v2rayindex=$v2ray_net
 	case $v2ray_net in
@@ -830,7 +830,7 @@ add_trojan_servers(){
 	dbus set ssconf_basic_trojan_binary_$trojanindex=$binary
 	dbus set ssconf_basic_trojan_sni_$trojanindex=$sni
 	dbus set ssconf_basic_trojan_network_$trojanindex=$v2ray_net
-	dbus set ssconf_basic_allowinsecure_$trojanindex=0
+	[ -n "$group" ] && dbus set ssconf_basic_allowinsecure_$trojanindex=1 || dbus set ssconf_basic_allowinsecure_$trojanindex=0
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$trojanindex=$ss_kcp_opts_tmp
@@ -980,7 +980,7 @@ add_vless_servers(){
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vless"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="xray"
-	dbus set ssconf_basic_allowinsecure_$v2rayindex=0
+	[ -n "$vless_group" ] && dbus set ssconf_basic_allowinsecure_$v2rayindex=1 || dbus set ssconf_basic_allowinsecure_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="none"
