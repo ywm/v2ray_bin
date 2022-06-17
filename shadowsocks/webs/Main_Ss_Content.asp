@@ -4308,9 +4308,8 @@ function set_cron(action) {
 															</select>
 														<select id="ssconf_basic_test_domain" name="ssconf_basic_test_domain" style="width:160px;margin:0px 0px 0px 2px;" class="input_option">
 															<option class="content_input_fd" value="https://www.google.com.hk/">google.com</option>
-															<option class="content_input_fd" value="https://www.twitter.com/">twitter.com</option>
 															<option class="content_input_fd" value="https://www.facebook.com/">facebook.com</option>
-															<option class="content_input_fd" value="https://www.youtube.com/">youtube.com</option>
+															<option class="content_input_fd" value="http://cachefly.cachefly.net/">v2rayN</option>
 														</select>
 														<input class="ss_btn" style="cursor:pointer;" onClick="remove_test()" type="button" value="清空结果"/>
 													</td>
