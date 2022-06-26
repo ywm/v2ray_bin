@@ -159,6 +159,7 @@ rm -rf /tmp/tmp_v2ray.json
 			fi
 			;;
 		kcp)
+		local local_path=$(eval echo \$ssconf_basic_v2ray_network_path_$nu)
 			local kcp="{
 				\"mtu\": 1350,
 				\"tti\": 50,
@@ -167,19 +168,21 @@ rm -rf /tmp/tmp_v2ray.json
 				\"congestion\": false,
 				\"readBufferSize\": 2,
 				\"writeBufferSize\": 2,
+				\"seed\": "$local_path",
 				\"header\": {
 				\"type\": \"$(eval echo \$ssconf_basic_v2ray_headtype_kcp_$nu)\",
 				\"request\": null,
 				\"response\": null
 				}
 				}"
+			[ -z "$local_path" ] && local kcp=$(echo $kcp |sed 's/"seed": "*, //')	
 			;;
 		ws)
 		local local_path=$(eval echo \$ssconf_basic_v2ray_network_path_$nu)
 		local local_header=$(eval echo \$ssconf_basic_v2ray_network_host_$nu)
 			local ws="{
 				\"connectionReuse\": true,
-				\"path\": $(get_path $local path),
+				\"path\": $(get_path $local_path),
 				\"headers\": $(get_ws_header local_header)
 				}"
 			;;
@@ -401,7 +404,7 @@ create_trojango_json(){
 					\"host\":  \"\"
 					}"
 	fi
-	[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8
+	[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8 || local ssconf_basic_v2ray_mux_concurrency=$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)
 		 #trojan go
 		 # 3335 for nat  
 		cat >"/tmp/tmp_trojango.json" <<-EOF
@@ -502,7 +505,7 @@ start_webtest(){
 	array3=`dbus get ssconf_basic_password_$nu|base64_decode`
 	array4=`dbus get ssconf_basic_method_$nu`
 	array5=`dbus get ssconf_basic_use_rss_$nu`
-	#array6=`dbus get ssconf_basic_onetime_auth_$nu`
+	array6=`dbus get ssconf_basic_rss_obfs_param_$nu`
 	array7=`dbus get ssconf_basic_rss_protocol_$nu`
 	array8=`dbus get ssconf_basic_rss_obfs_$nu`
 	array9=`dbus get ssconf_basic_ss_v2ray_plugin_$nu`
@@ -541,7 +544,7 @@ start_webtest(){
 			    "timeout":600,
 			    "protocol":"$array7",
 			    "obfs":"$array8",
-			    "obfs_param":"",
+			    "obfs_param":"$array6",
 			    "method":"$array4"
 			}
 		EOF
