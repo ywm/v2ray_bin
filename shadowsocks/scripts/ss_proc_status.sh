@@ -67,6 +67,7 @@ get_dns_name() {
 echo_version(){
 	echo_date
 	SOFVERSION=`cat /koolshare/ss/version`
+	##---------------------------v2ray-----------------------
 	if [ -z "$ss_basic_v2ray_version" ];then
 		ss_basic_v2ray_version_tmp=`/koolshare/bin/v2ray -version 2>/dev/null | head -n 1 | cut -d " " -f2`
 		if [ -n "$ss_basic_v2ray_version_tmp" ];then
@@ -74,16 +75,6 @@ echo_version(){
 			dbus set ss_basic_v2ray_version="$ss_basic_v2ray_version_tmp"
 		else
 			ss_basic_v2ray_version="null"
-		fi
-	fi
-
-	if [ -z "$ss_basic_v2ray_date" ];then
-		ss_basic_v2ray_date_tmp=`/koolshare/bin/v2ray -version 2>/dev/null | head -n 1 | cut -d " " -f5`
-		if [ -n "$ss_basic_v2ray_date_tmp" ];then
-			ss_basic_v2ray_date="$ss_basic_v2ray_date_tmp"
-			dbus set ss_basic_v2ray_date="$ss_basic_v2ray_date_tmp"
-		else
-			ss_basic_v2ray_date="null"
 		fi
 	fi
 	
@@ -98,13 +89,14 @@ echo_version(){
 		fi
 	fi
 
-	if [ -z "$ss_basic_xray_date" ];then
-		ss_basic_xray_date_tmp=`/koolshare/bin/xray -version 2>/dev/null | head -n 1 | cut -d " " -f6`
-		if [ -n "$ss_basic_xray_date_tmp" ];then
-			ss_basic_xray_date="$ss_basic_xray_date_tmp"
-			dbus set ss_basic_xray_date="$ss_basic_xray_date_tmp"
+	##---------------------------naive-----------------------
+	if [ -z "$ss_basic_naive_version" ];then
+		ss_basic_naive_version_tmp=`/koolshare/bin/naive -version 2>/dev/null | head -n 1 | cut -d " " -f2`
+		if [ -n "$ss_basic_naive_version_tmp" ];then
+			ss_basic_naive_version="$ss_basic_naive_version_tmp"
+			dbus set ss_basic_naive_version="$ss_basic_naive_version_tmp"
 		else
-			ss_basic_xray_date="null"
+			ss_basic_naive_version="null"
 		fi
 	fi
  
@@ -125,9 +117,10 @@ echo_version(){
 	echo "chinadns2		2.0.0 		2017年12月09日编译"
 	echo "ChinaDNS-NG		1.0-beta.25 	2019年08月31日编译"
 	echo "client_linux_arm5	20210922	kcptun"
-	echo "v2ray			$ss_basic_v2ray_version		$ss_basic_v2ray_date"
-	echo "xray			$ss_basic_xray_version		$ss_basic_xray_date"
+	echo "v2ray			$ss_basic_v2ray_version	"	
+	echo "xray			$ss_basic_xray_version	"	
 	echo "trojan-go		0.10.6		2021年9月14日编译"
+	echo "naive		$ss_basic_naive_version	"
 	echo -----------------------------------------------------------
 }
 
@@ -151,7 +144,8 @@ check_status(){
 	HAPROXY=`pidof haproxy`
 	V2RAY=`pidof v2ray`
 	XRAY=`pidof xray`
-	trojango=`pidof trojan-go`
+	TROJANGO=`pidof trojan-go`
+	NAIVE=`pidof naive`
 	HDP=`pidof https_dns_proxy`
 	DMQ=`pidof dnsmasq`
 	SMD=$(pidof smartdns)
@@ -195,7 +189,14 @@ check_status(){
 		echo -----------------------------------------------------------
 		echo "程序		状态	PID"
 		[ -n "$XRAY" ] && echo "xray		工作中	pid：$XRAY" || echo "xray	未运行"	
-		[ -n "$trojango" ] && echo "trojan-go		工作中	pid：$trojango" || echo "trojan-go	未运行"	
+		[ -n "$TROJANGO" ] && echo "trojan-go		工作中	pid：$TROJANGO" || echo "trojan-go	未运行"	
+	elif [ "$ss_basic_type" == "5" ];then
+		echo_version
+		echo
+		echo ② 检测当前相关进程工作状态：（你正在使用NaiveProxy,选择的模式是$(get_mode_name $ss_basic_mode),国外DNS解析方案是：$(get_dns_name $ss_foreign_dns)）
+		echo -----------------------------------------------------------
+		echo "程序		状态	PID"
+		[ -n "$NAIVE" ] && echo "naiveproxy		工作中	pid：$NAIVE" || echo "naiveproxy	未运行"		
 	fi
 
 	if [ -z "$ss_basic_koolgame_udp" ];then

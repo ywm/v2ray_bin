@@ -1,11 +1,12 @@
-# Shadowsocks ONLY on 380 ARM （安全，好用）
-support v2ray and xray binary update  
+# Shadowsocks ONLY on koolshare Merlin 380 ARM （安全，好用）
+This project will update bin and package for [**fancyss_arm380**](https://github.com/hq450/fancyss_history_package/tree/master/legacy/fancyss_arm380)    
+
+add and support new features  
 fixed many historical legacy issues  
-this project will update bin and package for [armv7 Merlin-Koolshare](https://github.com/hq450/fancyss/tree/master/fancyss_arm)  
 
 除插件原有功能外，另外
 
-* 支持xray, vless, xtls, trojan, trojan-go 等协议及更新，
+* 支持xray, vless, xtls, trojan, trojan-go, NaiveProxy 等协议及更新，
 * 支持ss + v2ray plugin，
 * 支持混合节点订阅，
 * 支持同时订阅多个链接，回车隔开，
@@ -13,7 +14,9 @@ this project will update bin and package for [armv7 Merlin-Koolshare](https://gi
 * 支持smartDNS (不熟悉配置请勿选择)，
 * 支持在线更新
 
-目前xray已经可以完全替代v2ray了，xray支持vmess，vless和trojan。  
+目前xray已经可以完全替代v2ray了，xray支持vmess，vless和trojan。
+
+NaiveProxy 使用下来也还不错，延迟很低，速度也很快。
 
 离线安装包仅能在koolshare 梅林 arm 380平台，且linux内核为2.6.36.4的armv7架构的机器上使用！
 

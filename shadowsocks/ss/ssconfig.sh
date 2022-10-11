@@ -15,6 +15,8 @@ V2RAY_CONFIG_FILE_TMP="/tmp/v2ray_tmp.json"
 V2RAY_CONFIG_FILE="/koolshare/ss/v2ray.json"
 TROJANGO_CONFIG_FILE="/koolshare/ss/trojango.json"
 TROJANGO2_CONFIG_FILE="/koolshare/ss/trojango2.json"
+NAIVE_CONFIG_FILE="/koolshare/ss/naive.json"
+NAIVE2_CONFIG_FILE="/koolshare/ss/naive2.json"
 LOCK_FILE=/var/lock/koolss.lock
 DNSF_PORT=7913
 DNSC_PORT=53
@@ -178,6 +180,12 @@ kill_process(){
 		killall ss-redir >/dev/null 2>&1
 	fi
 
+	naive_process=`pidof naive`
+	if [ -n "$naive_process" ];then 
+		echo_date 关闭naiveproxy进程...
+		killall naive >/dev/null 2>&1
+		kill -9 "$naive_process" >/dev/null 2>&1
+	fi
 	rssredir=`pidof rss-redir`
 	if [ -n "$rssredir" ];then 
 		echo_date 关闭ssr-redir进程...
@@ -437,6 +445,12 @@ get_type_name() {
 		3)
 			echo "v2ray"
 		;;
+		4)
+			echo "trojan"
+		;;
+		5)
+			echo "naive"
+		;;
 	esac
 }
 
@@ -493,6 +507,9 @@ start_sslocal(){
 	elif [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Trojan-Go" ]; then
 		echo_date 开启trojan-go，提供socks5代理端口：23456 
 		trojan-go -config $TROJANGO2_CONFIG_FILE >/dev/null 2>&1 &	
+	elif [ "$ss_basic_type" == "5" ] ; then
+		echo_date 开启Naive Proxy，提供socks代理端口：23456 
+		naive $NAIVE2_CONFIG_FILE >/dev/null 2>&1 &		
 	fi
 }
 
@@ -1894,6 +1911,32 @@ create_trojango_json(){
 	fi
 }
 
+create_naive_json(){
+	rm -rf "$NAIVE_CONFIG_FILE" "$NAIVE2_CONFIG_FILE"
+	if  [ "$ss_basic_type" == "5" ] ; then
+	
+		echo_date 生成NaiveProxy配置文件...
+		 #NaiveProxy
+		 # 3333 for nat  
+		cat >"$NAIVE_CONFIG_FILE" <<-EOF
+			{
+			"listen": "redir://0.0.0.0:3333",
+			"proxy": "${ss_basic_naive_protocol}://${ss_basic_naive_user}:${ss_basic_password}@$(dbus get ss_basic_server):$ss_basic_port"
+			}
+		EOF
+		echo_date NaiveProxy 配置文件写入成功到 "$NAIVE_CONFIG_FILE"
+		 #  23456 for socks
+		cat >"$NAIVE2_CONFIG_FILE" <<-EOF
+			{
+			"listen": "socks://127.0.0.1:23456",
+			"proxy": "${ss_basic_naive_protocol}://${ss_basic_naive_user}:${ss_basic_password}@$(dbus get ss_basic_server):$ss_basic_port"
+			}
+		EOF
+		
+		echo_date NaiveProxy 配置文件写入成功到 "$NAIVE2_CONFIG_FILE"
+	fi
+}
+
 start_v2ray() {
 	# v2ray start
 	cd /koolshare/bin
@@ -1981,21 +2024,40 @@ start_trojango() {
 	echo_date trojan-go启动成功，pid：$trojangoPID
 }
 
+start_naiveproxy() {
+	# naiveproxy start
+	cd /koolshare/bin
+	naive $NAIVE_CONFIG_FILE >/dev/null 2>&1 &
+	local naivePID
+	local i=10
+	until [ -n "$naivePID" ]; do
+		i=$(($i - 1))
+		naivePID=$(pidof naive)
+		if [ "$i" -lt 1 ]; then
+			echo_date "NaiveProxy进程启动失败！"
+			close_in_five
+		fi
+		sleep 1
+	done
+	echo_date NaiveProxy启动成功，pid：$naivePID
+}
+
+
 write_cron_job(){
 	sed -i '/ssupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	if [ "1" == "$ss_basic_rule_update" ]; then
 		echo_date 添加shadowsocks规则定时更新任务，每天"$ss_basic_rule_update_time"自动检测更新规则.
-		cru a ssupdate "0 $ss_basic_rule_update_time * * * /bin/sh /koolshare/scripts/ss_rule_update.sh"
+		cru a ssupdate "15 $ss_basic_rule_update_time * * * /bin/sh /koolshare/scripts/ss_rule_update.sh"
 	else
 		echo_date shadowsocks规则定时更新任务未启用！
 	fi
 	sed -i '/ssnodeupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	if [ "$ss_basic_node_update" = "1" ];then
 		if [ "$ss_basic_node_update_day" = "7" ];then
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * * /koolshare/scripts/ss_online_update.sh 3"
+			cru a ssnodeupdate "2 $ss_basic_node_update_hr * * * /koolshare/scripts/ss_online_update.sh 3"
 			echo_date "设置自动更新节点订阅在每天 $ss_basic_node_update_hr 点。"
 		else
-			cru a ssnodeupdate "0 $ss_basic_node_update_hr * * $ss_basic_node_update_day /koolshare/scripts/ss_online_update.sh 3"
+			cru a ssnodeupdate "2 $ss_basic_node_update_hr * * $ss_basic_node_update_day /koolshare/scripts/ss_online_update.sh 3"
 			echo_date "设置自动更新节点订阅在星期 $ss_basic_node_update_day 的 $ss_basic_node_update_hr 点。"
 		fi
 	fi
@@ -2649,10 +2711,12 @@ apply_ss(){
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "3" ] && create_v2ray_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && create_trojan_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && create_trojango_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "5" ] && create_naive_json
 	[ "$ss_basic_type" == "0" ] || [ "$ss_basic_type" == "1" ] && start_ss_redir
 	[ "$ss_basic_type" == "2" ] && start_koolgame
 	[ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && start_v2ray_xray
 	[ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && start_trojango
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "5" ] && start_naiveproxy
 	[ "$ss_basic_type" != "2" ] && start_kcp
 	[ "$ss_basic_type" != "2" ] && start_dns
 	#===load nat start===

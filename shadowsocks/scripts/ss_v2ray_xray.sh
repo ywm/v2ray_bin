@@ -14,14 +14,18 @@ case $ss_binary_update in
 2)
 	v2ray_xray="xray"
 	;;
+3)
+	v2ray_xray="naive"
+	;;	
 esac
 
 V2RAY_CONFIG_FILE="/koolshare/ss/v2ray.json"
+NAIVE_CONFIG_FILE="/koolshare/ss/naive.json"
+NAIVE2_CONFIG_FILE="/koolshare/ss/naive2.json"
 
-#url_main="https://raw.githubusercontent.com/hq450/fancyss/master/v2ray_binary"
 url_main="https://raw.githubusercontent.com/cary-sas/v2ray_bin/main/380_armv5/$v2ray_xray"
 url_back=""
-socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go"`
+socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive"`
 if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
 	echo_date "代理有开启，将使用代理网络..."
 	alias curlxx='curl --connect-timeout 8 -k --socks5-hostname 127.0.0.1:23456 '
@@ -44,7 +48,8 @@ get_latest_version(){
 			get_latest_version_backup
 		fi
 		V2VERSION=`cat /tmp/${v2ray_xray}_latest_info.txt | sed 's/v//g'` || 0
-		echo_date "检测到${v2ray_xray}最新版本：v$V2VERSION"
+		V2VERSION_BASE=${V2VERSION%-*}
+		echo_date "检测到${v2ray_xray}最新版本：v$V2VERSION_BASE"
 		if [ ! -f "/koolshare/bin/${v2ray_xray}"  ];then
 			echo_date "${v2ray_xray}安装文件丢失！重新下载！"
 			CUR_VER="0"
@@ -52,7 +57,7 @@ get_latest_version(){
 			CUR_VER=`${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f2 | sed 's/v//g'` || 0
 			echo_date "当前已安装${v2ray_xray}版本：v$CUR_VER"
 		fi
-		COMP=`versioncmp $CUR_VER $V2VERSION`
+		COMP=`versioncmp $CUR_VER $V2VERSION_BASE`
 		if [ "$COMP" == "1" ];then
 			[ "$CUR_VER" != "0" ] && echo_date "${v2ray_xray}已安装版本号低于最新版本，开始更新程序..."
 			update_now v$V2VERSION
@@ -94,7 +99,7 @@ update_now(){
 		echo_date "md5sum.txt下载成功..."
 	fi
 	
-	echo_date "开始下载v2ray程序"
+	echo_date "开始下载${v2ray_xray}程序"
 	curlxx -o /tmp/${v2ray_xray}/${v2ray_xray} $url_main/$1/${v2ray_xray}
 	if [ "$?" != "0" ];then
 		echo_date "${v2ray_xray}下载失败！"
@@ -159,8 +164,14 @@ start_v2ray(){
 	echo_date "开启${v2ray_xray}进程... "
 	cd /koolshare/bin
 	export GOGC=30
-	${v2ray_xray} --config=${V2RAY_CONFIG_FILE} >/dev/null 2>&1 &
-	
+
+	if [ "$v2ray_xray" == "naive" ];then
+		${v2ray_xray} $NAIVE_CONFIG_FILE >/dev/null 2>&1 &
+		${v2ray_xray} $NAIVE2_CONFIG_FILE >/dev/null 2>&1 &
+	else
+		${v2ray_xray} --config=${V2RAY_CONFIG_FILE} >/dev/null 2>&1 &
+	fi
+
 	local i=10
 	until [ -n "$V2PID" ]
 	do

@@ -78,7 +78,7 @@ get_path(){
 
 create_v2ray_json(){
 
-rm -rf /tmp/tmp_v2ray.json
+rm -f /tmp/tmp_v2ray.json
 
 		local kcp="null"
 		local tcp="null"
@@ -327,7 +327,7 @@ rm -rf /tmp/tmp_v2ray.json
 }
 
 create_trojan_json(){
-rm -rf /tmp/tmp_v2ray.json
+rm -f /tmp/tmp_v2ray.json
 
 		 #trojan
 		 # inbounds area (23458 for socks5)  
@@ -389,8 +389,8 @@ rm -rf /tmp/tmp_v2ray.json
 
 
 create_trojango_json(){
-	rm -rf /tmp/tmp_trojango.json
-	rm -rf /tmp/tmp2_trojango.json
+	rm -f /tmp/tmp_trojango.json
+	rm -f /tmp/tmp2_trojango.json
 	if [ "$(eval echo \$ssconf_basic_trojan_network_$nu)" == "1" ]; then
 		[ -n "$(eval echo \$ssconf_basic_v2ray_network_path_$nu)" ] && local ssconf_basic_v2ray_network_path=$(echo "/"$(eval echo \$ssconf_basic_v2ray_network_path_$nu)"" | sed 's,//,/,')
 		[ -n "$(eval echo \$ssconf_basic_v2ray_network_host_$nu)" ] && local ssconf_basic_v2ray_network_host=$(eval echo \$ssconf_basic_v2ray_network_host_$nu)
@@ -499,6 +499,27 @@ create_trojango_json(){
 	
 }
 
+create_naive_json(){
+	rm -f /tmp/tmp_naive.json
+	rm -f /tmp/tmp2_naive.json
+		 #NaiveProxy
+		 # 3333 for nat  
+		cat >/tmp/tmp_naive.json <<-EOF
+			{
+			"listen": "redir://0.0.0.0:3335",
+			"proxy": "${array15}://${array16}:${array3}@${array1}:$array2"
+			}
+		EOF
+
+		 #  23456 for socks
+		cat >/tmp/tmp2_naive.json <<-EOF
+			{
+			"listen": "socks://127.0.0.1:23458",
+			"proxy": "${array15}://${array16}:${array3}@${array1}:$array2"
+			}
+		EOF
+}
+
 start_webtest(){
 	array1=`dbus get ssconf_basic_server_$nu`
 	array2=`dbus get ssconf_basic_port_$nu`
@@ -514,6 +535,8 @@ start_webtest(){
 	array12=`dbus get ssconf_basic_type_$nu`	
 	array13=`dbus get ssconf_basic_v2ray_protocol_$nu`
 	array14=`dbus get ssconf_basic_trojan_binary_$nu`
+	array15=`dbus get ssconf_basic_naive_protocol_$nu`
+	array16=`dbus get ssconf_basic_naive_user_$nu`
 
 	if [ "$array10" != "" ];then
 		if [ "$array9" == "1" ];then
@@ -552,7 +575,7 @@ start_webtest(){
 			# result=`curl -o /dev/null -s -w %{time_connect}:%{time_starttransfer}:%{time_total}:%{speed_download} --socks5-hostname 127.0.0.1:23458 https://www.google.com/`
 			speed_test_curl
 			kill -9 `ps|grep -w rss-local|grep 23458|awk '{print $1}'` >/dev/null 2>&1
-			rm -rf /tmp/tmp_ss.json
+			rm -f /tmp/tmp_ss.json
 			
 		elif [ "$array12" == "0" ];then   #ss
 			ss-local -b 0.0.0.0 -l 23458 -s $server_ip -p $array2 -k $array3 -m $array4 -u $ARG_V2RAY_PLUGIN -f /var/run/sslocal3.pid >/dev/null 2>&1
@@ -569,14 +592,14 @@ start_webtest(){
 			xray run -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &
 			speed_test_curl
 			kill -9 `ps|grep xray|grep 'tmp_v2ray'|awk '{print $1}'` >/dev/null 2>&1	
-			rm -rf /tmp/tmp_v2ray.json /tmp/v2ray_webtest_log.log
+			rm -f /tmp/tmp_v2ray.json /tmp/v2ray_webtest_log.log
 			
 		elif [ "$array12" == "4" -a "$array14" == "Trojan" ];then   #trojan
 			create_trojan_json 
 			xray run -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &
 			speed_test_curl
 			kill -9 `ps|grep xray|grep 'tmp_v2ray'|awk '{print $1}'` >/dev/null 2>&1	
-			rm -rf /tmp/tmp_v2ray.json	/tmp/v2ray_webtest_log.log
+			rm -f /tmp/tmp_v2ray.json	/tmp/v2ray_webtest_log.log
 
 		elif [ "$array12" == "4" -a "$array14" == "Trojan-Go" ];then   #trojan go
 			create_trojango_json 
@@ -585,7 +608,17 @@ start_webtest(){
 			speed_test_curl
 			kill -9 `ps|grep 'trojan-go' | grep 'tmp2_trojango'|awk '{print $1}'` >/dev/null 2>&1
 			kill -9 `ps|grep 'trojan-go' | grep 'tmp_trojango'|awk '{print $1}'` >/dev/null 2>&1	
-			rm -rf /tmp/tmp_trojango.json /tmp/tmp2_trojango.json /tmp/trojan-go_webtest_log.log
+			rm -f /tmp/tmp_trojango.json /tmp/tmp2_trojango.json /tmp/trojan-go_webtest_log.log
+
+		elif [ "$array12" == "5" ];then   #naive
+			create_naive_json 
+			naive /tmp/tmp_naive.json >/dev/null 2>&1 &
+			naive /tmp/tmp2_naive.json >/dev/null 2>&1 &
+			speed_test_curl
+			kill -9 `ps|grep 'naive' | grep 'tmp2_naive'|awk '{print $1}'` >/dev/null 2>&1
+			kill -9 `ps|grep 'naive' | grep 'tmp_naive'|awk '{print $1}'` >/dev/null 2>&1	
+			rm -f /tmp/tmp_naive.json /tmp/tmp2_naive.json
+
 		fi
 
 	else

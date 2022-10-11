@@ -6,7 +6,7 @@
 eval `dbus export ss`
 source /koolshare/scripts/base.sh
 alias echo_date='echo 【$(TZ=UTC-8 date -R +%Y年%m月%d日\ %X)】:'
-socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go"`
+socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive"`
 if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
 	echo_date "代理有开启，将使用代理网络..."
 	alias curlxx='curl --connect-timeout 8  --socks5-hostname 127.0.0.1:23456 '
@@ -172,7 +172,7 @@ change_cru(){
 	sed -i '/ssupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
 	if [ "1" == "$ss_basic_rule_update" ]; then
 		echo_date 应用ss规则定时更新任务：每天"$ss_basic_rule_update_time"自动检测更新规则.
-		cru a ssupdate "0 $ss_basic_rule_update_time * * * /bin/sh /koolshare/scripts/ss_rule_update.sh"
+		cru a ssupdate "15 $ss_basic_rule_update_time * * * /bin/sh /koolshare/scripts/ss_rule_update.sh"
 	else
 		echo_date ss规则定时更新任务未启用！
 	fi
