@@ -5,7 +5,7 @@
 
 # 导入skipd数据
 eval `dbus export ss`
-ss_basic_dnslookup_server="114.114.114.114"
+ss_basic_dnslookup_server="8.8.8.8"
 
 # 引用环境变量等
 source /koolshare/scripts/base.sh
@@ -49,8 +49,9 @@ write_haproxy_cfg(){
 		    #stats hide-version  
 		    stats admin if TRUE
 		resolvers mydns
-		    nameserver dns1 119.29.29.29:53
-		    nameserver dns2 114.114.114.114:53
+		    nameserver dns1 223.6.6.6:53
+		    nameserver dns2 119.29.29.29:53
+		    nameserver dns3 114.114.114.114:53
 		    resolve_retries       3
 		    timeout retry         2s
 		    hold valid           10s
