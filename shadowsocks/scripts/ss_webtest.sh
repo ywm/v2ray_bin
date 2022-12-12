@@ -520,6 +520,59 @@ create_naive_json(){
 		EOF
 }
 
+create_ss2022_json(){
+	rm -f /tmp/tmp_v2ray.json
+		 #Shadowsocks 2022 
+		 # inbounds area (23458 for socks5)  
+		cat > /tmp/tmp_v2ray.json <<-EOF
+		{
+			"log": {
+				"access": "/dev/null",
+				"error": "/tmp/v2ray_webtest_log.log",
+				"loglevel": "error"
+			},
+				"inbounds": [
+					{
+						"port": 23458,
+						"listen": "0.0.0.0",
+						"protocol": "socks",
+						"settings": {
+							"auth": "noauth",
+							"udp": true,
+							"ip": "127.0.0.1",
+							"clients": null
+						},
+						"streamSettings": null
+					},
+					{
+						"listen": "0.0.0.0",
+						"port": 3335,
+						"protocol": "dokodemo-door",
+						"settings": {
+							"network": "tcp,udp",
+							"followRedirect": true
+						}
+					}
+				],
+			"outbounds": [
+			  {
+				"protocol": "shadowsocks",
+				"settings": {
+				  "servers": [
+					{
+					  "address": "$array1",
+					  "port": $array2,
+					  "method": "$array4",
+					  "password": "$array3"
+					}
+				  ]
+				}
+			  }
+			]
+		}
+		EOF
+}
+
 start_webtest(){
 	array1=`dbus get ssconf_basic_server_$nu`
 	array2=`dbus get ssconf_basic_port_$nu`
@@ -537,6 +590,17 @@ start_webtest(){
 	array14=`dbus get ssconf_basic_trojan_binary_$nu`
 	array15=`dbus get ssconf_basic_naive_protocol_$nu`
 	array16=`dbus get ssconf_basic_naive_user_$nu`
+	array17=`dbus get ssconf_basic_v2ray_xray_$nu`
+
+	if [ "$array12" == "0" ];then
+		case $array4 in
+			2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|2022-blake3-chacha20-poly1305) SS2022_webtest="Y";;
+			*)             SS2022_webtest="N";;
+		esac
+	fi
+	[ "$SS2022_webtest" == "Y" ] && array12="3"
+
+	[ "$array17" == "xray" ] && array17="xray run"
 
 	if [ "$array10" != "" ];then
 		if [ "$array9" == "1" ];then
@@ -587,13 +651,20 @@ start_webtest(){
 			fi	
 			kill -9 $ss_local_pid >/dev/null 2>&1
 
-		elif [ "$array12" == "3" ];then   #v2ray
+		elif [ "$array12" == "3" ] && [ "$SS2022_webtest" != "Y" ];then   #v2ray
 			create_v2ray_json 
+			$array17 -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &
+			speed_test_curl
+			kill -9 `ps|grep "$array17" |grep 'tmp_v2ray'|awk '{print $1}'` >/dev/null 2>&1	
+			rm -f /tmp/tmp_v2ray.json /tmp/v2ray_webtest_log.log
+
+		elif [ "$array12" == "3" ] && [ "$SS2022_webtest" == "Y" ];then   #ShadowSocks 2022
+			create_ss2022_json 
 			xray run -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &
 			speed_test_curl
 			kill -9 `ps|grep xray|grep 'tmp_v2ray'|awk '{print $1}'` >/dev/null 2>&1	
 			rm -f /tmp/tmp_v2ray.json /tmp/v2ray_webtest_log.log
-			
+	
 		elif [ "$array12" == "4" -a "$array14" == "Trojan" ];then   #trojan
 			create_trojan_json 
 			xray run -config=/tmp/tmp_v2ray.json >/dev/null 2>&1 &

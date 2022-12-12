@@ -119,7 +119,7 @@ echo_version(){
 	echo "client_linux_arm5	20210922	kcptun"
 	echo "v2ray			$ss_basic_v2ray_version	"	
 	echo "xray			$ss_basic_xray_version	"	
-	echo "trojan-go		0.10.9		2022年10月18日编译"
+	echo "trojan-go		0.10.10		2022年11月29日编译"
 	echo "naive		$ss_basic_naive_version	"
 	echo -----------------------------------------------------------
 }

@@ -35,6 +35,14 @@ game_on=`dbus list ss_acl_mode|cut -d "=" -f 2 | grep 3`
 ss_basic_password=`echo $ss_basic_password|base64_decode`
 ARG_V2RAY_PLUGIN=""
 
+if [ "$ss_basic_type" == "0" ];then
+	case $ss_basic_method in
+		2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|2022-blake3-chacha20-poly1305) SS2022="Y";;
+		*)             SS2022="N";;
+	esac
+fi
+[ "$SS2022" == "Y" ] && ss_basic_type="3"
+
 # 兼容3.8.9及其以下
 [ -z "$ss_basic_type" ] && {
 	if [ -n "$ss_basic_rss_protocol" ];then
@@ -1776,7 +1784,6 @@ create_trojan_json(){
 		EOF
 	
 		echo_date 解析Trojan配置文件...
-	#	cp "$V2RAY_CONFIG_FILE_TMP" /tmp/home/root/trojantmp.json
 		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
 			
 		echo_date Trojan配置文件写入成功到"$V2RAY_CONFIG_FILE"
@@ -1937,6 +1944,82 @@ create_naive_json(){
 	fi
 }
 
+
+create_ss2022_json(){
+	rm -rf "$V2RAY_CONFIG_FILE_TMP"
+	rm -rf "$V2RAY_CONFIG_FILE"
+	if  [ "$ss_basic_type" == "3" ] && [ "$SS2022" == "Y" ]; then
+		echo_date 生成 Shadowsocks 2022 配置文件...
+		 #Shadowsocks 2022 
+		 # inbounds area (23456 for socks5)  
+		cat >"$V2RAY_CONFIG_FILE_TMP" <<-EOF
+		{
+			"log": {
+				"access": "/dev/null",
+				"error": "/tmp/v2ray_log.log",
+				"loglevel": "error"
+			},
+				"inbounds": [
+					{
+						"port": 23456,
+						"listen": "0.0.0.0",
+						"protocol": "socks",
+						"settings": {
+							"auth": "noauth",
+							"udp": true,
+							"ip": "127.0.0.1",
+							"clients": null
+						},
+						"streamSettings": null
+					},
+					{
+						"listen": "0.0.0.0",
+						"port": 3333,
+						"protocol": "dokodemo-door",
+						"settings": {
+							"network": "tcp,udp",
+							"followRedirect": true
+						}
+					}
+				],
+			"outbounds": [
+			  {
+				"protocol": "shadowsocks",
+				"settings": {
+				  "servers": [
+					{
+					  "address": "$(dbus get ss_basic_server)",
+					  "port": $ss_basic_port,
+					  "method": "$ss_basic_method",
+					  "password": "$ss_basic_password"
+					}
+				  ]
+				}
+			  }
+			]
+		}
+		EOF
+	
+		echo_date 解析 Shadowsocks 2022 配置文件...
+		cat "$V2RAY_CONFIG_FILE_TMP" | jq --tab . >"$V2RAY_CONFIG_FILE"
+			
+		echo_date Shadowsocks 2022 配置文件写入成功到"$V2RAY_CONFIG_FILE"
+			
+		cd /koolshare/bin
+		echo_date 测试 Shadowsocks 2022 配置文件.....
+		result=$(xray -test -config="$V2RAY_CONFIG_FILE" | grep "Configuration OK.")
+		if [ -n "$result" ]; then
+			echo_date $result
+			echo_date Shadowsocks 2022 配置文件通过测试!!!
+		else
+			echo_date Shadowsocks 2022 配置文件没有通过测试，请检查设置!!!
+			rm -rf "$V2RAY_CONFIG_FILE_TMP"
+			rm -rf "$V2RAY_CONFIG_FILE"
+			close_in_five
+		fi
+	fi
+}
+
 start_v2ray() {
 	# v2ray start
 	cd /koolshare/bin
@@ -1961,11 +2044,11 @@ start_v2ray_xray() {
 		start_xray
 	elif [ "$ss_basic_type" == "4" ]; then
 		start_trojan
+	elif [ "$SS2022" == "Y" ]; then
+		start_ss2022		
 	else
 		start_v2ray
 	fi
-
-
 }
 
 start_xray() {
@@ -2042,6 +2125,24 @@ start_naiveproxy() {
 	echo_date NaiveProxy启动成功，pid：$naivePID
 }
 
+start_ss2022() {
+	# Shadowsocks 2022  start
+	cd /koolshare/bin
+	#export GOGC=30
+	xray run -config=/koolshare/ss/v2ray.json >/dev/null 2>&1 &
+	local ss2022PID
+	local i=10
+	until [ -n "$ss2022PID" ]; do
+		i=$(($i - 1))
+		ss2022PID=$(pidof xray)
+		if [ "$i" -lt 1 ]; then
+			echo_date "Shadowsocks 2022 进程启动失败！"
+			close_in_five
+		fi
+		sleep 1
+	done
+	echo_date Shadowsocks 2022 启动成功，pid：$ss2022PID
+}
 
 write_cron_job(){
 	sed -i '/ssupdate/d' /var/spool/cron/crontabs/* >/dev/null 2>&1
@@ -2708,7 +2809,8 @@ apply_ss(){
 	create_dnsmasq_conf
 	# do not re generate json on router start, use old one
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" != "3" ] && [ "$ss_basic_type" != "4" ] && create_ss_json
-	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "3" ] && create_v2ray_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "3" ] && [ "$SS2022" != "Y" ] && create_v2ray_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "3" ] && [ "$SS2022" == "Y" ] && create_ss2022_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && create_trojan_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && create_trojango_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "5" ] && create_naive_json
