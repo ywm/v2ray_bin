@@ -100,6 +100,17 @@ echo_version(){
 		fi
 	fi
  
+ 	##---------------------------trojan-go-----------------------
+	if [ -z "$ss_basic_trojango_version" ];then
+		ss_basic_trojango_version_tmp=`/koolshare/bin/trojan-go -version 2>/dev/null | head -n 1 | cut -d " " -f2`
+		if [ -n "$ss_basic_trojango_version_tmp" ];then
+			ss_basic_trojango_version="$ss_basic_trojango_version_tmp"
+			dbus set ss_basic_trojango_version="$ss_basic_trojango_version_tmp"
+		else
+			ss_basic_trojango_version="null"
+		fi
+	fi
+
 	echo ① 程序版本（插件版本：$SOFVERSION）：
 	echo -----------------------------------------------------------
 	echo "程序			版本		备注"
@@ -119,7 +130,7 @@ echo_version(){
 	echo "client_linux_arm5	20210922	kcptun"
 	echo "v2ray			$ss_basic_v2ray_version	"	
 	echo "xray			$ss_basic_xray_version	"	
-	echo "trojan-go		0.10.10		2022年11月29日编译"
+	echo "trojan-go		$ss_basic_trojango_version		2022年12月29日编译"
 	echo "naive		$ss_basic_naive_version	"
 	echo -----------------------------------------------------------
 }

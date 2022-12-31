@@ -1,1 +1,1 @@
-a1c3c1b597629ed8e68b6d3a8e49eeff  trojan-go
+db85c1f3868cb4aca36579582afa487f  trojan-go

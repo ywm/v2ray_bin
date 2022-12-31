@@ -1120,7 +1120,7 @@ get_trojan_go_config(){
 	v2ray_host=$(echo "$decode_link" | tr '?&#' '\n' | grep 'host=' | awk -F'=' '{print $2}')
 	sni=$(echo "$decode_link" | tr '?&#' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
 	binary="Trojan-Go"
-
+	fingerprint="none"
 	#20201024---
 	ss_kcp_support_tmp="0"
 	ss_udp_support_tmp="0"
@@ -1172,6 +1172,7 @@ add_trojan_go_servers(){
 	[ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$trojangoindex=$v2ray_host
 	[ -n "$v2ray_path" ] && dbus set ssconf_basic_v2ray_network_path_$trojangoindex=$v2ray_path
 	dbus set ssconf_basic_trojan_sni_$trojangoindex="$sni"
+	dbus set ssconf_basic_fingerprint_$trojangoindex="$fingerprint"
 	dbus set ssconf_basic_v2ray_mux_enable_$trojangoindex=0
 	dbus set ssconf_basic_ss_kcp_support_$trojangoindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojangoindex=$ss_udp_support_tmp
@@ -1312,6 +1313,7 @@ del_none_exist(){
 					dbus remove ssconf_basic_trojan_binary_$localindex	
 					dbus remove ssconf_basic_trojan_network_$localindex
 					dbus remove ssconf_basic_trojan_sni_$localindex
+					dbus remove ssconf_basic_fingerprint_$localindex
 					dbus remove ssconf_basic_type_$localindex
 					dbus remove ssconf_basic_use_kcp_$localindex
 					dbus remove ssconf_basic_use_lb_$localindex
@@ -1411,6 +1413,7 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_trojan_binary_$nu)" ] && dbus set ssconf_basic_trojan_binary_"$y"="$(dbus get ssconf_basic_trojan_binary_$nu)" && dbus remove ssconf_basic_trojan_binary_$nu
 				[ -n "$(dbus get ssconf_basic_trojan_network_$nu)" ] && dbus set ssconf_basic_trojan_network_"$y"="$(dbus get ssconf_basic_trojan_network_$nu)" && dbus remove ssconf_basic_trojan_network_$nu
 				[ -n "$(dbus get ssconf_basic_trojan_sni_$nu)" ] && dbus set ssconf_basic_trojan_sni_"$y"="$(dbus get ssconf_basic_trojan_sni_$nu)" && dbus remove ssconf_basic_trojan_sni_$nu
+				[ -n "$(dbus get ssconf_basic_fingerprint_$nu)" ] && dbus set ssconf_basic_fingerprint_"$y"="$(dbus get ssconf_basic_fingerprint_$nu)" && dbus remove ssconf_basic_fingerprint_$nu
 				[ -n "$(dbus get ssconf_basic_type_$nu)" ] && dbus set ssconf_basic_type_"$y"="$(dbus get ssconf_basic_type_$nu)" && dbus remove ssconf_basic_type_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_protocol_$nu)" ] && dbus set ssconf_basic_v2ray_protocol_"$y"="$(dbus get ssconf_basic_v2ray_protocol_$nu)" && dbus remove ssconf_basic_v2ray_protocol_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && dbus set ssconf_basic_v2ray_xray_"$y"="$(dbus get ssconf_basic_v2ray_xray_$nu)" && dbus remove ssconf_basic_v2ray_xray_$nu
@@ -1729,6 +1732,7 @@ start_update(){
 						dbus remove ssconf_basic_trojan_binary_$conf_nu
 						dbus remove ssconf_basic_trojan_network_$conf_nu
 						dbus remove ssconf_basic_trojan_sni_$conf_nu
+						dbus remove ssconf_basic_fingerprint_$conf_nu
 						dbus remove ssconf_basic_type_$conf_nu
 						dbus remove ssconf_basic_use_kcp_$conf_nu
 						dbus remove ssconf_basic_use_lb_$conf_nu
@@ -1887,6 +1891,7 @@ remove_online(){
 		dbus remove ssconf_basic_trojan_binary_$remove_nu
 		dbus remove ssconf_basic_trojan_network_$remove_nu
 		dbus remove ssconf_basic_trojan_sni_$remove_nu
+		dbus remove ssconf_basic_fingerprint_$remove_nu
 		dbus remove ssconf_basic_type_$remove_nu
 		dbus remove ssconf_basic_use_kcp_$remove_nu
 		dbus remove ssconf_basic_use_lb_$remove_nu

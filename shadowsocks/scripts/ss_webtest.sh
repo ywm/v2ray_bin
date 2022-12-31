@@ -405,6 +405,7 @@ create_trojango_json(){
 					}"
 	fi
 	[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8 || local ssconf_basic_v2ray_mux_concurrency=$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)
+	[ "$(eval echo \$ssconf_basic_fingerprint_$nu)" == "none" ] && local ssconf_basic_fingerprint="" || local ssconf_basic_fingerprint=$(eval echo \$ssconf_basic_fingerprint_$nu)
 		 #trojan go
 		 # 3335 for nat  
 		cat >"/tmp/tmp_trojango.json" <<-EOF
@@ -429,7 +430,8 @@ create_trojango_json(){
 					"http/1.1"
 					],
 					"session_ticket": true,
-					"reuse_session": true
+					"reuse_session": true,
+					"fingerprint": "$ssconf_basic_fingerprint"
 				},
 				"tcp": {
 					"no_delay": true,
@@ -475,7 +477,8 @@ create_trojango_json(){
 					"http/1.1"
 					],
 					"session_ticket": true,
-					"reuse_session": true
+					"reuse_session": true,
+					"fingerprint": "$ssconf_basic_fingerprint"
 				},
 				"tcp": {
 					"no_delay": true,

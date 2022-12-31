@@ -1822,6 +1822,7 @@ create_trojango_json(){
 		fi
 		[ -z "$(dbus get ss_basic_v2ray_mux_concurrency)" ] && local ss_basic_v2ray_mux_concurrency=8
 #		[ -z "$(dbus get ss_basic_trojan_sni)" ] && [ "$(dbus get ss_basic_server)" != "$ss_basic_v2ray_network_host" ] && local ss_basic_trojan_sni="$ss_basic_v2ray_network_host"
+		[ "$ss_basic_fingerprint" == "none" ] && local ss_basic_fingerprint=""
 		echo_date 生成Trojan Go配置文件...
 		 #trojan go
 		 # 3333 for nat  
@@ -1847,7 +1848,8 @@ create_trojango_json(){
 					"http/1.1"
 					],
 					"session_ticket": true,
-					"reuse_session": true
+					"reuse_session": true,
+					"fingerprint": "$ss_basic_fingerprint"
 				},
 				"tcp": {
 					"no_delay": true,
@@ -1892,7 +1894,8 @@ create_trojango_json(){
 					"http/1.1"
 					],
 					"session_ticket": true,
-					"reuse_session": true
+					"reuse_session": true,
+					"fingerprint": "$ss_basic_fingerprint"
 				},
 				"tcp": {
 					"no_delay": true,
