@@ -1375,6 +1375,7 @@ create_v2ray_json(){
 					\"allowInsecure\": $(get_function_switch $ss_basic_allowinsecure),
 					\"serverName\": \"$ss_basic_v2ray_network_tlshost\"
 					}"
+			[ "$ss_basic_v2ray_network_flow" != "none" -a "$ss_basic_v2ray_network_flow" != "" ] && local vless_flow="\"flow\": \"$ss_basic_v2ray_network_flow\","	|| 	local vless_flow=""
 			;;
 		xtls)
 			local xtls="{

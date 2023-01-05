@@ -103,6 +103,7 @@ rm -f /tmp/tmp_v2ray.json
 					\"allowInsecure\":  $(get_function_switch $(eval echo \$ssconf_basic_allowinsecure_$nu)),
 					\"serverName\": \"$(eval echo \$ssconf_basic_v2ray_network_tlshost_$nu)\"
 					}"
+					[ "$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)" != "none" -a "$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)" != "" ] && local vless_flow="\"flow\": \"$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)\","	|| 	local vless_flow=""		
 			;;
 		xtls)
 			local xtls="{

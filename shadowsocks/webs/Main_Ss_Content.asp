@@ -610,6 +610,8 @@ function verifyFields(r) {
 	var path_on = E("ss_basic_v2ray_network").value == "ws" || E("ss_basic_v2ray_network").value == "h2" || E("ss_basic_trojan_network").value == "1" || E("ss_basic_v2ray_network").value == "kcp";
 	var tls_on = E("ss_basic_v2ray_network_security").value == "xtls" || E("ss_basic_v2ray_network_security").value == "tls";
 	var xtls_on = E("ss_basic_v2ray_network_security").value == "xtls";
+	var vision_on = E("ss_basic_v2ray_protocol").value == "vless" && E("ss_basic_v2ray_network").value == "tcp" && E("ss_basic_v2ray_network_security").value == "tls";
+		
 	showhide("pass_tr", (!v2ray_on));
 	showhide("method_tr", (!v2ray_on) && (!trojan_on) && (!naive_on));
 	showhide("server_tr", (json_off));
@@ -627,7 +629,10 @@ function verifyFields(r) {
 	showhide("v2ray_network_host_basic_tr", ((v2ray_on && json_off && host_on) || (trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go" && host_on)));
 	showhide("v2ray_network_path_basic_tr", ((v2ray_on && json_off && path_on) || (trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go" && path_on)));
 	showhide("v2ray_network_tlshost_basic_tr", (v2ray_on && json_off && tls_on));
-	showhide("v2ray_network_flow_basic_tr", (v2ray_on && json_off && xtls_on));
+	showhide("v2ray_network_flow_basic_tr", (v2ray_on && json_off && (xtls_on || vision_on)));
+	showhide("xtls_flow_opt_basic" , (v2ray_on && json_off && xtls_on));
+	showhide("vision_flow_opt_basic" , (v2ray_on && json_off && vision_on));
+	
 	showhide("v2ray_network_security_basic_tr", (v2ray_on && json_off));
 	showhide("v2ray_mux_enable_basic_tr", ((trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go")|| (v2ray_on && json_off)));
 	showhide("v2ray_mux_concurrency_basic_tr", (((trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go") || (v2ray_on && json_off)) && E("ss_basic_v2ray_mux_enable").checked));
@@ -725,13 +730,17 @@ function verifyFields(r) {
 			var path_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || E("ss_node_table_v2ray_network").value == "kcp" ;
 			var tls_on_2 = E("ss_node_table_v2ray_network_security").value == "tls" || E("ss_node_table_v2ray_network_security").value == "xtls";
 			var xtls_on_2 = E("ss_node_table_v2ray_network_security").value == "xtls";
+			var vision_on_2 = E("ss_node_table_v2ray_protocol").value == "vless" && E("ss_node_table_v2ray_network").value == "tcp" && E("ss_node_table_v2ray_network_security").value == "tls";	
+
 			showhide("v2ray_headtype_tcp_tr", (E("ss_node_table_v2ray_network").value == "tcp"));
 			showhide("v2ray_headtype_kcp_tr", (E("ss_node_table_v2ray_network").value == "kcp"));
 			showhide("v2ray_serviceName_tr", serviceName_on_2);
 			showhide("v2ray_network_host_tr", host_on_2);
 			showhide("v2ray_network_tlshost_tr", tls_on_2);
 			showhide("allowinsecure_tr", tls_on_2);
-			showhide("v2ray_network_flow_tr", xtls_on_2);
+			showhide("v2ray_network_flow_tr", xtls_on_2 || vision_on_2);
+			showhide("xtls_flow_opt" , xtls_on_2);
+			showhide("vision_flow_opt" , vision_on_2);
 			showhide("v2ray_network_path_tr", path_on_2);
 			showhide("v2ray_mux_concurrency_tr", (E("ss_node_table_v2ray_mux_enable").checked));
 			showhide("v2ray_json_tr", (E("ss_node_table_v2ray_use_json").checked));
@@ -1497,15 +1506,19 @@ function tabclickhandler(_type) {
 			var host_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || http_on_2;
 			var serviceName_on_2 =  E("ss_node_table_v2ray_network").value == "grpc";
 			var path_on_2 = E("ss_node_table_v2ray_network").value == "ws" || E("ss_node_table_v2ray_network").value == "h2" || E("ss_node_table_v2ray_network").value == "kcp";
-			var tlshost_on_2 = E("ss_node_table_v2ray_network_security").value == "tls" || E("ss_node_table_v2ray_network_security").value == "xtls"
-			var xtlshost_on_2 = E("ss_node_table_v2ray_network_security").value == "xtls"
+			var tlshost_on_2 = E("ss_node_table_v2ray_network_security").value == "tls" || E("ss_node_table_v2ray_network_security").value == "xtls";
+			var xtlshost_on_2 = E("ss_node_table_v2ray_network_security").value == "xtls";
+			var visionhost_on_2 = E("ss_node_table_v2ray_protocol").value == "vless" && E("ss_node_table_v2ray_network").value == "tcp" && E("ss_node_table_v2ray_network_security").value == "tls";	
 			showhide("v2ray_headtype_tcp_tr", (E("ss_node_table_v2ray_network").value == "tcp"));
 			showhide("v2ray_headtype_kcp_tr", (E("ss_node_table_v2ray_network").value == "kcp"));
 			showhide("v2ray_network_host_tr", host_on_2);
 			showhide("v2ray_serviceName_tr", serviceName_on_2);
 			showhide("v2ray_network_path_tr", path_on_2);
 			showhide("v2ray_network_tlshost_tr", tlshost_on_2);
-			showhide("v2ray_network_flow_tr", xtlshost_on_2);
+			showhide("v2ray_network_flow_tr", xtlshost_on_2 || visionhost_on_2 );
+			showhide("xtls_flow_opt", xtlshost_on_2 );
+			showhide("vision_flow_opt", visionhost_on_2 );
+			
 			showhide("allowinsecure_tr", (xtlshost_on_2 || tlshost_on_2 ));
 			showhide("v2ray_mux_concurrency_tr", (E("ss_node_table_v2ray_mux_enable").checked));
 			showhide("v2ray_json_tr", (E("ss_node_table_v2ray_use_json").checked));
@@ -3945,12 +3958,19 @@ function set_cron(action) {
 																<th width="35%">流控 (flow)</th>
 																<td>
 																	<select id="ss_node_table_v2ray_network_flow" name="ss_node_table_v2ray_network_flow" onchange="verifyFields(this, 1);" style="width:350px;margin:0px 0px 0px 2px;" class="input_option">
-																		<option value="xtls-rprx-direct">xtls-rprx-direct</option>
-																		<option value="xtls-rprx-splice">xtls-rprx-splice</option>
-																		<option value="xtls-rprx-origin">xtls-rprx-origin</option>
-																		<option value="xtls-rprx-direct-udp443">xtls-rprx-direct-udp443</option>
-																		<option value="xtls-rprx-splice-udp443">xtls-rprx-splice-udp443</option>
-																		<option value="xtls-rprx-origin-udp443">xtls-rprx-origin-udp443</option>
+																		<option value=""></option>
+																		<optgroup label="xtls" id="xtls_flow_opt">
+																			<option value="xtls-rprx-direct">xtls-rprx-direct</option>
+																			<option value="xtls-rprx-splice">xtls-rprx-splice</option>
+																			<option value="xtls-rprx-origin">xtls-rprx-origin</option>
+																			<option value="xtls-rprx-direct-udp443">xtls-rprx-direct-udp443</option>
+																			<option value="xtls-rprx-splice-udp443">xtls-rprx-splice-udp443</option>
+																			<option value="xtls-rprx-origin-udp443">xtls-rprx-origin-udp443</option>
+																		</optgroup>
+																		<optgroup label="xtls-vision" id="vision_flow_opt">
+																			<option value="xtls-rprx-vision">xtls-rprx-vision</option>
+																			<option value="xtls-rprx-vision-udp443">xtls-rprx-vision-udp443</option>
+																		</optgroup>	
 																	</select>
 																</td>
 															</tr>
@@ -3992,7 +4012,7 @@ function set_cron(action) {
 																<th width="35%">指纹 (fingerprint)</th>
 																<td>
 																	<select id="ss_node_table_fingerprint" name="ss_node_table_fingerprint" onchange="verifyFields(this, 1);" style="width:350px;margin:0px 0px 0px 2px;" class="input_option">
-																		<option value="none" selected>关闭</option>
+																		<option value="none">关闭</option>
 																		<option value="firefox">firefox</option>
 																		<option value="chrome">chrome</option>
 																		<option value="ios">ios</option>
@@ -4353,12 +4373,19 @@ function set_cron(action) {
 													</th>
 													<td>
 														<select id="ss_basic_v2ray_network_flow" name="ss_basic_v2ray_network_flow" onchange="verifyFields(this, 1);" style="width:164px;margin:0px 0px 0px 2px;" class="input_option">
-															<option value="xtls-rprx-direct">xtls-rprx-direct</option>
-															<option value="xtls-rprx-splice">xtls-rprx-splice</option>
-															<option value="xtls-rprx-origin">xtls-rprx-origin</option>
-															<option value="xtls-rprx-direct-udp443">xtls-rprx-direct-udp443</option>
-															<option value="xtls-rprx-splice-udp443">xtls-rprx-splice-udp443</option>
-															<option value="xtls-rprx-origin-udp443">xtls-rprx-origin-udp443</option>
+															<option value=""></option>
+															<optgroup label="xtls" id="xtls_flow_opt_basic">
+																<option value="xtls-rprx-direct">xtls-rprx-direct</option>
+																<option value="xtls-rprx-splice">xtls-rprx-splice</option>
+																<option value="xtls-rprx-origin">xtls-rprx-origin</option>
+																<option value="xtls-rprx-direct-udp443">xtls-rprx-direct-udp443</option>
+																<option value="xtls-rprx-splice-udp443">xtls-rprx-splice-udp443</option>
+																<option value="xtls-rprx-origin-udp443">xtls-rprx-origin-udp443</option>
+															</optgroup>
+															<optgroup label="xtls-vision" id="vision_flow_opt_basic">
+																<option value="xtls-rprx-vision">xtls-rprx-vision</option>
+																<option value="xtls-rprx-vision-udp443">xtls-rprx-vision-udp443</option>
+															</optgroup>	
 														</select>
 													</td>
 												</tr>
@@ -4405,7 +4432,7 @@ function set_cron(action) {
 													<th width="35%">指纹 (fingerprint)</th>
 													<td>
 														<select id="ss_basic_fingerprint" name="ss_basic_fingerprint" onchange="verifyFields(this, 1);" style="width:164px;margin:0px 0px 0px 2px;" class="input_option">
-															<option value="none" selected>关闭</option>
+															<option value="none">关闭</option>
 															<option value="firefox">firefox</option>
 															<option value="chrome">chrome</option>
 															<option value="ios">ios</option>

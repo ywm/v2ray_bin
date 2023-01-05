@@ -1000,7 +1000,7 @@ add_vless_servers(){
 		# tcp协议设置【 tcp伪装类型 (type)】和【tls/xtls域名 (SNI)】
 		# tcp + xtls 会比较多，别的组合不熟悉
 		dbus set ssconf_basic_v2ray_headtype_tcp_$v2rayindex="$v2ray_type"
-		[ "$v2ray_tls" = "xtls" ] && dbus set ssconf_basic_v2ray_network_flow_$v2rayindex=$v2ray_flow	
+		[ "${v2ray_tls#*x}" = "tls" ] && dbus set ssconf_basic_v2ray_network_flow_$v2rayindex=$v2ray_flow	
 
 		#  @@ 不确定这个变量是否需要添加
 		# [ -n "$v2ray_host" ] && dbus set ssconf_basic_v2ray_network_host_$v2rayindex=$v2ray_host 
