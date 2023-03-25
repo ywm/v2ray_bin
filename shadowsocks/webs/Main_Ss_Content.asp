@@ -292,9 +292,9 @@ function save() {
 		dbus["ssconf_basic_server_" + node_sel] = vmess_node.add;
 		dbus["ss_basic_port"] = vmess_node.port;
 		dbus["ssconf_basic_port_" + node_sel] = vmess_node.port;
-		dbus["ss_basic_v2ray_xray"] = "v2ray";
+		dbus["ss_basic_v2ray_xray"] = "xray";
 		dbus["ss_basic_v2ray_protocol"] = "vmess";
-		dbus["ssconf_basic_v2ray_xray_" + node_sel] = "v2ray";
+		dbus["ssconf_basic_v2ray_xray_" + node_sel] = "xray";
 		dbus["ssconf_basic_v2ray_protocol_" + node_sel] = "vmess";
 		dbus["ss_basic_v2ray_uuid"] = vmess_node.id;
 		dbus["ssconf_basic_v2ray_uuid_" + node_sel] = vmess_node.id;
@@ -916,10 +916,10 @@ function ssconf_node2obj(node_sel) {
 //		$("#use_uuid_on").text("用户id（id）")
 //	}
 	var v2ray_xray = db_ss[p + "_" + "v2ray_xray" + "_" + node_sel]
-	if(v2ray_xray=="xray"){
-		obj["ss_basic_" + "v2ray_xray"] = "xray"
-	}else{
+	if(v2ray_xray=="v2ray"){
 		obj["ss_basic_" + "v2ray_xray"] = "v2ray"
+	}else{
+		obj["ss_basic_" + "v2ray_xray"] = "xray"
 	}
 	
 	var trojan_binary = db_ss[p + "_" + "trojan_binary" + "_" + node_sel]
@@ -971,10 +971,10 @@ function xray_change_on(xy){
 
 //非使用中节点改变
 function xray_change_off(xy){
-	if(xy=="xray"){
-		E("ss_node_table_v2ray_xray").value = "xray";
-	}else{
+	if(xy=="v2ray"){
 		E("ss_node_table_v2ray_xray").value = "v2ray";
+	}else{
+		E("ss_node_table_v2ray_xray").value = "xray";
 	}
 }
 function trojan_change_off(xy){
@@ -1256,7 +1256,7 @@ function Add_profile() { //点击节点页面内添加节点动作
 	E("edit_node").style.display = "none";
 	E("continue_add").style.display = "";
 	E("ss_node_table_v2ray_protocol").value = "vmess";
-	E("ss_node_table_v2ray_xray").value = "v2ray";
+	E("ss_node_table_v2ray_xray").value = "xray";
 	$("#vpnc_settings").fadeIn(200);
 	$("#use_uuid_off").text("用户id（id）");
 	$("#v2rayTitle").html("添加V2Ray配置");
@@ -1670,7 +1670,7 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 				ns[p + "_v2ray_security_" + node_global_max] = "auto";
 				ns[p + "_v2ray_alterid_" + node_global_max] = vmess_node.aid;
 				ns[p + "_v2ray_protocol_" + node_global_max] = "vmess";
-				ns[p + "_v2ray_xray_" + node_global_max] = "v2ray";
+				ns[p + "_v2ray_xray_" + node_global_max] = "xray";
 				ns[p + "_v2ray_network_" + node_global_max] = vmess_node.net;
 				if(vmess_node.net == "tcp"){
 					ns[p + "_v2ray_headtype_tcp_" + node_global_max] = vmess_node.type;
@@ -1746,7 +1746,7 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 				E("ss_node_table_v2ray_uuid").value = "";
 				E("ss_node_table_v2ray_alterid").value = "";
 				E("ss_node_table_v2ray_protocol").value = "vmess";
-				E("ss_node_table_v2ray_xray").value = "v2ray";
+				E("ss_node_table_v2ray_xray").value = "xray";
 				E("ss_node_table_v2ray_json").value = "";	
 				E("ss_node_table_trojan_binary").value = "Trojan";		
 				E("ss_node_table_trojan_network").value = "0";		
@@ -2158,7 +2158,7 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 				ns["ssconf_basic_v2ray_security_" + myid] = "auto";
 				ns["ssconf_basic_v2ray_alterid_" + myid] = vmess_node.aid;
 				ns["ssconf_basic_v2ray_protocol_" + myid] = "vmess";
-				ns["ssconf_basic_v2ray_xray_" + myid] = "v2ray";
+				ns["ssconf_basic_v2ray_xray_" + myid] = "xray";
 				ns["ssconf_basic_v2ray_network_" + myid] = vmess_node.net;
 				if(vmess_node.net == "tcp"){
 					ns["ssconf_basic_v2ray_headtype_tcp_" + myid] = vmess_node.type;
@@ -2226,7 +2226,7 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 			E("ss_node_table_v2ray_uuid").value = "";
 			E("ss_node_table_v2ray_alterid").value = "";
 			E("ss_node_table_v2ray_protocol").value = "vmess";
-			E("ss_node_table_v2ray_xray").value = "v2ray";
+			E("ss_node_table_v2ray_xray").value = "xray";
 			E("ss_node_table_v2ray_json").value = "";
 			E("ss_node_table_trojan_binary").value = "Trojan";		
 			E("ss_node_table_trojan_network").value = "0";	
@@ -3697,8 +3697,8 @@ function set_cron(action) {
 																<th width="35%">二进制（V2ray/Xray）</th>
 																<td>
 																	<select id="ss_node_table_v2ray_xray" name="ss_node_table_v2ray_xray" style="width:350px;margin:0px 0px 0px 2px;" class="input_option" onchange="xray_change_off(this.value);">
-																		<option value="v2ray">V2ray</option>
 																		<option value="xray">Xray</option>
+																		<option value="v2ray">V2ray</option>
 																	</select>
 																</td>
 															</tr>
@@ -4090,8 +4090,8 @@ function set_cron(action) {
 													</th>
 													<td>
 														<select id="ss_basic_v2ray_xray" name="ss_basic_v2ray_xray" style="width:164px;margin:0px 0px 0px 2px;" class="input_option"  onchange="xray_change_on(this.value);">
-															<option value="v2ray">V2ray</option>
 															<option value="xray">Xray</option>
+															<option value="v2ray">V2ray</option>
 														</select>
 													</td>
 												</tr>

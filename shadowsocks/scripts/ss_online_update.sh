@@ -67,6 +67,9 @@ SOCKS_FLAG=0
 # ssconf_basic_trojan_binary_
 # ssconf_basic_trojan_network_
 # ssconf_basic_trojan_sni_
+# ssconf_basic_fingerprint_
+# ssconf_basic_naive_protocol_
+# ssconf_basic_naive_user_
 # ==============================
 
 set_lock(){
@@ -172,6 +175,8 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && echo dbus set ssconf_basic_v2ray_xray_$q=$(dbus get ssconf_basic_v2ray_xray_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_tlshost_$q=$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)  >> /tmp/ss_conf.sh	
 		[ -n "$(dbus get ssconf_basic_v2ray_network_flow_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_flow_$q=$(dbus get ssconf_basic_v2ray_network_flow_$nu)  >> /tmp/ss_conf.sh	
+		[ -n "$(dbus get ssconf_basic_naive_protocol_$nu)" ] && echo dbus set ssconf_basic_naive_protocol_$q=$(dbus get ssconf_basic_naive_protocol_$nu)  >> /tmp/ss_conf.sh	
+		[ -n "$(dbus get ssconf_basic_naive_user_$nu)" ] && echo dbus set ssconf_basic_naive_user_$q=$(dbus get ssconf_basic_naive_user_$nu)  >> /tmp/ss_conf.sh
 
 		echo "#------------------------" >> /tmp/ss_conf.sh
 		if [ "$nu" == "$ssconf_basic_node" ];then
@@ -651,7 +656,7 @@ add_vmess_servers(){
 	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$v2rayindex=$v2ray_group
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vmess"
-	dbus set ssconf_basic_v2ray_xray_$v2rayindex="v2ray"
+	dbus set ssconf_basic_v2ray_xray_$v2rayindex="xray"
 	[ -n "$v2ray_group" ] && dbus set ssconf_basic_allowinsecure_$v2rayindex=1 || dbus set ssconf_basic_allowinsecure_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
@@ -1337,7 +1342,9 @@ del_none_exist(){
 					dbus remove ssconf_basic_v2ray_uuid_$localindex
 					dbus remove ssconf_basic_v2ray_xray_$localindex
 					dbus remove ssconf_basic_weight_$localindex
-
+					dbus remove ssconf_basic_naive_protocol_$localindex
+					dbus remove ssconf_basic_naive_user_$localindex
+					
 				let delnum+=1
 			fi 
 			done
@@ -1362,8 +1369,8 @@ remove_node_gap(){
 		local y=1
 		for nu in $SEQ
 		do
-			[[ $nu -gt 1000 ]] && group_index_node=$((nu/1000*1000)) 
-			[ "$y" != "$nu" ] && [[ $nu -gt $group_index_node ]] && [[ $y -lt $group_index_node ]]  && y=$((y%1000+group_index_node))
+			[[ "$nu" -gt 1000 ]] && group_index_node=$((nu/1000*1000)) 
+			[[ "$((group_index_node+0))" -gt 0 ]] && [ "$y" != "$nu" ] && [[ "$nu" -gt "$group_index_node" ]] && [[ "$y" -lt "$group_index_node" ]]  && y=$((y%1000+group_index_node))
 			if [ "$y" != "$nu" ] ; then
 				#echo_date 调整节点 $nu 到 节点 $y !
 				[ -n "$(dbus get ssconf_basic_group_$nu)" ] && dbus set ssconf_basic_group_"$y"="$(dbus get ssconf_basic_group_$nu)" && dbus remove ssconf_basic_group_$nu
@@ -1419,7 +1426,9 @@ remove_node_gap(){
 				[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && dbus set ssconf_basic_v2ray_xray_"$y"="$(dbus get ssconf_basic_v2ray_xray_$nu)" && dbus remove ssconf_basic_v2ray_xray_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)" ] && dbus set ssconf_basic_v2ray_network_tlshost_"$y"="$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)"  && dbus remove ssconf_basic_v2ray_network_tlshost_$nu
 				[ -n "$(dbus get ssconf_basic_v2ray_network_flow_$nu)" ] && dbus set ssconf_basic_v2ray_network_flow_"$y"="$(dbus get ssconf_basic_v2ray_network_flow_$nu)"  && dbus remove ssconf_basic_v2ray_network_flow_$nu
-			
+				[ -n "$(dbus get ssconf_basic_naive_protocol_$nu)" ] && dbus set ssconf_basic_naive_protocol_"$y"="$(dbus get ssconf_basic_naive_protocol_$nu)" && dbus remove ssconf_basic_naive_protocol_$nu
+				[ -n "$(dbus get ssconf_basic_naive_user_$nu)" ] && dbus set ssconf_basic_naive_user_"$y"="$(dbus get ssconf_basic_naive_user_$nu)" && dbus remove ssconf_basic_naive_user_$nu
+				
 				usleep 100000
 				# change node nu
 				if [ "$nu" == "$ssconf_basic_node" ];then
@@ -1756,6 +1765,8 @@ start_update(){
 						dbus remove ssconf_basic_v2ray_uuid_$conf_nu
 						dbus remove ssconf_basic_v2ray_xray_$conf_nu
 						dbus remove ssconf_basic_weight_$conf_nu
+						dbus remove ssconf_basic_naive_protocol_$conf_nu
+						dbus remove ssconf_basic_naive_user_$conf_nu
 					done
 					# 删除不再订阅节点的group信息
 					confs_nu_2=`dbus list ss_online_group_|grep "$local_group"| cut -d "=" -f 1|cut -d "_" -f 4`
@@ -1915,6 +1926,8 @@ remove_online(){
 		dbus remove ssconf_basic_v2ray_uuid_$remove_nu
 		dbus remove ssconf_basic_v2ray_xray_$remove_nu
 		dbus remove ssconf_basic_weight_$remove_nu
+		dbus remove ssconf_basic_naive_protocol_$remove_nu
+		dbus remove ssconf_basic_naive_user_$remove_nu
 	done
 }
 
