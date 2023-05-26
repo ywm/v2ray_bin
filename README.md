@@ -6,7 +6,7 @@ fixed many historical legacy issues
 
 除插件原有功能外，另外
 
-* 支持xray, vless, xtls, trojan, trojan-go, NaiveProxy 等协议及更新，
+* 支持xray, vless, xtls, reality, trojan, trojan-go, NaiveProxy 等协议及更新，
 * 支持ss + v2ray plugin，
 * 支持混合节点订阅，
 * 支持同时订阅多个链接，回车隔开，

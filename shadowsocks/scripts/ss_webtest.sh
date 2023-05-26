@@ -76,6 +76,21 @@ get_path(){
 	fi
 }
 
+get_fingerprint(){
+	if [ -n "$1" ];then
+		echo \"$1\"
+	else
+		echo "null"
+	fi
+}
+get_tgfingerprint(){
+	if [ -n "$1" ];then
+		echo "$1"
+	else
+		echo "null"
+	fi
+}
+
 create_v2ray_json(){
 
 rm -f /tmp/tmp_v2ray.json
@@ -87,6 +102,7 @@ rm -f /tmp/tmp_v2ray.json
 		local grpc="null"
 		local tls="null"
 		local xtls="null"
+		local reality="null"
 		local vless_flow=""
 
 		# tcp和kcp下tlsSettings为null，ws和h2下tlsSettings
@@ -97,10 +113,13 @@ rm -f /tmp/tmp_v2ray.json
 		 	local ssconf_basic_v2ray_network_tlshost_$nu="$(eval echo \$ssconf_basic_v2ray_network_host_$nu)"
 		fi
 
+		local local_fingerprint=$(eval echo \$ssconf_basic_fingerprint_$nu)
+
 		case "$(eval echo \$ssconf_basic_v2ray_network_security_$nu)" in
 		tls)
 			local tls="{
 					\"allowInsecure\":  $(get_function_switch $(eval echo \$ssconf_basic_allowinsecure_$nu)),
+					\"fingerprint\": $(get_fingerprint $local_fingerprint),
 					\"serverName\": \"$(eval echo \$ssconf_basic_v2ray_network_tlshost_$nu)\"
 					}"
 					[ "$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)" != "none" -a "$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)" != "" ] && local vless_flow="\"flow\": \"$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)\","	|| 	local vless_flow=""		
@@ -112,9 +131,20 @@ rm -f /tmp/tmp_v2ray.json
 					}"
 			local vless_flow="\"flow\": \"$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)\","
 			;;
+		reality)
+			local reality="{
+					\"serverName\": \"$(eval echo \$ssconf_basic_v2ray_network_tlshost_$nu)\",
+					\"fingerprint\": $(get_fingerprint $local_fingerprint),
+					\"publicKey\": \"$(eval echo \$ssconf_basic_xray_publicKey_$nu)\", 
+					\"shortId\": \"$(eval echo \$ssconf_basic_xray_shortId_$nu)\", 
+					\"spiderX\": \"\"
+					}"
+			local vless_flow="\"flow\": \"$(eval echo \$ssconf_basic_v2ray_network_flow_$nu)\","
+			;;	
 		*)
 			local tls="null"
 			local xtls="null"
+			local reality="null"
 			;;
 		esac
 		#fi
@@ -183,6 +213,7 @@ rm -f /tmp/tmp_v2ray.json
 		local local_header=$(eval echo \$ssconf_basic_v2ray_network_host_$nu)
 			local ws="{
 				\"connectionReuse\": true,
+				\"fingerprint\": $(get_fingerprint $local_fingerprint),
 				\"path\": $(get_path $local_path),
 				\"headers\": $(get_ws_header local_header)
 				}"
@@ -191,6 +222,7 @@ rm -f /tmp/tmp_v2ray.json
 		local local_path=$(eval echo \$ssconf_basic_v2ray_network_path_$nu)
 		local local_header=$(eval echo \$ssconf_basic_v2ray_network_host_$nu)
 			local h2="{
+				\"fingerprint\": $(get_fingerprint $local_fingerprint),
 				\"path\": $(get_path $local_path),
 				\"host\": $(get_h2_host $local_header)
 				}"
@@ -200,6 +232,7 @@ rm -f /tmp/tmp_v2ray.json
 			local grpc="{
 				\"multiMode\": true,
   				\"idle_timeout\": 13,
+				\"fingerprint\": $(get_fingerprint $local_fingerprint),
 				\"serviceName\": $(get_path $local_serviceName) 
 				}"
 			;;	
@@ -309,6 +342,7 @@ rm -f /tmp/tmp_v2ray.json
 					  "security": "$(eval echo \$ssconf_basic_v2ray_network_security_$nu)",
 					  "tlsSettings": $tls,
 					  "xtlsSettings": $xtls,
+					  "realitySettings": $reality,
 					  "tcpSettings": $tcp,
 					  "kcpSettings": $kcp,
 					  "wsSettings": $ws,
@@ -406,7 +440,7 @@ create_trojango_json(){
 					}"
 	fi
 	[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8 || local ssconf_basic_v2ray_mux_concurrency=$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)
-	[ "$(eval echo \$ssconf_basic_fingerprint_$nu)" == "none" ] && local ssconf_basic_fingerprint="" || local ssconf_basic_fingerprint=$(eval echo \$ssconf_basic_fingerprint_$nu)
+		local local_fingerprint=$(eval echo \$ssconf_basic_fingerprint_$nu)
 		 #trojan go
 		 # 3335 for nat  
 		cat >"/tmp/tmp_trojango.json" <<-EOF
@@ -432,7 +466,7 @@ create_trojango_json(){
 					],
 					"session_ticket": true,
 					"reuse_session": true,
-					"fingerprint": "$ssconf_basic_fingerprint"
+					"fingerprint": $(get_tgfingerprint $ss_basic_fingerprint)
 				},
 				"tcp": {
 					"no_delay": true,
@@ -479,7 +513,7 @@ create_trojango_json(){
 					],
 					"session_ticket": true,
 					"reuse_session": true,
-					"fingerprint": "$ssconf_basic_fingerprint"
+					"fingerprint": $(get_tgfingerprint $ss_basic_fingerprint)
 				},
 				"tcp": {
 					"no_delay": true,
@@ -598,7 +632,7 @@ start_webtest(){
 
 	if [ "$array12" == "0" ];then
 		case $array4 in
-			2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|2022-blake3-chacha20-poly1305) SS2022_webtest="Y";;
+			2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|2022-blake3-chacha20-poly1305|none) SS2022_webtest="Y";;
 			*)             SS2022_webtest="N";;
 		esac
 	fi

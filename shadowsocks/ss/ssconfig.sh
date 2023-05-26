@@ -37,7 +37,7 @@ ARG_V2RAY_PLUGIN=""
 
 if [ "$ss_basic_type" == "0" ];then
 	case $ss_basic_method in
-		2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|2022-blake3-chacha20-poly1305) SS2022="Y";;
+		2022-blake3-aes-128-gcm|2022-blake3-aes-256-gcm|2022-blake3-chacha20-poly1305|none) SS2022="Y";;
 		*)             SS2022="N";;
 	esac
 fi
@@ -1270,6 +1270,20 @@ get_path(){
 	fi
 }
 
+get_fingerprint(){
+	if [ -n "$1" ];then
+		echo \"$1\"
+	else
+		echo "null"
+	fi
+}
+get_tgfingerprint(){
+	if [ -n "$1" ];then
+		echo "$1"
+	else
+		echo "null"
+	fi
+}
 resolve_node_ip4json(){	
 	
 	# 检测用户json的服务器ip地址
@@ -1354,7 +1368,9 @@ create_v2ray_json(){
 		local grpc="null"
 		local tls="null"
 		local xtls="null"
+		local reality="null"
 		local vless_flow=""
+		[ "$ss_basic_fingerprint" == "none" ] && local ss_basic_fingerprint=""
 
 		# tcp和kcp下tlsSettings为null，ws和h2下tlsSettings
 		[ -z "$(dbus get ss_basic_v2ray_mux_concurrency)" ] && local ss_basic_v2ray_mux_concurrency=8
@@ -1373,6 +1389,7 @@ create_v2ray_json(){
 		tls)
 			local tls="{
 					\"allowInsecure\": $(get_function_switch $ss_basic_allowinsecure),
+					\"fingerprint\": $(get_fingerprint $ss_basic_fingerprint),
 					\"serverName\": \"$ss_basic_v2ray_network_tlshost\"
 					}"
 			[ "$ss_basic_v2ray_network_flow" != "none" -a "$ss_basic_v2ray_network_flow" != "" ] && local vless_flow="\"flow\": \"$ss_basic_v2ray_network_flow\","	|| 	local vless_flow=""
@@ -1384,9 +1401,20 @@ create_v2ray_json(){
 					}"
 			local vless_flow="\"flow\": \"$ss_basic_v2ray_network_flow\","
 			;;
+		reality)
+			local reality="{
+					\"serverName\": \"$ss_basic_v2ray_network_tlshost\",
+					\"fingerprint\": $(get_fingerprint $ss_basic_fingerprint),
+					\"publicKey\": \"$ss_basic_xray_publicKey\",
+					\"shortId\": \"$ss_basic_xray_shortId\",
+					\"spiderX\": \"\"
+					}"
+			local vless_flow="\"flow\": \"$ss_basic_v2ray_network_flow\","
+			;;	
 		*)
 			local tls="null"
 			local xtls="null"
+			local reality="null"
 			;;
 		esac
 		
@@ -1447,12 +1475,14 @@ create_v2ray_json(){
 		ws)
 			local ws="{
 				\"connectionReuse\": true,
+				\"fingerprint\": $(get_fingerprint $ss_basic_fingerprint),
 				\"path\": $(get_path $ss_basic_v2ray_network_path),
 				\"headers\": $(get_ws_header $ss_basic_v2ray_network_host)
 				}"
 			;;
 		h2)
 			local h2="{
+				\"fingerprint\": $(get_fingerprint $ss_basic_fingerprint),
 				\"path\": $(get_path $ss_basic_v2ray_network_path),
 				\"host\": $(get_h2_host $ss_basic_v2ray_network_host)
 				}"
@@ -1461,6 +1491,7 @@ create_v2ray_json(){
 			local grpc="{
 				\"multiMode\": true,
   				\"idle_timeout\": 13,
+				\"fingerprint\": $(get_fingerprint $ss_basic_fingerprint),
 				\"serviceName\": $(get_path $ss_basic_v2ray_serviceName) 
 				}"
 			;;	
@@ -1599,6 +1630,7 @@ create_v2ray_json(){
 					  "security": "$ss_basic_v2ray_network_security",
 					  "tlsSettings": $tls,
 					  "xtlsSettings": $xtls,
+					  "realitySettings": $reality,
 					  "tcpSettings": $tcp,
 					  "kcpSettings": $kcp,
 					  "wsSettings": $ws,
@@ -1823,67 +1855,26 @@ create_trojango_json(){
 		fi
 		[ -z "$(dbus get ss_basic_v2ray_mux_concurrency)" ] && local ss_basic_v2ray_mux_concurrency=8
 #		[ -z "$(dbus get ss_basic_trojan_sni)" ] && [ "$(dbus get ss_basic_server)" != "$ss_basic_v2ray_network_host" ] && local ss_basic_trojan_sni="$ss_basic_v2ray_network_host"
-		[ "$ss_basic_fingerprint" == "none" ] && local ss_basic_fingerprint=""
+
 		echo_date 生成Trojan Go配置文件...
 		 #trojan go
-		 # 3333 for nat  
-		cat >"$TROJANGO_CONFIG_FILE" <<-EOF
-			{
-				"run_type": "nat",
-				"local_addr": "0.0.0.0",
-				"local_port": 3333,
-				"remote_addr": "$(dbus get ss_basic_server)",
-				"remote_port": $ss_basic_port,
-				"log_level": 3,
-				"log_file": "/tmp/trojan-go_log.log",
-				"password": [
-				"$ss_basic_password"
-				],
-				"disable_http_check": false,
-				"udp_timeout": 60,
-				"ssl": {
-					"verify": true,
-					"verify_hostname": true,
-					"sni": "$ss_basic_trojan_sni",
-					"alpn": [
-					"http/1.1"
-					],
-					"session_ticket": true,
-					"reuse_session": true,
-					"fingerprint": "$ss_basic_fingerprint"
-				},
-				"tcp": {
-					"no_delay": true,
-					"keep_alive": true,
-					"prefer_ipv4": true
-				},
-				"mux": {
-					"enabled": $(get_function_switch $ss_basic_v2ray_mux_enable),
-					"concurrency": $ss_basic_v2ray_mux_concurrency,
-					"idle_timeout": 60
-				},
-				"websocket": $ws
-				,
-				"shadowsocks": {
-					"enabled": false,
-					"method": "AES-128-GCM",
-					"password": ""
-				}
-			}
-		EOF
+		generate_config() {
+			local run_type=$1
+			local local_addr=$2
+			local local_port=$3
+			local config_file=$4
 
-		 #  23456 for socks5  
-		cat >"$TROJANGO2_CONFIG_FILE" <<-EOF
-			{
-				"run_type": "client",
-				"local_addr": "127.0.0.1",
-				"local_port": 23456,
+			cat >"$config_file" <<-EOF
+				{
+				"run_type": "$run_type",
+				"local_addr": "$local_addr",
+				"local_port": $local_port,
 				"remote_addr": "$(dbus get ss_basic_server)",
 				"remote_port": $ss_basic_port,
 				"log_level": 3,
 				"log_file": "/tmp/trojan-go_log.log",
 				"password": [
-				"$ss_basic_password"
+					"$ss_basic_password"
 				],
 				"disable_http_check": false,
 				"udp_timeout": 60,
@@ -1896,7 +1887,7 @@ create_trojango_json(){
 					],
 					"session_ticket": true,
 					"reuse_session": true,
-					"fingerprint": "$ss_basic_fingerprint"
+					"fingerprint": $(get_tgfingerprint $ss_basic_fingerprint)
 				},
 				"tcp": {
 					"no_delay": true,
@@ -1908,15 +1899,20 @@ create_trojango_json(){
 					"concurrency": $ss_basic_v2ray_mux_concurrency,
 					"idle_timeout": 60
 				},
-				"websocket": $ws
-				,
+				"websocket": $ws,
 				"shadowsocks": {
 					"enabled": false,
 					"method": "AES-128-GCM",
 					"password": ""
 				}
-			}
-		EOF
+				}
+			EOF
+		}
+
+		# 3333 for nat 
+		generate_config "nat" "0.0.0.0" 3333 "$TROJANGO_CONFIG_FILE"
+		# 23456 for socks5 
+		generate_config "client" "127.0.0.1" 23456 "$TROJANGO2_CONFIG_FILE"
 		
 		echo_date Trojan-Go配置文件写入成功到"$TROJANGO_CONFIG_FILE"
 	fi

@@ -596,6 +596,7 @@ function openssHint(itemNum) {
 		statusmenu = "<b>传输层安全性协议</b>"
 		statusmenu += "</br></br>建议为 xtls-rprx-direct"
 		_caption = "流控 (flow)";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
 	} else if (itemNum == 112) {
 		width = "750px";
 		statusmenu = "勾选后，不会检查远端主机所提供的 TLS 证书的有效性</b>"
@@ -603,7 +604,27 @@ function openssHint(itemNum) {
 		statusmenu += "</br></br>如果是用机场，建议勾选"
 		_caption = "是否允许不安全连接";
 		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');		
-	} else if (itemNum == 31) {
+	}  else if (itemNum == 113) {
+		width = "750px";
+		statusmenu = "<b>必填，服务端私钥对应的公钥。</b>"
+		statusmenu += "</br></br>使用 ./xray x25519 -i \"服务器私钥\" 生成。"
+		_caption = "公钥 (publicKey)";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
+	}  else if (itemNum == 114) {
+		width = "750px";
+		statusmenu = "<b>启用后，Xray 将通过 uTLS 库 模拟 TLS 指纹，或随机生成。</b>"
+		statusmenu += "</br></br>TrojanGo的指纹和Xray的不完全一样，reality协议中需要开启指纹"
+		statusmenu += "</br></br>其他协议包括 xray ws, H2, gRPC, tls 都支持开启指纹"
+		_caption = "指纹 (fingerprint)";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
+	}  else if (itemNum == 115) {
+		width = "750px";
+		statusmenu = "<b>服务端 shortIds 之一</b>"
+		statusmenu += "</br></br> 服务端 shortIds 中若有此项 \"\" ，客户端 shortId 可为空"
+		statusmenu += "</br></br>\"0123456789abcdef\"  0 到 f，长度为 2 的倍数，长度上限为 16"
+		_caption = "shortId";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
+	}  else if (itemNum == 31) {
 		width = "400px";
 		statusmenu = "<b>此处控制开启或者关闭多路复用 (Mux)</b>"
 		statusmenu += "</br></br>此参数在客户端json配置文件的【outbound → mux → enabled】位置"
