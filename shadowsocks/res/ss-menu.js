@@ -624,6 +624,13 @@ function openssHint(itemNum) {
 		statusmenu += "</br></br>\"0123456789abcdef\"  0 到 f，长度为 2 的倍数，长度上限为 16"
 		_caption = "shortId";
 		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
+	}  else if (itemNum == 116) {
+		width = "750px";
+		statusmenu = "<b>同步UDP 勾选后可以让 UDP 流量的分流和 TCP 保持一致</b>"
+		statusmenu += "</br></br> 插件默认只有选择游戏模式后 UDP 才会走代理，规则同大陆白名单的 TCP 一致"
+		statusmenu += "</br></br> 勾选此选项后，可以打通其他几个模式的 UDP 也走代理"
+		_caption = "同步UDP";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
 	}  else if (itemNum == 31) {
 		width = "400px";
 		statusmenu = "<b>此处控制开启或者关闭多路复用 (Mux)</b>"

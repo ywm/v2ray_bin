@@ -64,6 +64,29 @@ get_dns_name() {
 	esac
 }
 
+get_action_chain() {
+	case "$1" in
+		0)
+			echo "RETURN"
+		;;
+		1)
+			echo "SHADOWSOCKS_GFW"
+		;;
+		2)
+			echo "SHADOWSOCKS_CHN"
+		;;
+		3)
+			echo "SHADOWSOCKS_GAM"
+		;;
+		5)
+			echo "SHADOWSOCKS_GLO"
+		;;
+		6)
+			echo "SHADOWSOCKS_HOM"
+		;;
+	esac
+}
+
 echo_version(){
 	echo_date
 	SOFVERSION=`cat /koolshare/ss/version`
@@ -291,14 +314,14 @@ check_status(){
 	iptables -nvL SHADOWSOCKS_HOM -t nat
 	echo -----------------------------------------------------------------------------------------------------------------------------------
 	echo
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && echo ------------------------------------------------------ mangle表 PREROUTING 链 -------------------------------------------------------
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && iptables -nvL PREROUTING -t mangle
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && echo
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && echo ------------------------------------------------------ mangle表 SHADOWSOCKS 链 -------------------------------------------------------
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && iptables -nvL SHADOWSOCKS -t mangle
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && echo
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && echo ------------------------------------------------------ mangle表 SHADOWSOCKS_GAM 链 -------------------------------------------------------
-	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && iptables -nvL SHADOWSOCKS_GAM -t mangle
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && echo ------------------------------------------------------ mangle表 PREROUTING 链 -------------------------------------------------------
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && iptables -nvL PREROUTING -t mangle
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && echo
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && echo ------------------------------------------------------ mangle表 SHADOWSOCKS 链 -------------------------------------------------------
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && iptables -nvL SHADOWSOCKS -t mangle
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && echo
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && echo ------------------------------------------------------ mangle表 $(get_action_chain $ss_basic_mode) 链 -------------------------------------------------------
+	[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && iptables -nvL $(get_action_chain $ss_basic_mode) -t mangle
 	echo -----------------------------------------------------------------------------------------------------------------------------------
 	echo
 }

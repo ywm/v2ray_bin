@@ -31,7 +31,7 @@ lan_ipaddr=$(nvram get lan_ipaddr)
 ip_prefix_hex=`nvram get lan_ipaddr | awk -F "." '{printf ("0x%02x", $1)} {printf ("%02x", $2)} {printf ("%02x", $3)} {printf ("00/0xffffff00\n")}'`
 [ "$ss_basic_mode" == "4" ] && ss_basic_mode=3
 game_on=`dbus list ss_acl_mode|cut -d "=" -f 2 | grep 3`
-[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] && mangle=1
+[ -n "$game_on" ] || [ "$ss_basic_mode" == "3" ] || [ "$ss_basic_udp_sync" == "1" ] && mangle=1
 ss_basic_password=`echo $ss_basic_password|base64_decode`
 ARG_V2RAY_PLUGIN=""
 
@@ -2231,7 +2231,7 @@ flush_nat(){
 	#iptables -t mangle -D PREROUTING -p udp -j SHADOWSOCKS >/dev/null 2>&1
 	
 	iptables -t mangle -F SHADOWSOCKS >/dev/null 2>&1 && iptables -t mangle -X SHADOWSOCKS >/dev/null 2>&1
-	iptables -t mangle -F SHADOWSOCKS_GAM > /dev/null 2>&1 && iptables -t mangle -X SHADOWSOCKS_GAM > /dev/null 2>&1
+	iptables -t mangle -F $(get_action_chain $ss_basic_mode) > /dev/null 2>&1 && iptables -t mangle -X $(get_action_chain $ss_basic_mode) > /dev/null 2>&1
 	iptables -t nat -D OUTPUT -p tcp -m set --match-set router dst -j REDIRECT --to-ports 3333 >/dev/null 2>&1
 	iptables -t nat -F OUTPUT > /dev/null 2>&1
 	iptables -t nat -X SHADOWSOCKS_EXT > /dev/null 2>&1
@@ -2479,11 +2479,11 @@ apply_nat_rules(){
 	# IP/cidr/白域名 白名单控制（不走ss）
 	[ "$mangle" == "1" ] && iptables -t mangle -A SHADOWSOCKS -p udp -m set --match-set white_list dst -j RETURN
 	# 创建游戏模式udp rule
-	[ "$mangle" == "1" ] && iptables -t mangle -N SHADOWSOCKS_GAM
+	[ "$mangle" == "1" ] && iptables -t mangle -N $(get_action_chain $ss_basic_mode)
 	# IP/CIDR/域名 黑名单控制（走ss）
-	[ "$mangle" == "1" ] && iptables -t mangle -A SHADOWSOCKS_GAM -p udp -m set --match-set black_list dst -j TPROXY --on-port 3333 --tproxy-mark 0x07
+	[ "$mangle" == "1" ] && iptables -t mangle -A $(get_action_chain $ss_basic_mode) -p udp -m set --match-set black_list dst -j TPROXY --on-port 3333 --tproxy-mark 0x07
 	# cidr黑名单控制-chnroute（走ss）
-	[ "$mangle" == "1" ] && iptables -t mangle -A SHADOWSOCKS_GAM -p udp -m set ! --match-set chnroute dst -j TPROXY --on-port 3333 --tproxy-mark 0x07
+	[ "$mangle" == "1" ] && iptables -t mangle -A $(get_action_chain $ss_basic_mode) -p udp -m set ! --match-set chnroute dst -j TPROXY --on-port 3333 --tproxy-mark 0x07
 	#-------------------------------------------------------
 	# 局域网黑名单（不走ss）/局域网黑名单（走ss）
 	lan_acess_control
