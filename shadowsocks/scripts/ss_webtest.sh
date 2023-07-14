@@ -26,10 +26,10 @@ speed_test_curl(){
 	sleep 1	
 	local KB=`awk -v sum=$Byte -v n=1024 'BEGIN{printf "%0.2f\n", sum/n}'`
 	local MB=`awk -v sum=$KB -v n=1024 'BEGIN{printf "%0.2f\n", sum/n}'`
-	Byte=${Byte%.*}
-	KB=${KB%.*}
-	result=`awk -v M=$MB -v k=$KB -v i=$Byte 'BEGIN { if(i>=1048576) print M"M"; else if(i<1024 && i>0) print i; else print k"K" }'`
-	[ -z "$Byte" -o "$result" == "0K" ] && result="failed"
+	local Byte=${Byte%.*}
+	local KB=${KB%.*}
+	local result=`awk -v M=$MB -v k=$KB -v i=$Byte 'BEGIN { if(i>=1048576) print M"M"; else if(i<1024 && i>0) print i; else print k"K" }'`
+	[ -z "$Byte" -o "$result" == "0K" ] && local result="failed"
 	dbus set ssconf_basic_webtest_$nu=$result
 }
 # flush previous test value in the table
@@ -215,7 +215,7 @@ rm -f /tmp/tmp_v2ray.json
 				\"connectionReuse\": true,
 				\"fingerprint\": $(get_fingerprint $local_fingerprint),
 				\"path\": $(get_path $local_path),
-				\"headers\": $(get_ws_header local_header)
+				\"headers\": $(get_ws_header $local_header)
 				}"
 			;;
 		h2)
@@ -255,7 +255,7 @@ rm -f /tmp/tmp_v2ray.json
 						"protocol": "socks",
 						"settings": {
 							"auth": "noauth",
-							"udp": true,
+							"udp": false,
 							"ip": "127.0.0.1",
 							"clients": null
 						},
@@ -266,7 +266,7 @@ rm -f /tmp/tmp_v2ray.json
 						"port": 3335,
 						"protocol": "dokodemo-door",
 						"settings": {
-							"network": "tcp,udp",
+							"network": "tcp",
 							"followRedirect": true
 						}
 					}
@@ -380,7 +380,7 @@ rm -f /tmp/tmp_v2ray.json
 						"protocol": "socks",
 						"settings": {
 							"auth": "noauth",
-							"udp": true,
+							"udp": false,
 							"ip": "127.0.0.1",
 							"clients": null
 						},
@@ -391,7 +391,7 @@ rm -f /tmp/tmp_v2ray.json
 						"port": 3335,
 						"protocol": "dokodemo-door",
 						"settings": {
-							"network": "tcp,udp",
+							"network": "tcp",
 							"followRedirect": true
 						}
 					}
@@ -576,7 +576,7 @@ create_ss2022_json(){
 						"protocol": "socks",
 						"settings": {
 							"auth": "noauth",
-							"udp": true,
+							"udp": false,
 							"ip": "127.0.0.1",
 							"clients": null
 						},
@@ -587,7 +587,7 @@ create_ss2022_json(){
 						"port": 3335,
 						"protocol": "dokodemo-door",
 						"settings": {
-							"network": "tcp,udp",
+							"network": "tcp",
 							"followRedirect": true
 						}
 					}
@@ -673,14 +673,14 @@ start_webtest(){
 			    "method":"$array4"
 			}
 		EOF
-			rss-local -b 0.0.0.0 -l 23458 -c /tmp/tmp_ss.json -u -f /var/run/sslocal2.pid >/dev/null 2>&1
+			rss-local -b 0.0.0.0 -l 23458 -c /tmp/tmp_ss.json -f /var/run/sslocal2.pid >/dev/null 2>&1
 			# result=`curl -o /dev/null -s -w %{time_connect}:%{time_starttransfer}:%{time_total}:%{speed_download} --socks5-hostname 127.0.0.1:23458 https://www.google.com/`
 			speed_test_curl
 			kill -9 `ps|grep -w rss-local|grep 23458|awk '{print $1}'` >/dev/null 2>&1
 			rm -f /tmp/tmp_ss.json
 			
 		elif [ "$array12" == "0" ];then   #ss
-			ss-local -b 0.0.0.0 -l 23458 -s $server_ip -p $array2 -k $array3 -m $array4 -u $ARG_V2RAY_PLUGIN -f /var/run/sslocal3.pid >/dev/null 2>&1
+			ss-local -b 0.0.0.0 -l 23458 -s $server_ip -p $array2 -k $array3 -m $array4 $ARG_V2RAY_PLUGIN -f /var/run/sslocal3.pid >/dev/null 2>&1
 			speed_test_curl
 			ss_local_pid=$(ps|grep -w ss-local|grep 23458|awk '{print $1}')			
 			if [ -n "$ARG_V2RAY_PLUGIN" ];then 

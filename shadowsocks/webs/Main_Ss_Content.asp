@@ -312,11 +312,11 @@ function save() {
 			dbus["ssconf_basic_v2ray_headtype_kcp_" + node_sel] = vmess_node.type;
 		}
 		dbus["ss_basic_v2ray_network_host"] = vmess_node.host;
-		//dbus["ss_basic_v2ray_network_tlshost"] = vmess_node.tlshost;
-		//dbus["ss_basic_v2ray_network_flow"] = vmess_node.flow;
+		dbus["ss_basic_v2ray_network_tlshost"] = vmess_node.tlshost;
+		dbus["ss_basic_v2ray_network_flow"] = vmess_node.flow;
 		dbus["ssconf_basic_v2ray_network_host_" + node_sel] = vmess_node.host;
-		//dbus["ssconf_basic_v2ray_network_tlshost_" + node_sel] = vmess_node.tlshost;
-		//dbus["ssconf_basic_v2ray_network_flow_" + node_sel] = vmess_node.flow;
+		dbus["ssconf_basic_v2ray_network_tlshost_" + node_sel] = vmess_node.tlshost;
+		dbus["ssconf_basic_v2ray_network_flow_" + node_sel] = vmess_node.flow;
 		dbus["ss_basic_v2ray_network_path"] = vmess_node.path;
 		dbus["ssconf_basic_v2ray_network_path_" + node_sel] = vmess_node.path;
 		if(vmess_node.tls == "tls"){
@@ -956,6 +956,9 @@ function protocol_change_on(xy){
 //	}else{
 //		$("#use_uuid_on").text("用户id（id）")
 //	}
+	if (xy == "vless") {
+		E("ss_basic_v2ray_alterid").value = "";
+	}
 	verifyFields();
 }
 
@@ -971,6 +974,9 @@ function protocol_change_off(xy){
 //	}else{
 //		$("#use_uuid_off").text("用户id（id）")
 //	}
+	if (xy == "vless") {
+		E("ss_node_table_v2ray_alterid").value = "";
+	}
 	verifyFields();
 }
 
@@ -992,6 +998,11 @@ function trojan_change_off(xy){
 	}else{
 		E("ss_node_table_trojan_binary").value = "Trojan";
 	}
+	if(xy=="Trojan"){
+	    E("ss_node_table_v2ray_network_path").value = "";
+		E("ss_node_table_v2ray_network_host").value = "";
+		E("ss_node_table_fingerprint").value = "";
+	}
 	verifyFields();
 }
 function network_change_off(xy){
@@ -999,6 +1010,22 @@ function network_change_off(xy){
 		E("ss_node_table_trojan_network").value = "1";
 	}else{
 		E("ss_node_table_trojan_network").value = "0";
+	}
+	verifyFields();
+}
+function flow_change_off(xy){
+	if (xy != "tcp") {
+		E("ss_node_table_v2ray_network_flow").value = "";
+	}else if (xy == "tcp" || xy == "grpc" ) {
+		E("ss_node_table_v2ray_network_path").value = "";
+		E("ss_node_table_v2ray_network_host").value = "";
+	}
+	verifyFields();
+}
+function reality_change_off(xy){
+	if (xy != "reality") {
+		E("ss_node_table_xray_publicKey").value = "";
+		E("ss_node_table_xray_shortId").value = "";
 	}
 	verifyFields();
 }
@@ -1236,8 +1263,8 @@ function Add_profile() { //点击节点页面内添加节点动作
 	E("ss_node_table_ss_v2ray_plugin").value = "0"
 	E("ss_node_table_ss_v2ray_plugin_opts").value = "";
 	E("ss_node_table_rss_protocol").value = "origin";
-//	E("ss_node_table_naive_protocol").value = "https";
-//	E("ss_node_table_naive_user").value = "";
+	E("ss_node_table_naive_protocol").value = "https";
+	E("ss_node_table_naive_user").value = "";
 	E("ss_node_table_rss_protocol_param").value = "";
 	E("ss_node_table_rss_obfs").value = "plain";
 	E("ss_node_table_rss_obfs_param").value = "";
@@ -1248,7 +1275,10 @@ function Add_profile() { //点击节点页面内添加节点动作
 	E("ss_node_table_v2ray_json").value = "";
 	E("ss_node_table_v2ray_serviceName").value = "";
 	E("ss_node_table_v2ray_network_path").value = "";
+	E("ss_node_table_v2ray_network_flow").value = "";
 	E("ss_node_table_v2ray_network_tlshost").value = "";
+	E("ss_node_table_xray_publicKey").value = "";
+	E("ss_node_table_xray_shortId").value = "";
 	E("ss_node_table_trojan_sni").value = "";
 	E("ss_node_table_trojan_binary").value = "Trojan";
 	E("ss_node_table_trojan_network").value = "0";
@@ -1703,8 +1733,8 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 					ns[p + "_v2ray_headtype_kcp_" + node_global_max] = vmess_node.type;
 				}
 				ns[p + "_v2ray_network_host_" + node_global_max] = vmess_node.host;
-//				ns[p + "_v2ray_network_tlshost_" + node_global_max] = vmess_node.tlshost;
-//				ns[p + "_v2ray_network_flow_" + node_global_max] = vmess_node.flow;
+				ns[p + "_v2ray_network_tlshost_" + node_global_max] = vmess_node.tlshost;
+				ns[p + "_v2ray_network_flow_" + node_global_max] = vmess_node.flow;
 				ns[p + "_v2ray_network_path_" + node_global_max] = vmess_node.path;
 				if(vmess_node.tls == "tls"){
 					ns[p + "_v2ray_network_security_" + node_global_max] = "tls";
@@ -1762,8 +1792,8 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 				E("ss_node_table_ss_v2ray_plugin").value = "0"
 				E("ss_node_table_ss_v2ray_plugin_opts").value = "";
 				E("ss_node_table_rss_protocol").value = "origin";
-//				E("ss_node_table_naive_protocol").value = "https";
-//				E("ss_node_table_naive_user").value = "";
+				E("ss_node_table_naive_protocol").value = "https";
+				E("ss_node_table_naive_user").value = "";
 				E("ss_node_table_rss_protocol_param").value = "";
 				E("ss_node_table_rss_obfs").value = "plain";
 				E("ss_node_table_rss_obfs_param").value = "";
@@ -1776,10 +1806,13 @@ function add_ss_node_conf(flag) { //点击添加按钮动作
 				E("ss_node_table_trojan_binary").value = "Trojan";		
 				E("ss_node_table_trojan_network").value = "0";		
 				E("ss_node_table_trojan_sni").value = "";	
-	//			E("ss_node_table_v2ray_network_tlshost").value = ""; 
+				E("ss_node_table_v2ray_network_tlshost").value = ""; 
+				E("ss_node_table_v2ray_network_flow").value = "";
 				E("ss_node_table_allowinsecure").value = "0";
 				E("ss_node_table_v2ray_mux_enable").value = "0";
-				E("ss_node_table_fingerprint").value = "";					
+				E("ss_node_table_fingerprint").value = "";	
+				E("ss_node_table_xray_publicKey").value = "";
+				E("ss_node_table_xray_shortId").value = "";				
 				cancel_add_rule();
 			}
 		}
@@ -2077,7 +2110,8 @@ function edit_conf_table(o) { //编辑节点功能，显示编辑面板
 	xray_change_off(c["v2ray_xray"])
 	trojan_change_off(c["trojan_binary"])
 	network_change_off(c["trojan_network"])
-	
+	flow_change_off(c["v2ray_network"])
+	reality_change_off(c["v2ray_network_security"])
 	E("cancelBtn").style.display = "";
 	E("add_node").style.display = "none";
 	E("edit_node").style.display = "";
@@ -2191,8 +2225,8 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 					ns["ssconf_basic_v2ray_headtype_kcp_" + myid] = vmess_node.type;
 				}
 				ns["ssconf_basic_v2ray_network_host_" + myid] = vmess_node.host;
-//				ns["ssconf_basic_v2ray_network_tlshost_" + myid] = vmess_node.tlshost;
-//				ns["ssconf_basic_v2ray_network_flow_" + myid] = vmess_node.flow;
+				ns["ssconf_basic_v2ray_network_tlshost_" + myid] = vmess_node.tlshost;
+				ns["ssconf_basic_v2ray_network_flow_" + myid] = vmess_node.flow;
 				ns["ssconf_basic_v2ray_network_path_" + myid] = vmess_node.path;
 				if(vmess_node.tls == "tls"){
 					ns["ssconf_basic_v2ray_network_security_" + myid] = "tls";
@@ -2242,8 +2276,8 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 			E("ss_node_table_ss_v2ray_plugin").value = "0"
 			E("ss_node_table_ss_v2ray_plugin_opts").value = "";
 			E("ss_node_table_rss_protocol").value = "origin";
-//			E("ss_node_table_naive_protocol").value = "https";
-//			E("ss_node_table_naive_user").value = "";
+			E("ss_node_table_naive_protocol").value = "https";
+			E("ss_node_table_naive_user").value = "";
 			E("ss_node_table_rss_protocol_param").value = "";
 			E("ss_node_table_rss_obfs").value = "plain";
 			E("ss_node_table_rss_obfs_param").value = "";
@@ -2257,9 +2291,12 @@ function edit_ss_node_conf(flag) { //编辑节点功能，数据重写
 			E("ss_node_table_trojan_network").value = "0";	
 			E("ss_node_table_trojan_sni").value = "";
 			E("ss_node_table_fingerprint").value = "";
-			E("ss_node_table_v2ray_network_tlshost").value = "";				
+			E("ss_node_table_v2ray_network_tlshost").value = "";
+			E("ss_node_table_v2ray_network_flow").value = "";				
 			E("ss_node_table_allowinsecure").value = "0";
 			E("ss_node_table_v2ray_mux_enable").value = "0";
+			E("ss_node_table_xray_publicKey").value = "";
+			E("ss_node_table_xray_shortId").value = "";		
 		}
 	});
 	updateSs_node_listView();
@@ -3922,7 +3959,7 @@ function set_cron(action) {
 															<tr id="v2ray_network_tr" style="display: none;">
 																<th width="35%">传输协议 (network)</th>
 																<td>
-																	<select id="ss_node_table_v2ray_network" name="ss_node_table_v2ray_network" style="width:350px;margin:0px 0px 0px 2px;" class="input_option" onchange="verifyFields(this, 1);">
+																	<select id="ss_node_table_v2ray_network" name="ss_node_table_v2ray_network" style="width:350px;margin:0px 0px 0px 2px;" class="input_option" onchange="flow_change_off(this.value);">
 																		<option value="tcp">tcp</option>
 																		<option value="kcp">kcp</option>
 																		<option value="ws">ws</option>
@@ -3972,7 +4009,7 @@ function set_cron(action) {
 															<tr id="v2ray_network_security_tr" style="display: none;">
 																<th width="35%">底层传输安全</th>
 																<td>
-																	<select id="ss_node_table_v2ray_network_security" name="ss_node_table_v2ray_network_security" onchange="verifyFields(this, 1);" style="width:350px;margin:0px 0px 0px 2px;" class="input_option">
+																	<select id="ss_node_table_v2ray_network_security" name="ss_node_table_v2ray_network_security" onchange="reality_change_off(this.value);" style="width:350px;margin:0px 0px 0px 2px;" class="input_option">
 																		<option value="none">关闭</option>
 																		<option value="tls">tls</option>
 																		<option value="xtls">xtls</option>
