@@ -177,8 +177,11 @@ prepare(){
 		[ -n "$(dbus get ssconf_basic_v2ray_xray_$nu)" ] && echo dbus set ssconf_basic_v2ray_xray_$q=$(dbus get ssconf_basic_v2ray_xray_$nu) >> /tmp/ss_conf.sh
 		[ -n "$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_tlshost_$q=$(dbus get ssconf_basic_v2ray_network_tlshost_$nu)  >> /tmp/ss_conf.sh	
 		[ -n "$(dbus get ssconf_basic_v2ray_network_flow_$nu)" ] && echo dbus set ssconf_basic_v2ray_network_flow_$q=$(dbus get ssconf_basic_v2ray_network_flow_$nu)  >> /tmp/ss_conf.sh	
+		[ -n "$(dbus get ssconf_basic_fingerprint_$nu)" ] && echo dbus set ssconf_basic_fingerprint_$q=$(dbus get ssconf_basic_fingerprint_$nu)  >> /tmp/ss_conf.sh			
 		[ -n "$(dbus get ssconf_basic_naive_protocol_$nu)" ] && echo dbus set ssconf_basic_naive_protocol_$q=$(dbus get ssconf_basic_naive_protocol_$nu)  >> /tmp/ss_conf.sh	
 		[ -n "$(dbus get ssconf_basic_naive_user_$nu)" ] && echo dbus set ssconf_basic_naive_user_$q=$(dbus get ssconf_basic_naive_user_$nu)  >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_xray_publicKey_$nu)" ] && echo dbus set ssconf_basic_xray_publicKey_$q=$(dbus get ssconf_basic_xray_publicKey_$nu)  >> /tmp/ss_conf.sh
+		[ -n "$(dbus get ssconf_basic_xray_shortId_$nu)" ] && echo dbus set ssconf_basic_xray_shortId_$q=$(dbus get ssconf_basic_xray_shortId_$nu)  >> /tmp/ss_conf.sh
 
 		echo "#------------------------" >> /tmp/ss_conf.sh
 		if [ "$nu" == "$ssconf_basic_node" ];then
