@@ -920,6 +920,122 @@ update_trojan_config(){
 
 
 ##################################################################################################
+# Hysteria2 节点添加解析并更新
+##################################################################################################
+get_hysteria2_config(){
+	decode_link="$1"
+	if [ -z "$decode_link" ];then
+		echo_date "解析失败！！！"
+		return 1
+	fi
+
+	group="$2"
+
+	if [ -n "$(echo -n "$decode_link" | grep "#")" ];then
+		remarks=$(echo -n $decode_link | awk -F'#' '{print $2}') 
+		decode_link=$(echo -n $decode_link | awk -F'#' '{print $1}')		
+	else
+		remarks="$remarks" 
+	fi
+
+	server=$(echo "$decode_link" |awk -F':' '{print $1}'|awk -F'@' '{print $2}')
+	server_port=$(echo "$decode_link" |awk -F':' '{print $2}' | awk -F'\\/\\?' '{print $1}')
+	password=$(echo "$decode_link" |awk -F':' '{print $1}'|awk -F'@' '{print $1}')
+	password=`echo $password|base64_encode`
+	#20201024+++
+	sni=$(echo "$decode_link" | tr '?#&' '\n' | grep 'sni=' | awk -F'=' '{print $2}')
+	insecure=$(echo "$decode_link" | tr '?#&' '\n' | grep 'insecure=' | awk -F'=' '{print $2}')
+	v2ray_net=0
+	binary="Hysteria2"
+#	echo_date "服务器：$server" >> $LOG_FILE
+#	echo_date "端口：$server_port" >> $LOG_FILE
+#	echo_date "密码：$password" >> $LOG_FILE
+#	echo_date "sni：$sni" >> $LOG_FILE
+	#20201024---
+
+
+	[ -n "$group" ] && group_base64=`echo $group | base64_encode | sed 's/ -//g'`
+	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`
+	[ -n "$remarks" ] && remarks_base64=`echo $remarks | base64_encode | sed 's/ -//g'`
+
+	[ -n "$node_regexp" ] && incNY=`echo $remarks $server  | sed -n "$node_regexp"` || incNY="Y"
+
+	#把全部服务器节点写入文件 /usr/share/shadowsocks/serverconfig/all_onlineservers
+	[ -n "$incNY" ] && [ -n "$group" ] && [ -n "$server" ] && echo $server_base64 $group_base64 $remarks_base64 >> /tmp/all_onlineservers
+	#echo ------
+	#echo group: $group
+	#echo remarks: $remarks
+	#echo server: $server
+	#echo server_port: $server_port
+	#echo password: $password
+	#echo ------
+	[ -n "$incNY" ] && echo "$group" >> /tmp/all_group_info.txt || return 2
+	[ -n "$group" ] && return 0 || return 1
+}
+
+add_hysteria2_servers(){
+	[[ $1 -ge 1000 ]] &&  local group_index=$1 
+	hysteria2index_x=$(($(dbus list ssconf_basic_|grep _name_ |awk -v group_index=$((group_index+1000)) -F'[_=]' '{if($4<group_index)print$4}' |sort -rn|head -n1)+1))
+	[[ $hysteria2index_x -gt 1000 ]] && hysteria2index_x=$((hysteria2index_x%1000))
+	hysteria2index=$((hysteria2index_x+group_index))
+#	echo_date "添加 Hysteria2 节点：$remarks"
+	[[ $1 -ge 1000 ]] && dbus set ssconf_basic_group_$hysteria2index=$group
+	dbus set ssconf_basic_name_$hysteria2index=$remarks
+	dbus set ssconf_basic_mode_$hysteria2index=$ssr_subscribe_mode
+	dbus set ssconf_basic_server_$hysteria2index=$server
+	dbus set ssconf_basic_port_$hysteria2index=$server_port
+	dbus set ssconf_basic_password_$hysteria2index=$password
+	dbus set ssconf_basic_type_$hysteria2index="4"
+	dbus set ssconf_basic_trojan_binary_$hysteria2index=$binary
+	dbus set ssconf_basic_trojan_sni_$hysteria2index=$sni
+	dbus set ssconf_basic_trojan_network_$hysteria2index=$v2ray_net
+	dbus set ssconf_basic_allowinsecure_$hysteria2index=$insecure
+
+	echo_date "Hysteria2 节点：新增加 【$remarks】 到节点列表第 $hysteria2index_x 位。"
+}
+
+update_hysteria2_config(){
+	isadded_server=$(</tmp/all_localservers grep -w $group_base64 | awk  '{print $1 , $4}' | grep -c "${server_base64} ${remarks_base64}"|head -n1)
+	if [ "$isadded_server" == "0" ]; then
+		add_hysteria2_servers $1
+		let addnum7+=1
+		let addnum+=1
+	else
+		# 如果在本地的订阅节点中已经有该节点（用group, remarks和server去判断），检测下配置是否更改，如果更改，则更新配置
+		local index=$(</tmp/all_localservers grep $group_base64 | awk  '{print $1 , $4, $3}' | grep "${server_base64} ${remarks_base64}" |awk '{print $3}'|head -n1)
+
+		local i=0
+		dbus set ssconf_basic_mode_$index="$ssr_subscribe_mode"
+		local_remarks=$(dbus get ssconf_basic_name_$index)
+		[ "$local_remarks" != "$remarks" ] && dbus set ssconf_basic_name_$index=$remarks && let i+=1
+		local_server=$(dbus get ssconf_basic_server_$index)
+		[ "$local_server" != "$server" ] && dbus set ssconf_basic_server_$index=$server && let i+=1
+		local_server_port=$(dbus get ssconf_basic_port_$index)
+		[ "$local_server_port" != "$server_port" ] && dbus set ssconf_basic_port_$index=$server_port && let i+=1
+		local_password=$(dbus get ssconf_basic_password_$index)
+		[ "$local_password" != "$password" ] && dbus set ssconf_basic_password_$index=$password && let i+=1
+
+		local_binary=$(dbus get ssconf_basic_trojan_binary_$index)
+		[ "$local_binary" != "$binary" ] && dbus set ssconf_basic_trojan_binary_$index=$binary && let i+=1
+		
+		local_v2ray_net=$(dbus get ssconf_basic_trojan_network_$index)
+		[ "$local_v2ray_net" != "$v2ray_net" ] && dbus set ssconf_basic_trojan_network_$index=$v2ray_net && let i+=1
+		
+		local_sni=$(dbus get ssconf_basic_trojan_sni_$index)
+		[ "$local_sni" != "$sni" ] && dbus set ssconf_basic_trojan_sni_$index=$sni && let i+=1
+
+		local_insecure=$(dbus get ssconf_basic_allowinsecure_$index)
+		[ "$local_insecure" != "$insecure" ] && dbus set ssconf_basic_allowinsecure_$index=$insecure && let i+=1
+
+		if [ "$i" -gt "0" ];then
+			echo_date "修改 Hysteria2 节点：【$remarks】" && let updatenum7+=1 && let updatenum+=1
+		else
+			echo_date "Hysteria2 节点：【$remarks】 参数未发生变化，跳过！"
+		fi
+	fi
+}
+
+##################################################################################################
 # vless 节点添加解析并更新
 ##################################################################################################
 
@@ -1315,6 +1431,8 @@ del_none_exist(){
 					let delnum4+=1
 				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ] && [ "`dbus get ssconf_basic_trojan_binary_$localindex`" = "Trojan-Go" ];then	 #trojan go
 					let delnum6+=1
+				elif [ "`dbus get ssconf_basic_type_$localindex`" = "4" ] && [ "`dbus get ssconf_basic_trojan_binary_$localindex`" = "Hysteria2" ];then	 #Hysteria2
+					let delnum7+=1	
 				fi
 				
 					dbus remove ssconf_basic_group_$localindex
@@ -1526,7 +1644,7 @@ get_oneline_rule_now(){
 	
 	if [ "$ss_basic_online_links_goss" == "1" ];then
 		open_socks_23456
-		socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive"`
+		socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive|hysteria"`
 		if [ -n "$socksopen_b" ];then
 			echo_date "使用$(get_type_name $ss_basic_type)提供的socks代理网络下载..."
 			curl -k --connect-timeout 8 -s -L --socks5-hostname 127.0.0.1:23456 $ssr_subscribe_link > /tmp/ssr_subscribe_file.txt
@@ -1579,7 +1697,7 @@ get_oneline_rule_now(){
 		fi
 
 
-		NODE_NU_online=$(</tmp/ssr_subscribe_file_temp1.txt grep -cE '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://')
+		NODE_NU_online=$(</tmp/ssr_subscribe_file_temp1.txt grep -cE '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://|^hysteria2://')
 		echo_date "检测到ShadowSocks节点格式，共计${NODE_NU_online}个节点..."
 
 		if [  "$NODE_NU_online" = "0" ] ; then
@@ -1595,9 +1713,9 @@ get_oneline_rule_now(){
 			remarks='AutoSuB'
 			group_index=$((url_count*1000))
 			# 提取节点
-			grep -E '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://' /tmp/ssr_subscribe_file_temp1.txt >  /tmp/ssr_subscribe_file_temp2.txt &&  mv  /tmp/ssr_subscribe_file_temp2.txt  /tmp/ssr_subscribe_file_temp1.txt
+			grep -E '^ss://|^ssr://|^vmess://|^trojan://|^vless://|^trojan-go://|^hysteria2://' /tmp/ssr_subscribe_file_temp1.txt >  /tmp/ssr_subscribe_file_temp2.txt &&  mv  /tmp/ssr_subscribe_file_temp2.txt  /tmp/ssr_subscribe_file_temp1.txt
 			
-			# 检测ss ssr vmess trojan vless trojan-go
+			# 检测ss ssr vmess trojan vless trojan-go hysteria2 
 			while read -r line
 			do 
 				link=""
@@ -1643,8 +1761,11 @@ get_oneline_rule_now(){
 			 if [ "${addnum5}${updatenum5}${delnum5}" != "000" ];then 
 			 echo_date " 新增VLESS节点 $addnum5 个，修改 $updatenum5 个，删除 $delnum5 个；"
 			 fi
-			 if [ "${addnum6}${updatenum5}${delnum6}" != "000" ];then 
+			 if [ "${addnum6}${updatenum6}${delnum6}" != "000" ];then 
 			 echo_date " 新增Trojan-Go节点 $addnum6 个，修改 $updatenum6 个，删除 $delnum6 个；"
+			 fi
+			 if [ "${addnum7}${updatenum7}${delnum7}" != "000" ];then 
+			 echo_date " 新增Hysteria2节点 $addnum7 个，修改 $updatenum7 个，删除 $delnum7 个；"
 			 fi
 			echo_date "现共有手动添加的ShadowSocks节点：$USER_ADD 个；"
 			echo_date "现共有来自订阅的ShadowSocks节点：$ONLINE_GET 个；"
@@ -1689,9 +1810,9 @@ start_update(){
 		echo_date "				服务器订阅程序(Shell by stones & sadog)"
 		echo_date "==================================================================="
 		echo_date "从 $url 获取订阅..."
-		addnum=0 ; addnum1=0 ; addnum2=0 ; addnum3=0 ; addnum4=0 ; addnum5=0; addnum6=0
-		updatenum=0 ; updatenum1=0 ; updatenum2=0 ; updatenum3=0 ; updatenum4=0 ; updatenum5=0;updatenum6=0
-		delnum=0 ; delnum1=0 ; delnum2=0 ; delnum3=0 ; delnum4=0 ; delnum5=0; delnum6=0
+		addnum=0 ; addnum1=0 ; addnum2=0 ; addnum3=0 ; addnum4=0 ; addnum5=0; addnum6=0; addnum7=0 
+		updatenum=0 ; updatenum1=0 ; updatenum2=0 ; updatenum3=0 ; updatenum4=0 ; updatenum5=0; updatenum6=0; updatenum7=0
+		delnum=0 ; delnum1=0 ; delnum2=0 ; delnum3=0 ; delnum4=0 ; delnum5=0; delnum6=0; delnum7=0
 		
 		get_oneline_rule_now "$url"
 

@@ -106,7 +106,7 @@ rm -f /tmp/tmp_v2ray.json
 		local vless_flow=""
 
 		# tcp和kcp下tlsSettings为null，ws和h2下tlsSettings
-		[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8
+
 		[ "$(eval echo \$ssconf_basic_v2ray_network_security_$nu)" == "none" ] && local ssconf_basic_v2ray_network_security=""
 		
 		if [ "$(eval echo \$ssconf_basic_v2ray_network_$nu)" == "ws" -o "$(eval echo \$ssconf_basic_v2ray_network_$nu)" == "h2" ] && [ -z "$(eval echo \$ssconf_basic_v2ray_network_tlshost_$nu)" ] && [ -n "$(eval echo \$ssconf_basic_v2ray_network_host_$nu)" ]; then
@@ -260,15 +260,6 @@ rm -f /tmp/tmp_v2ray.json
 							"clients": null
 						},
 						"streamSettings": null
-					},
-					{
-						"listen": "0.0.0.0",
-						"port": 3335,
-						"protocol": "dokodemo-door",
-						"settings": {
-							"network": "tcp",
-							"followRedirect": true
-						}
 					}
 				],
 			EOF
@@ -307,7 +298,7 @@ rm -f /tmp/tmp_v2ray.json
 					},
 					"mux": {
 					  "enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
-					  "concurrency": $ssconf_basic_v2ray_mux_concurrency
+					  "concurrency": 8
 					}
 				  }
 				]
@@ -351,7 +342,7 @@ rm -f /tmp/tmp_v2ray.json
 					},
 					"mux": {
 					  "enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
-					  "concurrency": $ssconf_basic_v2ray_mux_concurrency
+					  "concurrency": 8
 					}
 				  }
 				]
@@ -385,15 +376,6 @@ rm -f /tmp/tmp_v2ray.json
 							"clients": null
 						},
 						"streamSettings": null
-					},
-					{
-						"listen": "0.0.0.0",
-						"port": 3335,
-						"protocol": "dokodemo-door",
-						"settings": {
-							"network": "tcp",
-							"followRedirect": true
-						}
 					}
 				],
 			"outbounds": [
@@ -424,7 +406,6 @@ rm -f /tmp/tmp_v2ray.json
 
 
 create_trojango_json(){
-	rm -f /tmp/tmp_trojango.json
 	rm -f /tmp/tmp2_trojango.json
 	if [ "$(eval echo \$ssconf_basic_trojan_network_$nu)" == "1" ]; then
 		[ -n "$(eval echo \$ssconf_basic_v2ray_network_path_$nu)" ] && local ssconf_basic_v2ray_network_path=$(echo "/"$(eval echo \$ssconf_basic_v2ray_network_path_$nu)"" | sed 's,//,/,')
@@ -439,55 +420,8 @@ create_trojango_json(){
 					\"host\":  \"\"
 					}"
 	fi
-	[ -z "$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)" ] && local ssconf_basic_v2ray_mux_concurrency=8 || local ssconf_basic_v2ray_mux_concurrency=$(eval echo \$ssconf_basic_v2ray_mux_concurrency_$nu)
 		local local_fingerprint=$(eval echo \$ssconf_basic_fingerprint_$nu)
 		 #trojan go
-		 # 3335 for nat  
-		cat >"/tmp/tmp_trojango.json" <<-EOF
-			{
-				"run_type": "nat",
-				"local_addr": "0.0.0.0",
-				"local_port": 3335,
-				"remote_addr": "$array1",
-				"remote_port": $array2,
-				"log_level": 5,
-				"log_file": "/tmp/trojan-go_webtest_log.log",
-				"password": [
-				"$array3"
-				],
-				"disable_http_check": false,
-				"udp_timeout": 60,
-				"ssl": {
-					"verify": true,
-					"verify_hostname": true,
-					"sni": "$(eval echo \$ssconf_basic_trojan_sni_$nu)",
-					"alpn": [
-					"http/1.1"
-					],
-					"session_ticket": true,
-					"reuse_session": true,
-					"fingerprint": $(get_tgfingerprint $ss_basic_fingerprint)
-				},
-				"tcp": {
-					"no_delay": true,
-					"keep_alive": true,
-					"prefer_ipv4": true
-				},
-				"mux": {
-					"enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
-					"concurrency": $ssconf_basic_v2ray_mux_concurrency,
-					"idle_timeout": 60
-				},
-				"websocket": $ws
-				,
-				"shadowsocks": {
-					"enabled": false,
-					"method": "AES-128-GCM",
-					"password": ""
-				}
-			}
-		EOF
-
 
 		 #  23458 for socks5  
 		cat >"/tmp/tmp2_trojango.json" <<-EOF
@@ -522,7 +456,7 @@ create_trojango_json(){
 				},
 				"mux": {
 					"enabled": $(get_function_switch $(eval echo \$ssconf_basic_v2ray_mux_enable_$nu)),
-					"concurrency": $ssconf_basic_v2ray_mux_concurrency,
+					"concurrency": 8,
 					"idle_timeout": 60
 				},
 				"websocket": $ws
@@ -538,24 +472,36 @@ create_trojango_json(){
 }
 
 create_naive_json(){
-	rm -f /tmp/tmp_naive.json
 	rm -f /tmp/tmp2_naive.json
 		 #NaiveProxy
-		 # 3333 for nat  
-		cat >/tmp/tmp_naive.json <<-EOF
-			{
-			"listen": "redir://0.0.0.0:3335",
-			"proxy": "${array15}://${array16}:${array3}@${array1}:$array2"
-			}
-		EOF
 
-		 #  23456 for socks
+		 #  23458 for socks
 		cat >/tmp/tmp2_naive.json <<-EOF
 			{
 			"listen": "socks://127.0.0.1:23458",
 			"proxy": "${array15}://${array16}:${array3}@${array1}:$array2"
 			}
 		EOF
+}
+
+create_hy2_json(){
+	rm -f /tmp/tmp_hysteria.json 
+
+	cat >/tmp/tmp_hysteria.json <<-EOF
+				{
+				"server": "${array1}:${array2}",
+				"auth": "${array3}",
+				"tls": {
+					"sni": "$(eval echo \$ssconf_basic_trojan_sni_$nu)",
+					"insecure": $(get_function_switch $(eval echo \$ssconf_basic_allowinsecure_$nu))
+				},
+				"fastOpen": true,
+				"lazy": true,
+				"socks5": {
+					"listen": "127.0.0.1:23458"
+				}
+			}
+	EOF
 }
 
 create_ss2022_json(){
@@ -581,15 +527,6 @@ create_ss2022_json(){
 							"clients": null
 						},
 						"streamSettings": null
-					},
-					{
-						"listen": "0.0.0.0",
-						"port": 3335,
-						"protocol": "dokodemo-door",
-						"settings": {
-							"network": "tcp",
-							"followRedirect": true
-						}
 					}
 				],
 			"outbounds": [
@@ -712,21 +649,25 @@ start_webtest(){
 
 		elif [ "$array12" == "4" -a "$array14" == "Trojan-Go" ];then   #trojan go
 			create_trojango_json 
-			trojan-go -config=/tmp/tmp_trojango.json >/dev/null 2>&1 &
 			trojan-go -config=/tmp/tmp2_trojango.json >/dev/null 2>&1 &
 			speed_test_curl
 			kill -9 `ps|grep 'trojan-go' | grep 'tmp2_trojango'|awk '{print $1}'` >/dev/null 2>&1
-			kill -9 `ps|grep 'trojan-go' | grep 'tmp_trojango'|awk '{print $1}'` >/dev/null 2>&1	
 			rm -f /tmp/tmp_trojango.json /tmp/tmp2_trojango.json /tmp/trojan-go_webtest_log.log
 
+		elif [ "$array12" == "4" -a "$array14" == "Hysteria2" ];then   #Hysteria2
+			create_hy2_json 
+			export QUIC_GO_DISABLE_ECN=true
+			hysteria -c /tmp/tmp_hysteria.json -l error --disable-update-check  >/dev/null 2>&1 &
+			speed_test_curl
+			kill -9 `ps|grep hysteria|grep 'tmp_hysteria'|awk '{print $1}'` >/dev/null 2>&1	
+			rm -f /tmp/tmp_hysteria.json
+			
 		elif [ "$array12" == "5" ];then   #naive
 			create_naive_json 
-			naive /tmp/tmp_naive.json >/dev/null 2>&1 &
 			naive /tmp/tmp2_naive.json >/dev/null 2>&1 &
 			speed_test_curl
 			kill -9 `ps|grep 'naive' | grep 'tmp2_naive'|awk '{print $1}'` >/dev/null 2>&1
-			kill -9 `ps|grep 'naive' | grep 'tmp_naive'|awk '{print $1}'` >/dev/null 2>&1	
-			rm -f /tmp/tmp_naive.json /tmp/tmp2_naive.json
+			rm -f  /tmp/tmp2_naive.json
 
 		fi
 

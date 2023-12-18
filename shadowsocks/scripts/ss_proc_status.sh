@@ -134,6 +134,17 @@ echo_version(){
 		fi
 	fi
 
+	##---------------------------hysteria-----------------------
+	if [ -z "$ss_basic_hysteria_version" ];then
+		ss_basic_hysteria_version_tmp=`/koolshare/bin/hysteria version | grep 'Version:' | awk -F'[[:space:]]+' '{print $2}'`
+		if [ -n "$ss_basic_hysteria_version_tmp" ];then
+			ss_basic_hysteria_version="$ss_basic_hysteria_version_tmp"
+			dbus set ss_basic_hysteria_version="$ss_basic_hysteria_version_tmp"
+		else
+			ss_basic_hysteria_version="null"
+		fi
+	fi
+
 	echo ① 程序版本（插件版本：$SOFVERSION）：
 	echo -----------------------------------------------------------
 	echo "程序			版本		备注"
@@ -155,6 +166,7 @@ echo_version(){
 	echo "xray			$ss_basic_xray_version	"	
 	echo "trojan-go		$ss_basic_trojango_version		2022年12月29日编译"
 	echo "naive		$ss_basic_naive_version	"
+	echo "hysteria		$ss_basic_hysteria_version	"
 	echo -----------------------------------------------------------
 }
 
@@ -180,6 +192,7 @@ check_status(){
 	XRAY=`pidof xray`
 	TROJANGO=`pidof trojan-go`
 	NAIVE=`pidof naive`
+	HYSTERIA=`pidof hysteria`
 	HDP=`pidof https_dns_proxy`
 	DMQ=`pidof dnsmasq`
 	SMD=$(pidof smartdns)
@@ -224,6 +237,7 @@ check_status(){
 		echo "程序		状态	PID"
 		[ -n "$XRAY" ] && echo "xray		工作中	pid：$XRAY" || echo "xray	未运行"	
 		[ -n "$TROJANGO" ] && echo "trojan-go		工作中	pid：$TROJANGO" || echo "trojan-go	未运行"	
+		[ -n "$HYSTERIA" ] && echo "Hysteria2		工作中	pid：$HYSTERIA" || echo "Hysteria2	未运行"	
 	elif [ "$ss_basic_type" == "5" ];then
 		echo_version
 		echo

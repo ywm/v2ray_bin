@@ -151,7 +151,7 @@ function pop_help() {
 			moveType: 1,
 			content: '<div style="padding: 50px; line-height: 22px; background-color: #393D49; color: #fff; font-weight: 300;">\
 				<b>梅林固件 - 科学上网插件 - ' + db_ss["ss_basic_version_local"] + '</b><br><br>\
-				<color style="color: red;">重要提示:此插件向后维护 v2ray/xray/trojan/naiveproxy 等功能更新，版本更新，对于vmess，新版本默认选择xray二进制</color><br><br>\
+				<color style="color: red;">重要提示:此插件向后维护 v2ray/xray/trojan/naiveproxy/hysteria2 等功能更新，版本更新，对于vmess，新版本默认选择xray二进制</color><br><br>\
 				本插件是支持<a target="_blank" href="https://github.com/shadowsocks/shadowsocks-libev" ><u>SS</u></a>、<a target="_blank" href="https://github.com/shadowsocksrr/shadowsocksr-libev"><u>SSR</u></a>、<a target="_blank" href="http://firmware.koolshare.cn/binary/koolgame"><u>KoolGame</u></a>、<a target="_blank" href="https://github.com/v2fly/v2ray-core"><u>V2Ray</u></a>、<a href="#"><u>Trojan</u></a>、<a href="#"><u>Trojan-Go</u></a>、<a target="_blank" href="https://github.com/XTLS/xray-core"><u>XRay</u></a>七种客户端的科学上网、游戏加速工具。<br>\
 				本插件仅支持Merlin AM380 2.6.36.4内核的固件，请不要用于其它固件安装。<br>\
 				● V2Ray一键脚本：<a style="color:#e7bd16" target="_blank" href="https://github.com/233boy/v2ray/wiki/V2Ray%E6%90%AD%E5%BB%BA%E8%AF%A6%E7%BB%86%E5%9B%BE%E6%96%87%E6%95%99%E7%A8%8B"><u>V2Ray 搭建和优化详细图文教程</u></a><br>\
@@ -180,7 +180,7 @@ function pop_node_add() {
 					shade: 0.2,
 					time: 20000, //20s后自动关闭
 					area: ['450px'],
-					btn: ['添加ss节点', '添加ssr节点', '添加koolgame节点', '添加V2Ray节点','添加Trojan(go)节点','添加NaiveProxy节点'],
+					btn: ['添加ss节点', '添加ssr节点', '添加koolgame节点', '添加V2Ray节点','添加Trojan(go)/Hysteria2节点','添加NaiveProxy节点'],
 					btnAlign: 'c',
 					btn1: function(index, layero) {
 						setTimeout("Add_profile();", 300);
@@ -641,12 +641,13 @@ function verifyFields(r) {
 	showhide("v2ray_mux_concurrency_basic_tr", (((trojan_on && E("ss_basic_trojan_binary").value == "Trojan-Go") || (v2ray_on && json_off)) && E("ss_basic_v2ray_mux_enable").checked));
 	showhide("v2ray_json_basic_tr", (v2ray_on && json_on));
 	showhide("v2ray_binary_update_tr", v2ray_on);
-	//trojan
+	//trojan Hysteria2
 	showhide("trojan_binary_basic_tr", trojan_on);
 	showhide("trojan_network_basic_tr", (trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go"));
 	showhide("trojan_sni_basic_tr", trojan_on);
+	showhide("ss_hysteria_binary_update_tr", (trojan_on &&  E("ss_basic_trojan_binary").value == "Hysteria2"));
 	//mixed variables
-	showhide("allowinsecure_basic_tr", ((trojan_on && E("ss_basic_trojan_binary").value == "Trojan") || (v2ray_on && json_off && tls_on)));	
+	showhide("allowinsecure_basic_tr", ((trojan_on && (E("ss_basic_trojan_binary").value == "Trojan" || E("ss_basic_trojan_binary").value == "Hysteria2")) || (v2ray_on && json_off && tls_on)));
 	showhide("fingerprint_basic_tr", (trojan_on &&  E("ss_basic_trojan_binary").value == "Trojan-Go") || (v2ray_on && json_off && (!xtls_on)));
 	
 	// dns pannel
@@ -663,7 +664,7 @@ function verifyFields(r) {
 		E('trojan_sni_tr').style.display = "";
 		E('trojan_binary_tr').style.display = "";
 
-		if(E("ss_node_table_trojan_binary").value=="Trojan"){
+		if (E("ss_node_table_trojan_binary").value == "Trojan" || E("ss_node_table_trojan_binary").value == "Hysteria2") {
 			E('allowinsecure_tr').style.display = "";
 			E('v2ray_mux_enable_tr').style.display = "none";
 			E('v2ray_mux_concurrency_tr').style.display = "none";
@@ -934,6 +935,8 @@ function ssconf_node2obj(node_sel) {
 	var trojan_binary = db_ss[p + "_" + "trojan_binary" + "_" + node_sel]
 	if(trojan_binary=="Trojan-Go"){
 		obj["ss_basic_" + "trojan_binary"] = "Trojan-Go"
+	}else if(trojan_binary=="Hysteria2"){
+		obj["ss_basic_" + "trojan_binary"] = "Hysteria2"
 	}else{
 		obj["ss_basic_" + "trojan_binary"] = "Trojan"
 	}
@@ -993,18 +996,21 @@ function xray_change_off(xy){
 	}
 }
 function trojan_change_off(xy){
-	if(xy=="Trojan-Go"){
-		E("ss_node_table_trojan_binary").value = "Trojan-Go";
-	}else{
-		E("ss_node_table_trojan_binary").value = "Trojan";
-	}
-	if(xy=="Trojan"){
-	    E("ss_node_table_v2ray_network_path").value = "";
-		E("ss_node_table_v2ray_network_host").value = "";
-		E("ss_node_table_fingerprint").value = "";
-	}
-	verifyFields();
+    if (xy == "Trojan-Go") {
+        E("ss_node_table_trojan_binary").value = "Trojan-Go";
+    } else if (xy == "Hysteria2") {
+        E("ss_node_table_trojan_binary").value = "Hysteria2";
+    } else {
+        E("ss_node_table_trojan_binary").value = "Trojan";
+    }
+	if (xy == "Trojan" || xy == "Hysteria2") {
+        E("ss_node_table_v2ray_network_path").value = "";
+        E("ss_node_table_v2ray_network_host").value = "";
+        E("ss_node_table_fingerprint").value = "";
+    }
+    verifyFields();
 }
+
 function network_change_off(xy){
 	if(xy=="1"){
 		E("ss_node_table_trojan_network").value = "1";
@@ -1592,7 +1598,7 @@ function tabclickhandler(_type) {
 	//	E('trojan_network_tr').style.display = "";
 		E('trojan_sni_tr').style.display = "";
 			
-		if(E("ss_node_table_trojan_binary").value=="Trojan"){
+		if(E("ss_node_table_trojan_binary").value == "Trojan" || E("ss_node_table_trojan_binary").value == "Hysteria2"){
 			E('allowinsecure_tr').style.display = "";
 			E('v2ray_mux_enable_tr').style.display = "none";
 			E('v2ray_mux_concurrency_tr').style.display = "none";
@@ -1935,12 +1941,14 @@ function refresh_html() {
 						}else if(c["v2ray_protocol"] == "vless") {	//vless
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #3c45f6;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
 						}
-			} else if (c["trojan_binary"]) {  //  Trojan 节点
-					if(c["trojan_binary"] == "Trojan") {	//trojan
-					    html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #e2c628;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
-						}else if(c["trojan_binary"] == "Trojan-Go") {	//trojan go
-						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #FF5733;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
-						}
+			} else if (c["trojan_binary"]) {  // Trojan 节点
+				if (c["trojan_binary"] == "Trojan") { //trojan
+					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #e2c628;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
+				} else if (c["trojan_binary"] == "Trojan-Go") { //trojan go
+					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #FF5733;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
+				} else if (c["trojan_binary"] == "Hysteria2") { // Hysteria2
+					html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #FFBC00;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
+				}
 			} else { //其余节点为SS
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #00CCFF;width:66px;cursor:pointer;" onclick="apply_Running_node(this);" value="运行中">'
 				  }
@@ -1958,11 +1966,13 @@ function refresh_html() {
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #3c45f6;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
 						}
 			} else if(c["trojan_binary"]){  // Trojan 节点
-					if(c["trojan_binary"] == "Trojan") {	//trojan
-					    html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #e2c628;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'			
-						}else if(c["trojan_binary"] == "Trojan-Go") {	//trojan go
+					if(c["trojan_binary"] == "Trojan") { //trojan
+						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #e2c628;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
+					} else if(c["trojan_binary"] == "Trojan-Go") { //trojan go
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #FF5733;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
-						}
+					} else if(c["trojan_binary"] == "Hysteria2") { // Hysteria2
+						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #FFBC00;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
+					}
 			} else { // 其余为SS
 						html = html + '<input id="apply_ss_node_' + c["node"] + '" type="button" class="ss_btn" style="color: #00CCFF;width:66px;cursor:pointer;" onclick="apply_this_ss_node(this);" value="应用">'
 					}
@@ -2144,7 +2154,7 @@ function edit_conf_table(o) { //编辑节点功能，显示编辑面板
 				E("v2rayTitle").style.display = "";
 				$("#v2rayTitle").html("编辑v2ray账号");
 				tabclickhandler(3);
-	} else if(c["trojan_binary"] == "Trojan" || c["trojan_binary"] == "Trojan-Go" ) { // Trojan 节点
+	} else if(c["trojan_binary"] == "Trojan" || c["trojan_binary"] == "Hysteria2" || c["trojan_binary"] == "Trojan-Go" ) { // Trojan 节点
                 $("#vpnc_settings").fadeIn(200);
                 E("trojanTitle").style.display = "";
                 $("#trojanTitle").html("编辑Trojan账号");
@@ -3401,6 +3411,8 @@ function ss_binary_update(binary_update){
 		varinfo= '<li>为了避免不必要的问题，请保证路由器和服务器上的Xray版本一致！</li><br /><li>你确定要更新Xray二进制吗？</li>'
 	} else if (binary_update == 3) {
 		varinfo= '<li>为了避免不必要的问题，请保证路由器和服务器上的NaiveProxy版本一致！</li><br /><li>你确定要更新naive二进制吗？</li>'	
+	} else if (binary_update == 4) {
+		varinfo= '<li>为了避免不必要的问题，请保证路由器和服务器上的Hysteria2版本一致！</li><br /><li>你确定要更新Hysteria2二进制吗？</li>'		
 	} 
 	require(['/res/layer/layer.js'], function(layer) {
 		layer.confirm(varinfo, {
@@ -3612,7 +3624,7 @@ function set_cron(action) {
 											<img id="return_btn" onclick="reload_Soft_Center();" align="right" style="cursor:pointer;position:absolute;margin-left:-30px;margin-top:-25px;" title="返回软件中心" src="/images/backprev.png" onMouseOver="this.src='/images/backprevclick.png'" onMouseOut="this.src='/images/backprev.png'"></img>
 										</div>
 										<div style="margin-left:5px;margin-top:10px;margin-bottom:10px"><img src="/images/New_ui/export/line_export.png"></div>
-										<div class="SimpleNote" id="head_illustrate">本插件是支持<a href="https://github.com/shadowsocks/shadowsocks-libev" target="_blank"><em><u>SS</u></em></a>, <a href="https://github.com/shadowsocksrr/shadowsocksr-libev" target="_blank"><em><u>SSR</u></em></a>, <a href="http://firmware.koolshare.cn/binary/koolgame/" target="_blank"><em><u>KoolGame</u></em></a>, <a href="https://github.com/v2ray/v2ray-core" target="_blank"><em><u>V2Ray</u></em></a>, <a target="_blank" href="https://github.com/XTLS/Xray-core"><em><u>Xray(Vless, Trojan)</u></em></a>, <a target="_blank" href="https://github.com/gfw-report/trojan-go"><em><u>Trojan-Go</u></em></a>, <a target="_blank" href="https://github.com/klzgrad/naiveproxy/"><em><u>NaiveProxy</u></em></a>八种客户端的科学上网, 游戏加速工具。</div>
+										<div class="SimpleNote" id="head_illustrate">本插件是支持<a href="https://github.com/shadowsocks/shadowsocks-libev" target="_blank"><em><u>SS</u></em></a>, <a href="https://github.com/shadowsocksrr/shadowsocksr-libev" target="_blank"><em><u>SSR</u></em></a>, <a href="http://firmware.koolshare.cn/binary/koolgame/" target="_blank"><em><u>KoolGame</u></em></a>, <a href="https://github.com/v2ray/v2ray-core" target="_blank"><em><u>V2Ray</u></em></a>, <a target="_blank" href="https://github.com/XTLS/Xray-core"><em><u>Xray(Vless, Trojan)</u></em></a>, <a target="_blank" href="https://github.com/gfw-report/trojan-go"><em><u>Trojan-Go</u></em></a>, <a target="_blank" href="https://github.com/klzgrad/naiveproxy/"><em><u>NaiveProxy</u></em></a>, <a target="_blank" href="https://github.com/apernet/hysteria/"><em><u>Hysteria2</u></em></a>九种客户端的科学上网, 游戏加速工具。</div>
 										<div style="margin-top: 0px;text-align: center;font-size: 18px;margin-bottom: 0px;" class="formfontdesc" id="cmdDesc"></div>
 										<!-- this is the popup area for status -->
 										<div id="detail_status"  class="content_status" style="box-shadow: 3px 3px 10px #000;margin-top: 0px;display: none;">
@@ -3779,17 +3791,17 @@ function set_cron(action) {
 																	<!-- <input type="text" name="ss_node_table_v2ray_protocol" id="ss_node_table_v2ray_protocol"  class="input_ss_table" style="width:342px;" maxlength="300" value=""/> -->
 																	<select id="ss_node_table_v2ray_protocol" name="ss_node_table_v2ray_protocol" style="width:350px;margin:0px 0px 0px 2px;" class="input_option" onchange="protocol_change_off(this.value);">
 																		<option value="vmess">vmess</option>
-																		<option value="vless">vless</option>
-																	<!--	<option value="trojan">trojan</option>	-->
+																		<option value="vless">vless</option>														
 																	</select>
 																</td>
 															</tr>
 															<tr id="trojan_binary_tr" style="display: none;">
-																<th width="35%">协议（Trojan/Trojan-Go）</th>
+																<th width="35%">协议（Trojan/Trojan-Go/Hysteria2）</th>
 																<td>
 																	<select id="ss_node_table_trojan_binary" name="ss_node_table_trojan_binary" style="width:350px;margin:0px 0px 0px 2px;" class="input_ss_table" onchange="trojan_change_off(this.value);">
 																		<option value="Trojan" >Trojan</option>
 																		<option value="Trojan-Go">Trojan-Go</option>
+																		<option value="Hysteria2">Hysteria2</option>
 																	</select>
 																</td>
 															</tr>
@@ -4199,12 +4211,13 @@ function set_cron(action) {
 												</tr>
 												<tr id="trojan_binary_basic_tr" style="display: none;">
 													<th width="35%">
-														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(108)"><font color="#ffcc00">Trojan协议（Trojan/Trojan-Go）</font></a>
+														<a class="hintstyle" href="javascript:void(0);" onclick="openssHint(108)"><font color="#ffcc00">协议（Trojan/Trojan-Go/Hysteria2）</font></a>
 													</th>
 													<td>
 														<select id="ss_basic_trojan_binary" name="ss_basic_trojan_binary" style="width:164px;margin:0px 0px 0px 2px;" class="input_option"  onchange="verifyFields(this, 1);">
 															<option value="Trojan">Trojan</option>
 															<option value="Trojan-Go">Trojan-Go</option>
+															<option value="Hysteria2">Hysteria2</option>															
 														</select>
 													</td>
 												</tr>
@@ -4573,6 +4586,12 @@ function set_cron(action) {
 													<th width="35%">其它</th>
 													<td>
 														<a type="button" class="ss_btn" style="cursor:pointer" onclick="ss_binary_update(3)">更新NaiveProxy程序</a>
+													</td>
+												</tr>	
+												<tr id="ss_hysteria_binary_update_tr" style="display: none;">
+													<th width="35%">其它</th>
+													<td>
+														<a type="button" class="ss_btn" style="cursor:pointer" onclick="ss_binary_update(4)">更新Hysteria2程序</a>
 													</td>
 												</tr>	
 											</table>
@@ -5398,7 +5417,7 @@ taobao.com
 												</tr>
 												</thead>
 												<tr>
-													<th width="35%">订阅地址管理（支持SS/SSR/Vmess/Vless/Trojan/Trojan-Go）</th>
+													<th width="35%">订阅地址管理（支持SS/SSR/Vmess/Vless/Trojan/Trojan-Go/Hysteria2）</th>
 													<td>
 														<textarea placeholder="填入需要订阅的地址，多个地址分行填写" rows=8 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_online_links" name="ss_online_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 													</td>
@@ -5479,9 +5498,9 @@ taobao.com
 												</tr>
 												</thead>
 												<tr>
-													<th width="35%">ss/ssr/vmess/vless/trojan/trojan-go链接</th>
+													<th width="35%">ss/ssr/vmess/vless/trojan/trojan-go/Hysteria2链接</th>
 													<td>
-														<textarea placeholder="填入以ss://或者ssr://或者vmess://或者vless://或者trojan://或者trojan-go://开头的链接,多个链接请分行填写" rows=9 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_base64_links" name="ss_base64_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+														<textarea placeholder="填入以ss://或者ssr://或者vmess://或者vless://或者trojan://或者trojan-go://或者hysteria2://开头的链接,多个链接请分行填写" rows=9 style="width:99%; font-family:'Lucida Console'; font-size:12px;background:#475A5F;color:#FFFFFF;border:1px solid gray;" id="ss_base64_links" name="ss_base64_links" title="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 													</td>
 												</tr>
 												<tr>

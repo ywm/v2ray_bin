@@ -17,15 +17,27 @@ case $ss_binary_update in
 3)
 	v2ray_xray="naive"
 	;;	
+4)
+	v2ray_xray="hysteria"
+	;;	
 esac
+
+get_bin_version() {
+    if [ "$v2ray_xray" = "hysteria" ]; then
+        /koolshare/bin/hysteria version | grep 'Version:' | awk -F'[[:space:]]+' '{print $2}'| sed 's/v//g' 
+    else
+        ${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f2 | sed 's/v//g' 
+    fi
+}
 
 V2RAY_CONFIG_FILE="/koolshare/ss/v2ray.json"
 NAIVE_CONFIG_FILE="/koolshare/ss/naive.json"
 NAIVE2_CONFIG_FILE="/koolshare/ss/naive2.json"
+HY2_CONFIG_FILE="/koolshare/ss/hysteria.json"
 
 url_main="https://raw.githubusercontent.com/cary-sas/v2ray_bin/main/380_armv5/$v2ray_xray"
 url_back=""
-socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive"`
+socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive|hysteria"`
 if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
 	echo_date "代理有开启，将使用代理网络..."
 	alias curlxx='curl --connect-timeout 8 -k --socks5-hostname 127.0.0.1:23456 '
@@ -54,7 +66,7 @@ get_latest_version(){
 			echo_date "${v2ray_xray}安装文件丢失！重新下载！"
 			CUR_VER="0"
 		else
-			CUR_VER=`${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f2 | sed 's/v//g'` || 0
+			CUR_VER=$(get_bin_version) || 0 
 			echo_date "当前已安装${v2ray_xray}版本：v$CUR_VER"
 		fi
 		COMP=`versioncmp $CUR_VER $V2VERSION_BASE`
@@ -62,10 +74,8 @@ get_latest_version(){
 			[ "$CUR_VER" != "0" ] && echo_date "${v2ray_xray}已安装版本号低于最新版本，开始更新程序..."
 			update_now v$V2VERSION
 		else
-			V2RAY_LOCAL_VER=`/koolshare/bin/${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f2`
-			V2RAY_LOCAL_DATE=`/koolshare/bin/${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f5`
+			V2RAY_LOCAL_VER=$(get_bin_version)
 			[ -n "$V2RAY_LOCAL_VER" ] && dbus set ss_basic_${v2ray_xray}_version="$V2RAY_LOCAL_VER"
-			[ -n "$V2RAY_LOCAL_DATE" ] && dbus set ss_basic_${v2ray_xray}_date="$V2RAY_LOCAL_DATE"
 			echo_date "${v2ray_xray}已安装版本已经是最新，退出更新程序!"
 		fi
 		[ -f "/tmp/${v2ray_xray}" ] &&  rm -rf /tmp/${v2ray_xray}
@@ -109,7 +119,7 @@ update_now(){
 		echo_date "${v2ray_xray}程序下载成功..."
 	fi
 
-	if [ "$md5sum_ok=1" ] && [ "$v2ray_ok=1" ];then
+	if [ "$md5sum_ok" -eq 1 ] && [ "$v2ray_ok" -eq 1 ];then
 		check_md5sum
 	else
 		echo_date "下载失败，请检查你的网络！"
@@ -153,10 +163,8 @@ move_binary(){
 	echo_date "开始替换${v2ray_xray}二进制文件... "
 	mv /tmp/${v2ray_xray}/${v2ray_xray} /koolshare/bin/${v2ray_xray}
 	chmod +x /koolshare/bin/${v2ray_xray}
-	V2RAY_LOCAL_VER=`/koolshare/bin/${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f2`
-	V2RAY_LOCAL_DATE=`/koolshare/bin/${v2ray_xray} -version 2>/dev/null | head -n 1 | cut -d " " -f5`
+	V2RAY_LOCAL_VER=$(get_bin_version)
 	[ -n "$V2RAY_LOCAL_VER" ] && dbus set ss_basic_${v2ray_xray}_version="$V2RAY_LOCAL_VER"
-	[ -n "$V2RAY_LOCAL_DATE" ] && dbus set ss_basic_${v2ray_xray}_date="$V2RAY_LOCAL_DATE"
 	echo_date "${v2ray_xray}二进制文件替换成功... "
 }
 
@@ -168,6 +176,9 @@ start_v2ray(){
 	if [ "$v2ray_xray" == "naive" ];then
 		${v2ray_xray} $NAIVE_CONFIG_FILE >/dev/null 2>&1 &
 		${v2ray_xray} $NAIVE2_CONFIG_FILE >/dev/null 2>&1 &
+	elif [ "$v2ray_xray" == "hysteria" ];then
+		export QUIC_GO_DISABLE_ECN=true
+		${v2ray_xray} -c $HY2_CONFIG_FILE -l error --disable-update-check  >/dev/null 2>&1 &
 	else
 		${v2ray_xray} --config=${V2RAY_CONFIG_FILE} >/dev/null 2>&1 &
 	fi

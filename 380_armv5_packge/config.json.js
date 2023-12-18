@@ -1,9 +1,9 @@
 {
-"build_date":"2023-08-13_00:18:47",
+"build_date":"2023-12-18_22:19:55",
 "description":"科学上网",
 "home_url":"Main_Ss_Content.asp",
-"md5":"b63cb08614ccba29fed2126b1d0ab1c9",
+"md5":"d2a4e82fb2e057634b2f33a4ab21df30",
 "name":"shadowsocks",
-"tar_url": "https://github.com/cary-sas/v2ray_bin/raw/main/380_armv5_packge/4.37.5/shadowsocks.tar.gz",
-"version":"4.37.5"
+"tar_url": "https://github.com/cary-sas/v2ray_bin/raw/main/380_armv5_packge/4.37.6/shadowsocks.tar.gz",
+"version":"4.37.6"
 }

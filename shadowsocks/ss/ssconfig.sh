@@ -17,6 +17,7 @@ TROJANGO_CONFIG_FILE="/koolshare/ss/trojango.json"
 TROJANGO2_CONFIG_FILE="/koolshare/ss/trojango2.json"
 NAIVE_CONFIG_FILE="/koolshare/ss/naive.json"
 NAIVE2_CONFIG_FILE="/koolshare/ss/naive2.json"
+HY2_CONFIG_FILE="/koolshare/ss/hysteria.json"
 LOCK_FILE=/var/lock/koolss.lock
 DNSF_PORT=7913
 DNSC_PORT=53
@@ -194,6 +195,14 @@ kill_process(){
 		killall naive >/dev/null 2>&1
 		kill -9 "$naive_process" >/dev/null 2>&1
 	fi
+
+	hy2_process=`pidof hysteria`
+	if [ -n "$hy2_process" ];then 
+		echo_date 关闭Hysteria2进程...
+		killall hysteria >/dev/null 2>&1
+		kill -9 "$hy2_process" >/dev/null 2>&1
+	fi
+
 	rssredir=`pidof rss-redir`
 	if [ -n "$rssredir" ];then 
 		echo_date 关闭ssr-redir进程...
@@ -2020,6 +2029,37 @@ create_ss2022_json(){
 	fi
 }
 
+
+create_hy2_json(){
+	rm -f "$HY2_CONFIG_FILE" 
+	if  [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Hysteria2" ]; then
+	
+		echo_date 生成Hysteria2配置文件...
+		 #HY2
+
+	cat >"$HY2_CONFIG_FILE" <<-EOF		
+			{
+				"server": "$(dbus get ss_basic_server):$ss_basic_port",
+				"auth": "${ss_basic_password}",
+				"tls": {
+					"sni": "$ss_basic_trojan_sni",
+					"insecure": $(get_function_switch $ss_basic_allowinsecure)
+				},
+				"fastOpen": true,
+				"lazy": true,
+				"socks5": {
+					"listen": "127.0.0.1:23456"
+				},
+				"tcpRedirect": {
+					"listen": "0.0.0.0:3333"
+				}
+			}
+	EOF
+
+		echo_date Hysteria2 配置文件写入成功到 "$HY2_CONFIG_FILE"
+	fi
+}
+
 start_v2ray() {
 	# v2ray start
 	cd /koolshare/bin
@@ -2123,6 +2163,25 @@ start_naiveproxy() {
 		sleep 1
 	done
 	echo_date NaiveProxy启动成功，pid：$naivePID
+}
+
+start_hy2() {
+	# Hysteria2 start
+	export QUIC_GO_DISABLE_ECN=true
+	cd /koolshare/bin
+	hysteria -c $HY2_CONFIG_FILE -l error --disable-update-check  >/dev/null 2>&1 &
+	local hy2PID
+	local i=10
+	until [ -n "$hy2PID" ]; do
+		i=$(($i - 1))
+		hy2PID=$(pidof hysteria)
+		if [ "$i" -lt 1 ]; then
+			echo_date "Hysteria2进程启动失败！"
+			close_in_five
+		fi
+		sleep 1
+	done
+	echo_date Hysteria2启动成功，pid：$hy2PID
 }
 
 start_ss2022() {
@@ -2814,11 +2873,13 @@ apply_ss(){
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && create_trojan_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && create_trojango_json
 	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "5" ] && create_naive_json
+	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "4" -a "$ss_basic_trojan_binary" == "Hysteria2" ] && create_hy2_json
 	[ "$ss_basic_type" == "0" ] || [ "$ss_basic_type" == "1" ] && start_ss_redir
 	[ "$ss_basic_type" == "2" ] && start_koolgame
 	[ "$ss_basic_type" == "3" ] || [ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Trojan" ] && start_v2ray_xray
 	[ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Trojan-Go" ] && start_trojango
-	[ -z "$WAN_ACTION" ] && [ "$ss_basic_type" = "5" ] && start_naiveproxy
+	[ "$ss_basic_type" == "5" ] && start_naiveproxy
+	[ "$ss_basic_type" == "4" -a "$ss_basic_trojan_binary" == "Hysteria2" ] && start_hy2
 	[ "$ss_basic_type" != "2" ] && start_kcp
 	[ "$ss_basic_type" != "2" ] && start_dns
 	#===load nat start===

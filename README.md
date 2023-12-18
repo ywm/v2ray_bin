@@ -6,12 +6,12 @@ fixed many historical legacy issues
 
 除插件原有功能外，另外
 
-* 支持xray, vless, xtls, reality, trojan, trojan-go, NaiveProxy 等协议及更新，
+* 支持xray, vless, xtls, reality, trojan, trojan-go, NaiveProxy, Hysteria2 等协议及更新，
 * 支持ss + v2ray plugin，
 * 支持混合节点订阅，
 * 支持同时订阅多个链接，回车隔开，
-* 支持ss:// vless:// trojan:// trojan-go://格式订阅和导入，
-* 支持smartDNS (不熟悉配置请勿选择)，
+* 支持ss:// vless:// trojan:// trojan-go:// hysteria2:// 格式订阅和导入，
+* 支持smartDNS (不熟悉配置请勿选择)，ChinaDNS-NG
 * 支持在线更新
 
 目前xray已经可以完全替代v2ray了，xray支持vmess，vless和trojan。
