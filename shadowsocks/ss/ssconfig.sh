@@ -1365,6 +1365,45 @@ resolve_node_ip4json(){
 }
 
 
+create_fragment_config(){
+	case "$ss_basic_fragment" in
+	1)
+		cat <<EOF
+ ,{
+    "protocol": "freedom",
+    "settings": {
+        "fragment": {
+            "interval": "10-20",
+            "length": "50-100",
+            "packets": "tlshello"
+        },
+        "noises": [
+            {
+                "delay": "10-20",
+                "packet": "100-200",
+                "type": "rand"
+            }
+        ]
+    },
+    "streamSettings": {
+        "network": "tcp",
+        "security": "",
+        "sockopt": {
+            "TcpNoDelay": true,
+            "mark": 255
+        }
+    },
+    "tag": "fragment"
+ }
+EOF
+		;;
+	*)
+		echo ""
+		;;
+	esac
+}
+
+
 create_v2ray_json(){
 	rm -rf "$V2RAY_CONFIG_FILE_TMP"
 	rm -rf "$V2RAY_CONFIG_FILE"
@@ -1505,6 +1544,8 @@ create_v2ray_json(){
 				}"
 			;;	
 		esac
+
+		local tls_fragment=$(create_fragment_config)
 		# log area
 		cat >"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 			{
@@ -1650,7 +1691,7 @@ create_v2ray_json(){
 					  "enabled": $(get_function_switch $ss_basic_v2ray_mux_enable),
 					  "concurrency": $ss_basic_v2ray_mux_concurrency
 					}
-				  }
+				  } ${tls_fragment}
 				]
 				}
 			EOF
@@ -1769,6 +1810,8 @@ create_trojan_json(){
 	if  [ "$ss_basic_type" == "4" ] && [ "$ss_basic_trojan_binary" == "Trojan" ]; then
 		echo_date 生成Trojan配置文件...
 		 #trojan
+		 local tls_fragment=$(create_fragment_config)
+		 
 		 # inbounds area (23456 for socks5)  
 		cat >"$V2RAY_CONFIG_FILE_TMP" <<-EOF
 		{
@@ -1820,7 +1863,7 @@ create_trojan_json(){
                     "serverName": "$ss_basic_trojan_sni"
                 }
 				}
-			  }
+			  }  ${tls_fragment}
 			]
 		}
 		EOF

@@ -316,7 +316,7 @@ function LoadingSSProgress(seconds) {
 		document.getElementById("loading_block3").innerHTML = "socks5代理设置 ..."
 		$("#loading_block2").html("<li><font color='#ffcc00'>请勿刷新本页面，应用中 ...</font></li>");
 	} else if (action == 15) {
-		document.getElementById("loading_block3").innerHTML = "V2Ray 二进制文件更新 ..."
+		document.getElementById("loading_block3").innerHTML = "二进制文件更新 ..."
 		$("#loading_block2").html("<li><font color='#ffcc00'>请勿刷新本页面，更新中 ...</font></li>");
 	} else if (action == 16) {
 		document.getElementById("loading_block3").innerHTML = "设置插件重启定时任务 ..."
@@ -631,7 +631,15 @@ function openssHint(itemNum) {
 		statusmenu += "</br></br> 勾选此选项后，可以打通其他几个模式的 UDP 也走代理"
 		_caption = "同步UDP";
 		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
-	}  else if (itemNum == 31) {
+	}  else if (itemNum == 117) {
+		width = "750px";
+		statusmenu = "<b>开启 TLS Hello Fragment</b>"
+		statusmenu += "</br></br> xray 1.8.3 版本开始支持 TLS Hello Fragment"
+		statusmenu += "</br></br>开启后可以防止 TLS 握手被检测到，增加隐蔽性"
+		_caption = "TLS Hello Fragment";
+		return overlib(statusmenu, OFFSETX, -560, OFFSETY, -90, LEFT, STICKY, WIDTH, 'width', CAPTION, _caption, CLOSETITLE, '');
+	}
+	else if (itemNum == 31) {
 		width = "400px";
 		statusmenu = "<b>此处控制开启或者关闭多路复用 (Mux)</b>"
 		statusmenu += "</br></br>此参数在客户端json配置文件的【outbound → mux → enabled】位置"
@@ -795,7 +803,7 @@ function openssHint(itemNum) {
 		_caption = "说明：";
 	}else if (itemNum == 108) {
 		width = "550px";
-		statusmenu = "</br>此参数为选择执行二进制v2ray或者xray,如果不清楚，请选择v2ray"
+		statusmenu = "</br>此参数为选择执行二进制v2ray或者xray,如果不清楚，请选择xray"
 		_caption = "二进制（V2ray/Xray）";
 	}else if (itemNum == 109) {
 		width = "450px";

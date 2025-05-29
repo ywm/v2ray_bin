@@ -14,7 +14,7 @@ case "$ssconf_basic_test_domain" in
 		speed_test_url="https://scontent-sjc3-1.xx.fbcdn.net/m1/v/t6/An-Y531FBt1_Dmjmdml0fAxWVznPEZ4KhVulHN4RqyLIqKI4Fldv1Q2EBkOSRtG8co5l0O9EVtYm894u1-w.zip?ccb=10-5&oh=00_AT9wS67x0noZvrW6rZWkwT2CNg5Pvk3kmpL9AWsVR8wdvg&oe=62944A47&_nc_sid=857daf"
 	;;
 	*)
-		speed_test_url="http://cachefly.cachefly.net/100mb.test"
+		speed_test_url="https://cdn.cloudflare.steamstatic.com/steam/apps/256843155/movie_max.mp4 "
 	;;
 esac
 
@@ -22,7 +22,7 @@ agent="User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:32.0) Gecko/2
 
 speed_test_curl(){
 	sleep 3
-	local Byte=`curl -A "$agent" "$speed_test_url" -o /dev/null --socks5-hostname 127.0.0.1:23458 --connect-timeout 5 --max-time 10 2>&1 | tr '\r' '\n' | awk '{print $NF}' | sed '1,3d;$d' | awk 'function max(x){i=0;for(val in x){if(i<=x[val]){i=x[val];}}return i;} {if ($1 ~ /k/) {a[$1]=$1*1024;next} else if ($1 ~ /M/) {a[$1]=$1*1024*1024;next} else {a[$1]=$1;next}} END{print max(a) }'`
+	local Byte=`curl -k -A "$agent" "$speed_test_url" -o /dev/null --socks5-hostname 127.0.0.1:23458 --connect-timeout 5 --max-time 12 2>&1 | tr '\r' '\n' | awk '{print $NF}' | sed '1,3d;$d' | awk 'function max(x){i=0;for(val in x){if(i<=x[val]){i=x[val];}}return i;} {if ($1 ~ /k/) {a[$1]=$1*1024;next} else if ($1 ~ /M/) {a[$1]=$1*1024*1024;next} else {a[$1]=$1;next}} END{print max(a) }'`
 	sleep 1	
 	local KB=`awk -v sum=$Byte -v n=1024 'BEGIN{printf "%0.2f\n", sum/n}'`
 	local MB=`awk -v sum=$KB -v n=1024 'BEGIN{printf "%0.2f\n", sum/n}'`

@@ -6,7 +6,7 @@
 eval `dbus export ss`
 source /koolshare/scripts/base.sh
 alias echo_date='echo 【$(TZ=UTC-8 date -R +%Y年%m月%d日\ %X)】:'
-socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive"`
+socksopen_b=`netstat -nlp|grep -w 23456|grep -E "local|v2ray|xray|trojan-go|naive|hysteria"`
 if [ -n "$socksopen_b" ] && [ "$ss_basic_online_links_goss" == "1" ];then
 	echo_date "代理有开启，将使用代理网络..."
 	alias curlxx='curl --connect-timeout 8  --socks5-hostname 127.0.0.1:23456 '
@@ -18,9 +18,9 @@ start_update(){
 	url_main="https://raw.githubusercontent.com/qxzg/Actions/master/fancyss_rules"
 	url_back=""
 	# version dectet
-	version_gfwlist1=$(cat /koolshare/ss/rules/version | sed -n 1p | sed 's/ /\n/g'| sed -n 1p)
-	version_chnroute1=$(cat /koolshare/ss/rules/version | sed -n 2p | sed 's/ /\n/g'| sed -n 1p)
-	version_cdn1=$(cat /koolshare/ss/rules/version | sed -n 4p | sed 's/ /\n/g'| sed -n 1p)
+    version_gfwlist1=$(sed -n 1p /koolshare/ss/rules/version | awk '{print $1}')
+    version_chnroute1=$(sed -n 2p /koolshare/ss/rules/version | awk '{print $1}')
+    version_cdn1=$(sed -n 4p /koolshare/ss/rules/version | awk '{print $1}')
 	
 	echo ==================================================================================================
 	echo_date 开始更新shadowsocks规则，请等待...
@@ -30,37 +30,39 @@ start_update(){
 		echo_date 检测到在线版本文件，继续...
 	else
 		echo_date 没有检测到在线版本，可能是访问github有问题，去大陆白名单模式试试吧！
-		rm -rf /tmp/ss_version
+		rm -f /tmp/ss_version
 		exit
 	fi
 	
 	online_content=$(cat /tmp/ss_version)
 	if [ -z "$online_content" ];then
-		rm -rf /tmp/ss_version
+		rm -f /tmp/ss_version
 	fi
 	
-	git_line1=$(cat /tmp/ss_version | sed -n 1p)
-	git_line2=$(cat /tmp/ss_version | sed -n 2p)
-	git_line4=$(cat /tmp/ss_version | sed -n 4p)
+    git_line1=$(sed -n 1p /tmp/ss_version)
+    git_line2=$(sed -n 2p /tmp/ss_version)
+    git_line4=$(sed -n 4p /tmp/ss_version)
 	
-	version_gfwlist2=$(echo $git_line1 | sed 's/ /\n/g'| sed -n 1p)
-	version_chnroute2=$(echo $git_line2 | sed 's/ /\n/g'| sed -n 1p)
-	version_cdn2=$(echo $git_line4 | sed 's/ /\n/g'| sed -n 1p)
+    version_gfwlist2=$(echo "$git_line1" | awk '{print $1}')
+    version_chnroute2=$(echo "$git_line2" | awk '{print $1}')
+    version_cdn2=$(echo "$git_line4" | awk '{print $1}')
+
+    md5sum_gfwlist2=$(echo "$git_line1" | awk '{print $(NF-1)}')
+    md5sum_chnroute2=$(echo "$git_line2" | awk '{print $(NF-1)}')
+    md5sum_cdn2=$(echo "$git_line4" | awk '{print $(NF-1)}')
 	
-	md5sum_gfwlist2=$(echo $git_line1 | sed 's/ /\n/g'| tail -n 2 | head -n 1)
-	md5sum_chnroute2=$(echo $git_line2 | sed 's/ /\n/g'| tail -n 2 | head -n 1)
-	md5sum_cdn2=$(echo $git_line4 | sed 's/ /\n/g'| tail -n 2 | head -n 1)
-	
+    EMPTY_MD5="d41d8cd98f00b204e9800998ecf8427e"
+
 	# update gfwlist
 	if [ "$ss_basic_gfwlist_update" == "1" ];then
 		echo_date " --------------------------------------------------------------------"
 		if [ ! -z "$version_gfwlist2" ];then
-			if [ "$version_gfwlist1" != "$version_gfwlist2" ];then
+			if [ "$md5sum_gfwlist2" = "$EMPTY_MD5" ] || [ "$version_gfwlist1" != "$version_gfwlist2" ];then
 				echo_date 检测到新版本gfwlist，开始更新...
 				echo_date 下载gfwlist到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/gfwlist.conf > /tmp/gfwlist.conf
 				curlxx "$url_main"/gfwlist.conf > /tmp/gfwlist.conf
-				md5sum_gfwlist1=$(md5sum /tmp/gfwlist.conf | sed 's/ /\n/g'| sed -n 1p)
+				md5sum_gfwlist1=$(md5sum /tmp/gfwlist.conf | awk '{print $1}')
 				if [ "$md5sum_gfwlist1"x = "$md5sum_gfwlist2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始gfwlist文件
 					mv /tmp/gfwlist.conf /koolshare/ss/rules/gfwlist.conf
@@ -85,19 +87,15 @@ start_update(){
 	if [ "$ss_basic_chnroute_update" == "1" ];then
 		echo_date " --------------------------------------------------------------------"
 		if [ ! -z "$version_chnroute2" ];then
-			if [ "$version_chnroute1" != "$version_chnroute2" ];then
+			if [ "$md5sum_chnroute2" = "$EMPTY_MD5" ] || [ "$version_chnroute1" != "$version_chnroute2" ];then
 				echo_date 检测到新版本chnroute，开始更新...
 				echo_date 下载chnroute到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/chnroute.txt > /tmp/chnroute.txt
 				curlxx "$url_main"/chnroute.txt > /tmp/chnroute.txt
-				## 下载 clouidflare的 IP段清单
-				#curlxx  https://www.cloudflare.com/ips-v4 >/tmp/cf_ips-v4.txt 
 
-				md5sum_chnroute1=$(md5sum /tmp/chnroute.txt | sed 's/ /\n/g'| sed -n 1p)
+				md5sum_chnroute1=$(md5sum /tmp/chnroute.txt | awk '{print $1}')
 				if [ "$md5sum_chnroute1"x = "$md5sum_chnroute2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始chnroute文件
-					## 将Cloudflare的IP段合并到大陆白名单中，方便筛查优选IP而套用CDN 
-					#cat /tmp/chnroute.txt /tmp/cf_ips-v4.txt > /koolshare/ss/rules/chnroute.txt
 					mv /tmp/chnroute.txt /koolshare/ss/rules/chnroute.txt
 					sed -i "2s/.*/$git_line2/" /koolshare/ss/rules/version
 					reboot="1"
@@ -119,12 +117,12 @@ start_update(){
 	if [ "$ss_basic_cdn_update" == "1" ];then
 		echo_date " --------------------------------------------------------------------"
 		if [ ! -z "$version_cdn2" ];then
-			if [ "$version_cdn1" != "$version_cdn2" ];then
+			if [ "$md5sum_cdn2" = "$EMPTY_MD5" ] || [ "$version_cdn1" != "$version_cdn2" ];then
 				echo_date 检测到新版本cdn名单，开始更新...
 				echo_date 下载cdn名单到临时文件...
 				#wget --no-check-certificate --timeout=8 -qO - "$url_main"/cdn.txt > /tmp/cdn.txt
 				curlxx "$url_main"/cdn.txt > /tmp/cdn.txt
-				md5sum_cdn1=$(md5sum /tmp/cdn.txt | sed 's/ /\n/g'| sed -n 1p)
+				md5sum_cdn1=$(md5sum /tmp/cdn.txt | awk '{print $1}')
 				if [ "$md5sum_cdn1"x = "$md5sum_cdn2"x ];then
 					echo_date 下载完成，校验通过，将临时文件覆盖到原始cdn名单文件
 					mv /tmp/cdn.txt /koolshare/ss/rules/cdn.txt
@@ -147,17 +145,17 @@ start_update(){
 	rm -rf /tmp/gfwlist.conf*
 	rm -rf /tmp/chnroute.txt*
 	rm -rf /tmp/cdn.txt*
-	rm -rf /tmp/ss_version
+	rm -f /tmp/ss_version
 	
 	echo_date Shadowsocks更新进程运行完毕！
 	# write number
-	nvram set update_ipset="$(cat /koolshare/ss/rules/version | sed -n 1p | sed 's/#/\n/g'| sed -n 1p)"
-	nvram set update_chnroute="$(cat /koolshare/ss/rules/version | sed -n 2p | sed 's/#/\n/g'| sed -n 1p)"
-	nvram set update_cdn="$(cat /koolshare/ss/rules/version | sed -n 4p | sed 's/#/\n/g'| sed -n 1p)"
+	nvram set update_ipset="$(awk 'NR==1{print $1}' /koolshare/ss/rules/version)"
+	nvram set update_chnroute="$(awk 'NR==2{print $1}' /koolshare/ss/rules/version)"
+	nvram set update_cdn="$(awk 'NR==4{print $1}' /koolshare/ss/rules/version)"
 	
-	nvram set ipset_numbers=$(cat /koolshare/ss/rules/gfwlist.conf | grep -c ipset)
-	nvram set chnroute_numbers=$(cat /koolshare/ss/rules/chnroute.txt | grep -c .)
-	nvram set cdn_numbers=$(cat /koolshare/ss/rules/cdn.txt | grep -c .)
+    nvram set ipset_numbers=$(grep -c ipset /koolshare/ss/rules/gfwlist.conf)
+    nvram set chnroute_numbers=$(grep -c . /koolshare/ss/rules/chnroute.txt)
+    nvram set cdn_numbers=$(grep -c . /koolshare/ss/rules/cdn.txt)
 	#======================================================================
 	if [ "$reboot" == "1" ];then
 		echo_date 自动重启shadowsocks，以应用新的规则文件！请稍后！
