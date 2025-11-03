@@ -14,7 +14,7 @@ jobs:
     env:
       OWNER: apernet
       REPO: hysteria
-      DEST_DIR: v2ray_bin/380_armv5/hysteria
+      DEST_DIR: 380_armv5/hysteria           # <-- fixed path
       ASSET_NAME: hysteria-linux-armv5
       UPX_URL: https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
 
@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+            fetch-depth: 0
 
       - name: Install system dependencies
         run: |
@@ -35,16 +35,15 @@ jobs:
           set -euo pipefail
           f="${{ env.DEST_DIR }}/latest.txt"
           if [[ -f "$f" ]]; then
-            raw="$(tr -d '\n\r ' < "$f")"
-            # drop leading v if any
+            raw="$(tr -d '\r' < "$f" | tr -d ' \n')"
             ver="${raw#v}"
           else
             raw=""
             ver="0.0.0"
           fi
-          echo "raw_local=$raw"        >> $GITHUB_OUTPUT
-          echo "local_num=$ver"        >> $GITHUB_OUTPUT
-          echo "Local latest (num): $ver"
+          echo "raw_local=$raw"  >> $GITHUB_OUTPUT
+          echo "local_num=$ver"  >> $GITHUB_OUTPUT
+          echo "Local latest (num) = '$ver'"
 
       - name: Resolve remote latest app/* (strip app/v, pick highest semver)
         id: remote
@@ -52,12 +51,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          # Get many releases, collect all app/v* tags, map to numeric "X.Y.Z"
           json="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
                            -H "Accept: application/vnd.github+json" \
                            "https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100")"
 
-          # Build a table: numeric_version|tag|download_url
           mapfile -t rows < <(jq -r '
             .[] | select(.tag_name|startswith("app/")) as $r
             | ($r.tag_name|sub("^app/v";"")) as $num
@@ -67,35 +64,46 @@ jobs:
             | "\($num)|\($tag)|\($url)"
           ' <<<"$json")
 
-          if [[ ${#rows[@]} -eq 0 ]]; then
-            echo "No app/* releases with ${ASSET_NAME} found"; exit 1
-          fi
+          [[ ${#rows[@]} -gt 0 ]] || { echo "No app/* releases with ${ASSET_NAME}"; exit 1; }
 
-          # Sort semver (sort -V), pick highest
           latest_row="$(printf "%s\n" "${rows[@]}" | sort -t'|' -k1,1V | tail -n1)"
           IFS='|' read -r num tag url <<<"$latest_row"
 
-          # num like 2.6.5 ; tag like app/v2.6.5 ; url is direct asset URL
-          echo "remote_num=$num"  >> $GITHUB_OUTPUT
-          echo "remote_tag=$tag"  >> $GITHUB_OUTPUT
-          echo "remote_url=$url"  >> $GITHUB_OUTPUT
-          echo "Remote latest: num=$num tag=$tag"
+          # sanity: keep only x.y.z form for compare
+          num_clean="$(echo "$num" | grep -oE '^[0-9]+(\.[0-9]+){1,2}')"
+
+          echo "remote_num=$num_clean" >> $GITHUB_OUTPUT
+          echo "remote_tag=$tag"       >> $GITHUB_OUTPUT
+          echo "remote_url=$url"       >> $GITHUB_OUTPUT
+          echo "Remote latest: num=$num_clean tag=$tag"
 
       - name: Decide update (only if remote > local)
         id: guard
         run: |
           set -euo pipefail
-          local="${{ steps.local.outputs.local_num }}"
-          remote="${{ steps.remote.outputs.remote_num }}"
+          local_v="${{ steps.local.outputs.local_num }}"
+          remote_v="${{ steps.remote.outputs.remote_num }}"
 
-          # compare using sort -V
-          newer="$(printf "%s\n%s\n" "$local" "$remote" | sort -V | tail -n1)"
-          if [[ "$newer" == "$remote" && "$remote" != "$local" ]]; then
+          if [[ -z "$remote_v" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "No remote version detected."
+            exit 0
+          fi
+
+          # if the folder for v<remote> already exists, skip
+          if [[ -d "${{ env.DEST_DIR }}/v${remote_v}" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Folder already exists for v${remote_v}; skipping."
+            exit 0
+          fi
+
+          top="$(printf "%s\n%s\n" "$local_v" "$remote_v" | sort -V | tail -n1)"
+          if [[ "$top" == "$remote_v" && "$remote_v" != "$local_v" ]]; then
             echo "skip=false" >> $GITHUB_OUTPUT
-            echo "Update needed: $local -> $remote"
+            echo "Update needed: $local_v -> $remote_v"
           else
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Already up-to-date (local=$local, remote=$remote)."
+            echo "Already latest: local=$local_v, remote=$remote_v"
           fi
 
       - name: Stop if no update
@@ -128,11 +136,10 @@ jobs:
       - name: Place versioned binary & update latest.txt
         if: steps.guard.outputs.skip == 'false'
         run: |
-          ver="${{ steps.remote.outputs.remote_num }}"                  # e.g. 2.6.5
-          ver_tag="v${ver}"                                            # v2.6.5
-          mkdir -p "${DEST_DIR}/${ver_tag}"
-          cp -f "${ASSET_NAME}" "${DEST_DIR}/${ver_tag}/${ASSET_NAME}"
-          echo "${ver}" > "${DEST_DIR}/latest.txt"                     # store numeric only
+          ver="${{ steps.remote.outputs.remote_num }}"     # e.g. 2.6.5
+          mkdir -p "${DEST_DIR}/v${ver}"
+          cp -f "${ASSET_NAME}" "${DEST_DIR}/v${ver}/${ASSET_NAME}"
+          echo "${ver}" > "${DEST_DIR}/latest.txt"         # store numeric only
 
       - name: Commit and push (message = v<version>)
         if: steps.guard.outputs.skip == 'false'
