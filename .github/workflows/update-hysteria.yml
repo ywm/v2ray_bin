@@ -1,0 +1,164 @@
+name: Update & Commit Hysteria (ARMv5 + UPX 3.94)
+
+on:
+  schedule:
+    - cron: "5 4 * * 6"   # At 04:05 on Saturday
+  workflow_dispatch:
+    inputs:
+      hy_version:
+        description: "Optional: specify Hysteria version (e.g. v2.6.5). Leave empty to auto-detect latest app/*."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+    env:
+      OWNER: apernet
+      REPO: hysteria
+      DEST_DIR: v2ray_bin/380_armv5/hysteria
+      ASSET_NAME: hysteria-linux-armv5
+      UPX_URL: https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl xz-utils jq ca-certificates unzip file
+
+      - name: Resolve Hysteria version (latest app/* if not provided)
+        id: resolve
+        env:
+          INPUT_HY_VERSION: "${{ inputs.hy_version }}"
+        run: |
+          set -euo pipefail
+
+          # If user provided vX.Y.Z, use it; map to tag "app/vX.Y.Z"
+          if [ -n "${INPUT_HY_VERSION}" ]; then
+            case "${INPUT_HY_VERSION}" in
+              v*) PLAIN_VER="${INPUT_HY_VERSION}" ;;
+              *)  echo "Provide version like v2.6.5"; exit 1 ;;
+            esac
+            TAG="app/${PLAIN_VER}"
+          else
+            # Auto-detect the latest app/* release
+            JSON="$(curl -fsSL https://api.github.com/repos/apernet/hysteria/releases?per_page=30)"
+            TAG="$(printf "%s" "$JSON" | jq -r '[.[] | select(.tag_name|startswith("app/"))][0].tag_name')"
+            [ -n "${TAG}" ] && [ "${TAG}" != "null" ] || { echo "No app/* release tag found"; exit 1; }
+            PLAIN_VER="${TAG#app/}"
+          fi
+
+          # Asset URL
+          DL_URL="https://github.com/apernet/hysteria/releases/download/${TAG//\//%2F}/${{ env.ASSET_NAME }}"
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "ver=${PLAIN_VER}" >> "$GITHUB_OUTPUT"
+          echo "url=${DL_URL}" >> "$GITHUB_OUTPUT"
+          echo "Resolved Hysteria version: ${TAG} (folder: ${PLAIN_VER})"
+          echo "Download URL: ${DL_URL}"
+
+      - name: Skip if version already exists / already latest
+        id: guard
+        run: |
+          set -euo pipefail
+          VER="${{ steps.resolve.outputs.ver }}"
+          LATEST_FILE="${{ env.DEST_DIR }}/latest.txt"
+
+          if [ -d "${{ env.DEST_DIR }}/${VER}" ]; then
+            echo "Version directory already exists: $VER"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -f "${LATEST_FILE}" ]; then
+            CURR="$(tr -d '\n' < "${LATEST_FILE}")"
+          else
+            CURR=""
+          fi
+
+          if [ "${CURR}" = "${VER}" ]; then
+            echo "latest.txt already at ${VER}. Nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install UPX 3.94 (ucl alias)
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          curl -fsSL "${UPX_URL}" -o upx.tar.xz
+          tar -xJf upx.tar.xz
+          sudo mv upx-3.94-amd64_linux/upx /usr/local/bin/upx
+          sudo ln -sf /usr/local/bin/upx /usr/local/bin/upx-ucl
+          upx-ucl -V
+
+      - name: Download Hysteria ARMv5 asset
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          curl -fL "${{ steps.resolve.outputs.url }}" -o asset.bin
+          file asset.bin || true
+          ls -lh asset.bin
+
+      - name: Extract if archive; else rename
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          OUT="${ASSET_NAME}"
+          MAGIC="$(file -b asset.bin)"
+
+          case "$MAGIC" in
+            *"gzip compressed data"*)
+              echo "Detected gzip archive; extracting..."
+              mkdir -p _ex && tar -xzf asset.bin -C _ex || true
+              CAND="$(find _ex -type f -name "${ASSET_NAME}" -o -perm -u+x | head -n1 || true)"
+              [ -n "${CAND}" ] || { echo "Binary not found inside archive"; exit 1; }
+              cp -f "${CAND}" "${OUT}"
+              ;;
+            *"Zip archive data"*)
+              echo "Detected zip archive; extracting..."
+              mkdir -p _ex && unzip -o asset.bin -d _ex >/dev/null
+              CAND="$(find _ex -type f -name "${ASSET_NAME}" -o -perm -u+x | head -n1 || true)"
+              [ -n "${CAND}" ] || { echo "Binary not found inside zip"; exit 1; }
+              cp -f "${CAND}" "${OUT}"
+              ;;
+            *)
+              echo "Assuming raw binary; renaming to ${OUT}"
+              mv -f asset.bin "${OUT}"
+              ;;
+          esac
+          chmod +x "${OUT}"
+          ls -lh "${OUT}"
+
+      - name: Compress with UPX 3.94
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          upx-ucl --lzma --ultra-brute "${ASSET_NAME}" || echo "UPX failed; keeping original."
+          ls -lh "${ASSET_NAME}"
+
+      - name: Place versioned binary & update latest.txt
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          VER="${{ steps.resolve.outputs.ver }}"
+          mkdir -p "${DEST_DIR}/${VER}"
+          cp -f "${ASSET_NAME}" "${DEST_DIR}/${VER}/${ASSET_NAME}"
+          echo "${VER}" > "${DEST_DIR}/latest.txt"
+          ls -l "${DEST_DIR}/${VER}"
+
+      - name: Commit and push (message = version)
+        if: steps.guard.outputs.skip == 'false'
+        run: |
+          set -e
+          VER="${{ steps.resolve.outputs.ver }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${DEST_DIR}/${VER}/${ASSET_NAME}" "${DEST_DIR}/latest.txt"
+          git commit -m "${VER}" || echo "No changes to commit."
+          git push
