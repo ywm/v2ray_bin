@@ -3,12 +3,7 @@ name: Update & Commit Hysteria (ARMv5 + UPX 3.94)
 on:
   schedule:
     - cron: "5 4 * * 6"   # At 04:05 on Saturday
-  workflow_dispatch:
-    inputs:
-      hy_version:
-        description: "Optional: specify Hysteria version (e.g. v2.6.5). Leave empty to auto-detect latest app/*."
-        required: false
-        default: ""
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -32,64 +27,80 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y curl xz-utils jq ca-certificates unzip file
+          sudo apt-get install -y curl xz-utils jq ca-certificates file
 
-      - name: Resolve Hysteria version (latest app/* if not provided)
-        id: resolve
-        env:
-          INPUT_HY_VERSION: "${{ inputs.hy_version }}"
+      - name: Read local latest (strip leading v)
+        id: local
         run: |
           set -euo pipefail
-
-          # If user provided vX.Y.Z, use it; map to tag "app/vX.Y.Z"
-          if [ -n "${INPUT_HY_VERSION}" ]; then
-            case "${INPUT_HY_VERSION}" in
-              v*) PLAIN_VER="${INPUT_HY_VERSION}" ;;
-              *)  echo "Provide version like v2.6.5"; exit 1 ;;
-            esac
-            TAG="app/${PLAIN_VER}"
+          f="${{ env.DEST_DIR }}/latest.txt"
+          if [[ -f "$f" ]]; then
+            raw="$(tr -d '\n\r ' < "$f")"
+            # drop leading v if any
+            ver="${raw#v}"
           else
-            # Auto-detect the latest app/* release
-            JSON="$(curl -fsSL https://api.github.com/repos/apernet/hysteria/releases?per_page=30)"
-            TAG="$(printf "%s" "$JSON" | jq -r '[.[] | select(.tag_name|startswith("app/"))][0].tag_name')"
-            [ -n "${TAG}" ] && [ "${TAG}" != "null" ] || { echo "No app/* release tag found"; exit 1; }
-            PLAIN_VER="${TAG#app/}"
+            raw=""
+            ver="0.0.0"
+          fi
+          echo "raw_local=$raw"        >> $GITHUB_OUTPUT
+          echo "local_num=$ver"        >> $GITHUB_OUTPUT
+          echo "Local latest (num): $ver"
+
+      - name: Resolve remote latest app/* (strip app/v, pick highest semver)
+        id: remote
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Get many releases, collect all app/v* tags, map to numeric "X.Y.Z"
+          json="$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+                           -H "Accept: application/vnd.github+json" \
+                           "https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100")"
+
+          # Build a table: numeric_version|tag|download_url
+          mapfile -t rows < <(jq -r '
+            .[] | select(.tag_name|startswith("app/")) as $r
+            | ($r.tag_name|sub("^app/v";"")) as $num
+            | ($r.tag_name) as $tag
+            | ($r.assets[]? | select(.name=="'"${ASSET_NAME}"'") | .browser_download_url) as $url
+            | select($url != null)
+            | "\($num)|\($tag)|\($url)"
+          ' <<<"$json")
+
+          if [[ ${#rows[@]} -eq 0 ]]; then
+            echo "No app/* releases with ${ASSET_NAME} found"; exit 1
           fi
 
-          # Asset URL
-          DL_URL="https://github.com/apernet/hysteria/releases/download/${TAG//\//%2F}/${{ env.ASSET_NAME }}"
+          # Sort semver (sort -V), pick highest
+          latest_row="$(printf "%s\n" "${rows[@]}" | sort -t'|' -k1,1V | tail -n1)"
+          IFS='|' read -r num tag url <<<"$latest_row"
 
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "ver=${PLAIN_VER}" >> "$GITHUB_OUTPUT"
-          echo "url=${DL_URL}" >> "$GITHUB_OUTPUT"
-          echo "Resolved Hysteria version: ${TAG} (folder: ${PLAIN_VER})"
-          echo "Download URL: ${DL_URL}"
+          # num like 2.6.5 ; tag like app/v2.6.5 ; url is direct asset URL
+          echo "remote_num=$num"  >> $GITHUB_OUTPUT
+          echo "remote_tag=$tag"  >> $GITHUB_OUTPUT
+          echo "remote_url=$url"  >> $GITHUB_OUTPUT
+          echo "Remote latest: num=$num tag=$tag"
 
-      - name: Skip if version already exists / already latest
+      - name: Decide update (only if remote > local)
         id: guard
         run: |
           set -euo pipefail
-          VER="${{ steps.resolve.outputs.ver }}"
-          LATEST_FILE="${{ env.DEST_DIR }}/latest.txt"
+          local="${{ steps.local.outputs.local_num }}"
+          remote="${{ steps.remote.outputs.remote_num }}"
 
-          if [ -d "${{ env.DEST_DIR }}/${VER}" ]; then
-            echo "Version directory already exists: $VER"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ -f "${LATEST_FILE}" ]; then
-            CURR="$(tr -d '\n' < "${LATEST_FILE}")"
+          # compare using sort -V
+          newer="$(printf "%s\n%s\n" "$local" "$remote" | sort -V | tail -n1)"
+          if [[ "$newer" == "$remote" && "$remote" != "$local" ]]; then
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "Update needed: $local -> $remote"
           else
-            CURR=""
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "Already up-to-date (local=$local, remote=$remote)."
           fi
 
-          if [ "${CURR}" = "${VER}" ]; then
-            echo "latest.txt already at ${VER}. Nothing to do."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Stop if no update
+        if: steps.guard.outputs.skip == 'true'
+        run: echo "No update needed."
 
       - name: Install UPX 3.94 (ucl alias)
         if: steps.guard.outputs.skip == 'false'
@@ -100,65 +111,36 @@ jobs:
           sudo ln -sf /usr/local/bin/upx /usr/local/bin/upx-ucl
           upx-ucl -V
 
-      - name: Download Hysteria ARMv5 asset
+      - name: Download Hysteria ARMv5 asset (remote latest)
         if: steps.guard.outputs.skip == 'false'
         run: |
-          curl -fL "${{ steps.resolve.outputs.url }}" -o asset.bin
-          file asset.bin || true
-          ls -lh asset.bin
-
-      - name: Extract if archive; else rename
-        if: steps.guard.outputs.skip == 'false'
-        run: |
-          set -euo pipefail
-          OUT="${ASSET_NAME}"
-          MAGIC="$(file -b asset.bin)"
-
-          case "$MAGIC" in
-            *"gzip compressed data"*)
-              echo "Detected gzip archive; extracting..."
-              mkdir -p _ex && tar -xzf asset.bin -C _ex || true
-              CAND="$(find _ex -type f -name "${ASSET_NAME}" -o -perm -u+x | head -n1 || true)"
-              [ -n "${CAND}" ] || { echo "Binary not found inside archive"; exit 1; }
-              cp -f "${CAND}" "${OUT}"
-              ;;
-            *"Zip archive data"*)
-              echo "Detected zip archive; extracting..."
-              mkdir -p _ex && unzip -o asset.bin -d _ex >/dev/null
-              CAND="$(find _ex -type f -name "${ASSET_NAME}" -o -perm -u+x | head -n1 || true)"
-              [ -n "${CAND}" ] || { echo "Binary not found inside zip"; exit 1; }
-              cp -f "${CAND}" "${OUT}"
-              ;;
-            *)
-              echo "Assuming raw binary; renaming to ${OUT}"
-              mv -f asset.bin "${OUT}"
-              ;;
-          esac
-          chmod +x "${OUT}"
-          ls -lh "${OUT}"
+          curl -fL "${{ steps.remote.outputs.remote_url }}" -o "${{ env.ASSET_NAME }}"
+          chmod +x "${{ env.ASSET_NAME }}"
+          file "${{ env.ASSET_NAME }}" || true
+          ls -lh "${{ env.ASSET_NAME }}"
 
       - name: Compress with UPX 3.94
         if: steps.guard.outputs.skip == 'false'
         run: |
-          upx-ucl --lzma --ultra-brute "${ASSET_NAME}" || echo "UPX failed; keeping original."
-          ls -lh "${ASSET_NAME}"
+          upx-ucl --lzma --ultra-brute "${{ env.ASSET_NAME }}" || echo "UPX failed; keeping original."
+          ls -lh "${{ env.ASSET_NAME }}"
 
       - name: Place versioned binary & update latest.txt
         if: steps.guard.outputs.skip == 'false'
         run: |
-          VER="${{ steps.resolve.outputs.ver }}"
-          mkdir -p "${DEST_DIR}/${VER}"
-          cp -f "${ASSET_NAME}" "${DEST_DIR}/${VER}/${ASSET_NAME}"
-          echo "${VER}" > "${DEST_DIR}/latest.txt"
-          ls -l "${DEST_DIR}/${VER}"
+          ver="${{ steps.remote.outputs.remote_num }}"                  # e.g. 2.6.5
+          ver_tag="v${ver}"                                            # v2.6.5
+          mkdir -p "${DEST_DIR}/${ver_tag}"
+          cp -f "${ASSET_NAME}" "${DEST_DIR}/${ver_tag}/${ASSET_NAME}"
+          echo "${ver}" > "${DEST_DIR}/latest.txt"                     # store numeric only
 
-      - name: Commit and push (message = version)
+      - name: Commit and push (message = v<version>)
         if: steps.guard.outputs.skip == 'false'
         run: |
           set -e
-          VER="${{ steps.resolve.outputs.ver }}"
+          ver="${{ steps.remote.outputs.remote_num }}"
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${DEST_DIR}/${VER}/${ASSET_NAME}" "${DEST_DIR}/latest.txt"
-          git commit -m "${VER}" || echo "No changes to commit."
+          git add "${DEST_DIR}/v${ver}/${ASSET_NAME}" "${DEST_DIR}/latest.txt"
+          git commit -m "hysteria v${ver}" || echo "No changes to commit."
           git push
