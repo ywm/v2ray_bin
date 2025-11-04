@@ -139,7 +139,7 @@ jobs:
           ver="${{ steps.remote.outputs.remote_num }}"     # e.g. 2.6.5
           mkdir -p "${DEST_DIR}/v${ver}"
           cp -f "${ASSET_NAME}" "${DEST_DIR}/v${ver}/${ASSET_NAME}"
-          echo "${ver}" > "${DEST_DIR}/latest.txt"         # store numeric only
+          echo "v${ver}" > "${DEST_DIR}/latest.txt"         # store version like v2.6.5
 
       - name: Commit and push (message = v<version>)
         if: steps.guard.outputs.skip == 'false'
