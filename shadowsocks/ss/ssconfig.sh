@@ -365,7 +365,7 @@ resolv_server_ip(){
 				ss_basic_server_ip="$server_ip"
 				dbus set ss_basic_server_ip="$server_ip"
 			else
-				dbus remvoe ss_basic_server_ip
+				dbus remove ss_basic_server_ip
 				echo_date 节点服务器的ip地址解析失败，将由ss-redir自己解析.
 			fi
 		else
@@ -637,7 +637,7 @@ start_dns(){
 		start_sslocal
 		echo_date 开启dns2socks，用于chinadns-ng的国外上游...
 		dns2socks 127.0.0.1:23456 "$ss_chinadns1_user" 127.0.0.1:1055 >/dev/null 2>&1 &
-		</koolshare/ss/rules/gfwlist.conf sed -e '/^server=/d' -e 's/ipset=\/.//g' -e 's/\/gfwlist//g' > /tmp/gfwlist.txt
+		sed -e '/^server=/d' -e 's/ipset=\/.//g' -e 's/\/gfwlist//g' /koolshare/ss/rules/gfwlist.conf > /tmp/gfwlist.txt
 		chinadns-ng -N -l ${DNSF_PORT} -c ${CDN}#${DNSC_PORT} -t 127.0.0.1#1055 -g /tmp/gfwlist.txt -m /koolshare/ss/rules/cdn.txt -M >/dev/null 2>&1 &
 	fi
 
@@ -1286,13 +1286,7 @@ get_fingerprint(){
 		echo "null"
 	fi
 }
-get_tgfingerprint(){
-	if [ -n "$1" ];then
-		echo "$1"
-	else
-		echo "null"
-	fi
-}
+
 resolve_node_ip4json(){	
 	
 	# 检测用户json的服务器ip地址
@@ -1939,7 +1933,7 @@ create_trojango_json(){
 					],
 					"session_ticket": true,
 					"reuse_session": true,
-					"fingerprint": $(get_tgfingerprint $ss_basic_fingerprint)
+					"fingerprint": $(get_fingerprint $ss_basic_fingerprint)
 				},
 				"tcp": {
 					"no_delay": true,
@@ -2349,7 +2343,7 @@ flush_nat(){
 	ipset -F router >/dev/null 2>&1 && ipset -X router >/dev/null 2>&1
 	#remove_redundant_rule
 	ip_rule_exist=`ip rule show | grep "lookup 310" | grep -c 310`
-	if [ -n "ip_rule_exist" ];then
+	if [ -n "$ip_rule_exist" ];then
 		#echo_date 清除重复的ip rule规则.
 		until [ "$ip_rule_exist" = 0 ]
 		do 

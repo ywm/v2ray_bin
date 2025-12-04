@@ -410,7 +410,7 @@ update_ss_config(){
 		local_ss_v2ray_tmp=$(dbus get ssconf_basic_ss_v2ray_$index)
 		[ "$local_ss_v2ray_tmp" != "$ss_v2ray_tmp" ] && dbus set ssconf_basic_ss_v2ray_$index=$ss_v2ray_tmp && let i+=1
 
-		local_ss_v2ray_opts_tmp=$(dbus get ssconf_basic_ss_v2ray_opts_tmp_$index)
+		local_ss_v2ray_opts_tmp=$(dbus get ssconf_basic_ss_v2ray_plugin_opts_$index)
 		[ "$local_ss_v2ray_opts_tmp" != "$ss_v2ray_opts_tmp" ] && dbus set ssconf_basic_ss_v2ray_plugin_opts_$index=$ss_v2ray_opts_tmp && let i+=1
 
 		local_ss_kcp_support_tmp=$(dbus get ssconf_basic_ss_kcp_support_$index)
@@ -662,7 +662,11 @@ add_vmess_servers(){
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vmess"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="xray"
-	[ -n "$v2ray_group" ] && dbus set ssconf_basic_allowinsecure_$v2rayindex=1 || dbus set ssconf_basic_allowinsecure_$v2rayindex=0
+	if [ -n "$v2ray_group" ]; then
+		dbus set ssconf_basic_allowinsecure_$v2rayindex=1
+	else
+		dbus set ssconf_basic_allowinsecure_$v2rayindex=0
+	fi
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="auto"
@@ -671,7 +675,11 @@ add_vmess_servers(){
 	dbus set ssconf_basic_port_$v2rayindex=$v2ray_port
 	dbus set ssconf_basic_server_$v2rayindex=$v2ray_add
 	dbus set ssconf_basic_v2ray_uuid_$v2rayindex=$v2ray_id
-	[ -n "$v2ray_group" ] && dbus set ssconf_basic_v2ray_alterid_$v2rayindex=0 || dbus set ssconf_basic_v2ray_alterid_$v2rayindex=$v2ray_aid
+	if [ -n "$v2ray_group" ]; then
+		dbus set ssconf_basic_v2ray_alterid_$v2rayindex=0
+	else
+		dbus set ssconf_basic_v2ray_alterid_$v2rayindex=$v2ray_aid
+	fi
 	dbus set ssconf_basic_v2ray_network_security_$v2rayindex=$v2ray_tls
 	dbus set ssconf_basic_v2ray_network_$v2rayindex=$v2ray_net
 	case $v2ray_net in
@@ -840,7 +848,11 @@ add_trojan_servers(){
 	dbus set ssconf_basic_trojan_binary_$trojanindex=$binary
 	dbus set ssconf_basic_trojan_sni_$trojanindex=$sni
 	dbus set ssconf_basic_trojan_network_$trojanindex=$v2ray_net
-	[ -n "$group" ] && dbus set ssconf_basic_allowinsecure_$trojanindex=1 || dbus set ssconf_basic_allowinsecure_$trojanindex=0
+	if [ -n "$group" ]; then
+  		dbus set ssconf_basic_allowinsecure_$trojanindex=1
+	else
+		dbus set ssconf_basic_allowinsecure_$trojanindex=0
+	fi
 	dbus set ssconf_basic_ss_kcp_support_$trojanindex=$ss_kcp_support_tmp
 	dbus set ssconf_basic_ss_udp_support_$trojanindex=$ss_udp_support_tmp
 	dbus set ssconf_basic_ss_kcp_opts_$trojanindex=$ss_kcp_opts_tmp
@@ -1110,7 +1122,11 @@ add_vless_servers(){
 	dbus set ssconf_basic_type_$v2rayindex=3
 	dbus set ssconf_basic_v2ray_protocol_$v2rayindex="vless"
 	dbus set ssconf_basic_v2ray_xray_$v2rayindex="xray"
-	[ -n "$vless_group" ] && dbus set ssconf_basic_allowinsecure_$v2rayindex=1 || dbus set ssconf_basic_allowinsecure_$v2rayindex=0
+	if [ -n "$vless_group" ]; then
+		dbus set ssconf_basic_allowinsecure_$v2rayindex=1
+	else
+		dbus set ssconf_basic_allowinsecure_$v2rayindex=0
+	fi
 	dbus set ssconf_basic_v2ray_mux_enable_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_use_json_$v2rayindex=0
 	dbus set ssconf_basic_v2ray_security_$v2rayindex="none"
@@ -1122,7 +1138,6 @@ add_vless_servers(){
 	dbus set ssconf_basic_v2ray_network_security_$v2rayindex=$v2ray_tls
 	dbus set ssconf_basic_v2ray_network_$v2rayindex=$v2ray_net
 	[ -n "$fingerprint" ] && dbus set ssconf_basic_fingerprint_$v2rayindex=$fingerprint
-
 	[ -n "$v2ray_tlshost" ] && dbus set ssconf_basic_v2ray_network_tlshost_$v2rayindex=$v2ray_tlshost
 	
 	case $v2ray_net in
@@ -1192,9 +1207,9 @@ update_vless_config(){
 		local_v2ray_net=$(dbus get ssconf_basic_v2ray_network_$index)
 		[ "$local_v2ray_net" != "$v2ray_net" ] && dbus set ssconf_basic_v2ray_network_$index=$v2ray_net && let i+=1
 		local_v2ray_tlshost=$(dbus get ssconf_basic_v2ray_network_tlshost_$index)
-		[ "$local_v2ray_tlsthost" != "$v2ray_tlshost" ] && dbus set ssconf_basic_v2ray_network_tlshost_$index=$v2ray_tlshost && let i+=1	
+		[ "$local_v2ray_tlshost" != "$v2ray_tlshost" ] && dbus set ssconf_basic_v2ray_network_tlshost_$index=$v2ray_tlshost && let i+=1
 		local_fingerprint=$(dbus get ssconf_basic_fingerprint_$index)
-		[ "$local_v2ray_tlsthost" != "$fingerprint" ] && dbus set ssconf_basic_fingerprint_$index=$fingerprint && let i+=1
+		[ "$local_fingerprint" != "$fingerprint" ] && dbus set ssconf_basic_fingerprint_$index=$fingerprint && let i+=1
 
 		case $local_v2ray_net in
 		tcp)
@@ -1281,7 +1296,7 @@ get_trojan_go_config(){
 	ss_ssudp_mtu_tmp=""
 	ss_udp_opts_tmp=""
 
-	[ -n "$group" ] && group_base64=`echo $trojan_go_group | base64_encode | sed 's/ -//g'`
+	[ -n "$group" ] && group_base64=`echo $group | base64_encode | sed 's/ -//g'`
 	[ -n "$server" ] && server_base64=`echo $server | base64_encode | sed 's/ -//g'`	
 	[ -n "$remarks" ] && remarks_base64=`echo $remarks | base64_encode | sed 's/ -//g'`
 
@@ -1502,7 +1517,17 @@ del_none_exist(){
 remove_node_gap(){
 	local SEQ=$(dbus list ssconf_basic_|grep _name_|cut -d "_" -f 4|cut -d "=" -f 1|sort -n)
 	local MAX=$(dbus list ssconf_basic_|grep _name_|cut -d "_" -f 4|cut -d "=" -f 1|sort -rn|head -n1)
-	[[ $MAX -gt 1000 ]] && local MAX_adj=$((MAX%1000))
+	local MAX_adj
+	if [ -n "$MAX" ]; then
+	if [ "$MAX" -gt 1000 ]; then
+		MAX_adj=$((MAX%1000))
+	else
+		MAX_adj=$MAX
+	fi
+	else
+	MAX_adj=0
+	fi
+
 	local NODE_NU=$(dbus list ssconf_basic_|grep _name_|wc -l)
 	local KCP_NODE=`dbus get ss_kcp_node`
 	
@@ -1635,7 +1660,7 @@ get_oneline_rule_now(){
 	# 节点订阅
 	local ssr_subscribe_link=`echo "$1" | awk -F'~~' '{ print $1 }'`
 	LINK_FORMAT=`echo "$ssr_subscribe_link" | grep -E "^http://|^https://"`
-	local node_regexp=`echo "$1" | awk -F'~~' '{ print $2 }'`
+	node_regexp=`echo "$1" | awk -F'~~' '{ print $2 }'`
 	[ -z "$LINK_FORMAT" ] && return 4
 	
 	echo_date "开始更新在线订阅列表..." 
